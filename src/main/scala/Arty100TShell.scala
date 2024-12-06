@@ -9,6 +9,8 @@ class Arty100TShell extends RawModule {
   val uart_rxd_out = IO(Output(Bool()))
   val uart_txd_in = IO(Input(Bool()))
 
+  val ck_io8 = IO(Output(Bool()))
+
   val jd_0 = IO(Output(Bool()))
   val jd_1 = IO(Input(Bool()))
   val jd_2 = IO(Input(Bool()))
@@ -44,7 +46,9 @@ class Arty100TShell extends RawModule {
 
   val axi_crossbar = Module(new AXICrossBar())
   val axi_gpio = Module(new axi_gpio_0())
-  val axi_uartlite = Module(new axi_uartlite_0())
+  // val axi_uartlite = Module(new axi_uartlite_0())
+  // val axi_timer = Module(new axi_timer_0())
+  val axi_madatimer = Module(new AXIMadaTimer())
 
   // clocking wizard connection
   clk_wiz.io.clk_in1 := CLK100MHZ
@@ -91,21 +95,29 @@ class Arty100TShell extends RawModule {
   system.io.uart_0_rxd := uart_txd_in
   uart_rxd_out := system.io.uart_0_txd
 
+  // axi connection
   system.io.periph_axi4_s_axi <> axi_crossbar.io.s_axi
   
   axi_crossbar.io.m_axi(0) <> axi_gpio.io.s_axi
   axi_gpio.io.gpio_io_i := 5.U(32.W)
   led0_b := axi_gpio.io.gpio_io_o(0)
-  
-  axi_crossbar.io.m_axi(1) <> axi_uartlite.io.s_axi
-  axi_uartlite.io.rx := jd_7
-  jd_3 := axi_uartlite.io.tx
 
+  axi_crossbar.io.m_axi(1) <> axi_madatimer.io.s_axi
   
+  // axi_crossbar.io.m_axi(1) <> axi_uartlite.io.s_axi
+  // axi_uartlite.io.rx := jd_7
+  // jd_3 := axi_uartlite.io.tx
+  jd_3 := false.B
 
-  led1_b := false.B
+  // axi_crossbar.io.m_axi(1) <> axi_timer.io.s_axi
+  // axi_timer.io.capturetrig0 := false.B
+  // axi_timer.io.capturetrig1 := false.B
+  // axi_timer.io.freeze := false.B
+  // ck_io8 := axi_timer.io.pwm0
+
+  ck_io8 := false.B
+
+
+  led1_b := false.B //axi_timer.io.pwm0
   led2_b := true.B
-
-
-
 }

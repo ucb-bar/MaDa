@@ -98,12 +98,13 @@ class AXICrossBar extends RawModule {
   io.m_axi(1).awvalid := axi_crossbar_0.io.m_axi_awvalid(1)
   axi_crossbar_0.io.m_axi_awready := Cat(VecInit(io.m_axi.reverse.map(_.awready)))
 
-  io.m_axi(0).wdata := axi_crossbar_0.io.m_axi_wdata(31, 0)
-  io.m_axi(1).wdata := axi_crossbar_0.io.m_axi_wdata(63, 32)
-  io.m_axi(0).wstrb := axi_crossbar_0.io.m_axi_wstrb(2, 0)
-  io.m_axi(1).wstrb := axi_crossbar_0.io.m_axi_wstrb(4, 2)
-  io.m_axi(0).wvalid := axi_crossbar_0.io.m_axi_wvalid(0)
-  io.m_axi(1).wvalid := axi_crossbar_0.io.m_axi_wvalid(1)
+  // w bundle
+  io.m_axi.zipWithIndex.foreach { case (m_axi, i) =>
+    m_axi.wdata := axi_crossbar_0.io.m_axi_wdata(32*i + 31, 32*i)
+    m_axi.wstrb := axi_crossbar_0.io.m_axi_wstrb(2*i + 1, 2*i)
+    m_axi.wvalid := axi_crossbar_0.io.m_axi_wvalid(i)
+  }
+
   axi_crossbar_0.io.m_axi_wready := Cat(VecInit(io.m_axi.reverse.map(_.wready)))
 
   axi_crossbar_0.io.m_axi_bresp := Cat(VecInit(io.m_axi.reverse.map(_.bresp)))
