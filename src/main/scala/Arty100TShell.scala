@@ -9,7 +9,13 @@ class Arty100TShell extends RawModule {
   val uart_rxd_out = IO(Output(Bool()))
   val uart_txd_in = IO(Input(Bool()))
 
-  val ck_io8 = IO(Output(Bool()))
+  val ck_io2 = IO(Output(Bool()))
+  val ck_io3 = IO(Output(Bool()))
+  val ck_io4 = IO(Output(Bool()))
+  val ck_io5 = IO(Output(Bool()))
+  val ck_io6 = IO(Output(Bool()))
+  val ck_io7 = IO(Output(Bool()))
+  val ck_io26 = IO(Output(Bool()))
 
   val jd_0 = IO(Output(Bool()))
   val jd_1 = IO(Input(Bool()))
@@ -115,7 +121,14 @@ class Arty100TShell extends RawModule {
   // axi_timer.io.freeze := false.B
   // ck_io8 := axi_timer.io.pwm0
 
-  ck_io8 := false.B
+  ck_io2 := axi_madatimer.io.pwms(0)
+  ck_io3 := ~axi_madatimer.io.pwms(0)
+  ck_io4 := axi_madatimer.io.pwms(1)
+  ck_io5 := ~axi_madatimer.io.pwms(1)
+  ck_io6 := axi_madatimer.io.pwms(2)
+  ck_io7 := ~axi_madatimer.io.pwms(2)
+
+  ck_io26 := sw(0)
 
 
   led1_b := false.B //axi_timer.io.pwm0

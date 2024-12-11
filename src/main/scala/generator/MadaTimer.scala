@@ -114,7 +114,7 @@ class AXIMadaTimer(n: Int = 4) extends RawModule {
         Mux(counter_reg >= auto_reload, auto_reload, counter_reg + 1.U)) // up, max is auto_reload
     }
     io.pwms.zipWithIndex.foreach { case (pwm, i) =>
-      pwm := counter_reg >= ccrs(i)
+      pwm := counter_reg < ccrs(i)
     }
     dontTouch(io.pwms)
   } // end of withClockAndReset
