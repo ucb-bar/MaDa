@@ -1,4 +1,6 @@
 .metals/
+.bloop/
+.vscode/
 
 out/
 generated-src/
