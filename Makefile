@@ -3,9 +3,11 @@ BUILD_DIR = ./generated-src
 PRJ = ChiselProject
 
 verilog:
-	$(call git_commit, "generate verilog")
 	mkdir -p $(BUILD_DIR)
-	mill -i $(PRJ).runMain Elaborate --target-dir $(BUILD_DIR)
+	mill -i $(PRJ).runMain GenerateVerilog --target-dir $(BUILD_DIR)
+
+bitstream: verilog
+	mill -i $(PRJ).runMain GenerateBitstream --target-dir $(BUILD_DIR)
 
 test:
 	mill -i $(PRJ).Test
