@@ -8,5 +8,6 @@ class clk_wiz_0 extends BlackBox {
     val reset = Input(Bool())
     val locked = Output(Bool())
     val clk_out1 = Output(Clock())
+    val clk_out2 = Output(Clock())
   })
 }
