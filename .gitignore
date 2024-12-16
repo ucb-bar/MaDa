@@ -1,11 +1,16 @@
+
+# Metals
 .metals/
 .bloop/
 .vscode/
 
+# Build artifacts
 out/
 generated-src/
 
+# Toolchains
 toolchains/mill
 
+# Vivado
 vivado*.jou
 vivado*.log
