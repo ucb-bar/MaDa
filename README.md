@@ -3,7 +3,7 @@
 ## Install Mill
 
 ```bash
-./scripts/install_mill.sh
+./scripts/install-mill.sh
 ```
 
 ## Build Example
