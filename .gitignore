@@ -6,3 +6,6 @@ out/
 generated-src/
 
 toolchains/mill
+
+vivado*.jou
+vivado*.log
