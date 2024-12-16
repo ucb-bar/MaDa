@@ -61,6 +61,10 @@ object GenerateBitstream extends App {
   val fpga_part = "xc7a35ticsg324-1L"
   val board_part = "digilentinc.com:arty-a7-35:part0:1.1"
 
+  /* Zedboard */
+  val fpga_part = "xc7z020clg484-1"
+  val board_part = "digilentinc.com:zedboard:part0:1.1"
+
   // get all files under the generated-src directory
   val sources = new File("generated-src").listFiles().map(_.getAbsolutePath)
 
