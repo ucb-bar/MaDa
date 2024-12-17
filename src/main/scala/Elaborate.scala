@@ -129,6 +129,7 @@ object GenerateBitstream extends App {
     // create Vivado IPs
     run_tcl.println("update_ip_catalog")
 
+    {
     val ip_name = "clk_wiz_0"
 
     run_tcl.println(s"create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 -module_name ${ip_name}")
@@ -144,7 +145,7 @@ object GenerateBitstream extends App {
       set_property -dict [list \
         CONFIG.CLKOUT1_JITTER {125.247} \
         CONFIG.CLKOUT1_PHASE_ERROR {98.575} \
-        CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {125} \
+        CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {50} \
         CONFIG.CLKOUT2_JITTER {175.402} \
         CONFIG.CLKOUT2_PHASE_ERROR {98.575} \
         CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {25} \
@@ -153,13 +154,33 @@ object GenerateBitstream extends App {
         CONFIG.MMCM_CLKOUT0_DIVIDE_F {8.000} \
         CONFIG.MMCM_CLKOUT1_DIVIDE {40} \
         CONFIG.NUM_OUT_CLKS {2} \
-    ] [get_ips clk_wiz_0]""")
+    ] [get_ips ${ip_name}]""")
 
 
     run_tcl.println(s"generate_target {instantiation_template} [get_ips ${ip_name}]")
     run_tcl.println(s"generate_target all [get_ips ${ip_name}]")
     run_tcl.println(s"export_ip_user_files -of_objects [get_ips ${ip_name}] -no_script -sync -force -quiet")
     run_tcl.println(s"create_ip_run [get_ips ${ip_name}]")
+    }
+
+    {
+    val ip_name = "axis_data_fifo_0"
+
+    run_tcl.println(s"create_ip -name axis_data_fifo -vendor xilinx.com -library ip -version 2.0 -module_name ${ip_name}")
+
+    run_tcl.println("""
+      set_property -dict [list \
+        CONFIG.HAS_TLAST {1} \
+        CONFIG.TUSER_WIDTH {1 } \
+      ] [get_ips axis_data_fifo_0]
+    """)
+
+    run_tcl.println(s"generate_target {instantiation_template} [get_ips ${ip_name}]")
+    run_tcl.println(s"generate_target all [get_ips ${ip_name}]")
+    run_tcl.println(s"export_ip_user_files -of_objects [get_ips ${ip_name}] -no_script -sync -force -quiet")
+    run_tcl.println(s"create_ip_run [get_ips ${ip_name}]")
+    
+    }
 
     run_tcl.close()
     run_tcl.flush()   // make sure the file is written to the disk

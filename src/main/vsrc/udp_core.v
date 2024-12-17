@@ -83,7 +83,20 @@ module udp_core #
      * UART: 115200 bps, 8N1
      */
     input  wire       uart_rxd,
-    output wire       uart_txd
+    output wire       uart_txd,
+
+
+    output wire [7:0] rx_fifo_udp_payload_axis_tdata,
+    output wire rx_fifo_udp_payload_axis_tvalid,
+    input wire rx_fifo_udp_payload_axis_tready,
+    output wire rx_fifo_udp_payload_axis_tlast,
+    output wire rx_fifo_udp_payload_axis_tuser,
+
+    input wire [7:0] tx_fifo_udp_payload_axis_tdata,
+    input wire tx_fifo_udp_payload_axis_tvalid,
+    output wire tx_fifo_udp_payload_axis_tready,
+    input wire tx_fifo_udp_payload_axis_tlast,
+    input wire tx_fifo_udp_payload_axis_tuser
 );
 
 // AXI between MAC and Ethernet modules
@@ -208,17 +221,17 @@ wire tx_udp_payload_axis_tready;
 wire tx_udp_payload_axis_tlast;
 wire tx_udp_payload_axis_tuser;
 
-wire [7:0] rx_fifo_udp_payload_axis_tdata;
-wire rx_fifo_udp_payload_axis_tvalid;
-wire rx_fifo_udp_payload_axis_tready;
-wire rx_fifo_udp_payload_axis_tlast;
-wire rx_fifo_udp_payload_axis_tuser;
+// wire [7:0] rx_fifo_udp_payload_axis_tdata;
+// wire rx_fifo_udp_payload_axis_tvalid;
+// wire rx_fifo_udp_payload_axis_tready;
+// wire rx_fifo_udp_payload_axis_tlast;
+// wire rx_fifo_udp_payload_axis_tuser;
 
-wire [7:0] tx_fifo_udp_payload_axis_tdata;
-wire tx_fifo_udp_payload_axis_tvalid;
-wire tx_fifo_udp_payload_axis_tready;
-wire tx_fifo_udp_payload_axis_tlast;
-wire tx_fifo_udp_payload_axis_tuser;
+// wire [7:0] tx_fifo_udp_payload_axis_tdata;
+// wire tx_fifo_udp_payload_axis_tvalid;
+// wire tx_fifo_udp_payload_axis_tready;
+// wire tx_fifo_udp_payload_axis_tlast;
+// wire tx_fifo_udp_payload_axis_tuser;
 
 // Configuration
 wire [47:0] local_mac   = 48'h02_00_00_00_00_00;
@@ -551,45 +564,45 @@ udp_complete_inst (
     .clear_arp_cache(0)
 );
 
-axis_fifo #(
-    .DEPTH(8192),
-    .DATA_WIDTH(8),
-    .KEEP_ENABLE(0),
-    .ID_ENABLE(0),
-    .DEST_ENABLE(0),
-    .USER_ENABLE(1),
-    .USER_WIDTH(1),
-    .FRAME_FIFO(0)
-)
-udp_payload_fifo (
-    .clk(clk),
-    .rst(rst),
+// axis_fifo #(
+//     .DEPTH(8192),
+//     .DATA_WIDTH(8),
+//     .KEEP_ENABLE(0),
+//     .ID_ENABLE(0),
+//     .DEST_ENABLE(0),
+//     .USER_ENABLE(1),
+//     .USER_WIDTH(1),
+//     .FRAME_FIFO(0)
+// )
+// udp_payload_fifo (
+//     .clk(clk),
+//     .rst(rst),
 
-    // AXI input
-    .s_axis_tdata(rx_fifo_udp_payload_axis_tdata),
-    .s_axis_tkeep(0),
-    .s_axis_tvalid(rx_fifo_udp_payload_axis_tvalid),
-    .s_axis_tready(rx_fifo_udp_payload_axis_tready),
-    .s_axis_tlast(rx_fifo_udp_payload_axis_tlast),
-    .s_axis_tid(0),
-    .s_axis_tdest(0),
-    .s_axis_tuser(rx_fifo_udp_payload_axis_tuser),
+//     // AXI input
+//     .s_axis_tdata(rx_fifo_udp_payload_axis_tdata),
+//     .s_axis_tkeep(0),
+//     .s_axis_tvalid(rx_fifo_udp_payload_axis_tvalid),
+//     .s_axis_tready(rx_fifo_udp_payload_axis_tready),
+//     .s_axis_tlast(rx_fifo_udp_payload_axis_tlast),
+//     .s_axis_tid(0),
+//     .s_axis_tdest(0),
+//     .s_axis_tuser(rx_fifo_udp_payload_axis_tuser),
 
-    // AXI output
-    .m_axis_tdata(tx_fifo_udp_payload_axis_tdata),
-    .m_axis_tkeep(),
-    .m_axis_tvalid(tx_fifo_udp_payload_axis_tvalid),
-    .m_axis_tready(tx_fifo_udp_payload_axis_tready),
-    .m_axis_tlast(tx_fifo_udp_payload_axis_tlast),
-    .m_axis_tid(),
-    .m_axis_tdest(),
-    .m_axis_tuser(tx_fifo_udp_payload_axis_tuser),
+//     // AXI output
+//     .m_axis_tdata(tx_fifo_udp_payload_axis_tdata),
+//     .m_axis_tkeep(),
+//     .m_axis_tvalid(tx_fifo_udp_payload_axis_tvalid),
+//     .m_axis_tready(tx_fifo_udp_payload_axis_tready),
+//     .m_axis_tlast(tx_fifo_udp_payload_axis_tlast),
+//     .m_axis_tid(),
+//     .m_axis_tdest(),
+//     .m_axis_tuser(tx_fifo_udp_payload_axis_tuser),
 
-    // Status
-    .status_overflow(),
-    .status_bad_frame(),
-    .status_good_frame()
-);
+//     // Status
+//     .status_overflow(),
+//     .status_bad_frame(),
+//     .status_good_frame()
+// );
 
 endmodule
 

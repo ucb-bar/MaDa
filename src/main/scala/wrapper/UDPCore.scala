@@ -40,17 +40,17 @@ class udp_core extends BlackBox {
     val uart_rxd = Input(Bool())
     val uart_txd = Output(Bool())
     
-    // val rx_fifo_udp_payload_axis_tdata = Output(UInt(8.W))
-    // val rx_fifo_udp_payload_axis_tvalid = Output(Bool())
-    // val rx_fifo_udp_payload_axis_tready = Input(Bool())
-    // val rx_fifo_udp_payload_axis_tlast = Output(Bool())
-    // val rx_fifo_udp_payload_axis_tuser = Output(Bool())
+    val rx_fifo_udp_payload_axis_tdata = Output(UInt(8.W))
+    val rx_fifo_udp_payload_axis_tvalid = Output(Bool())
+    val rx_fifo_udp_payload_axis_tready = Input(Bool())
+    val rx_fifo_udp_payload_axis_tlast = Output(Bool())
+    val rx_fifo_udp_payload_axis_tuser = Output(Bool())
 
-    // val tx_fifo_udp_payload_axis_tdata = Input(UInt(8.W))
-    // val tx_fifo_udp_payload_axis_tvalid = Input(Bool())
-    // val tx_fifo_udp_payload_axis_tready = Output(Bool())
-    // val tx_fifo_udp_payload_axis_tlast = Input(Bool())
-    // val tx_fifo_udp_payload_axis_tuser = Input(Bool())
+    val tx_fifo_udp_payload_axis_tdata = Input(UInt(8.W))
+    val tx_fifo_udp_payload_axis_tvalid = Input(Bool())
+    val tx_fifo_udp_payload_axis_tready = Output(Bool())
+    val tx_fifo_udp_payload_axis_tlast = Input(Bool())
+    val tx_fifo_udp_payload_axis_tuser = Input(Bool())
   })
 }
 
