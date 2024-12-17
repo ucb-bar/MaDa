@@ -33,7 +33,12 @@ THE SOFTWARE.
  */
 module udp_core #
 (
-    parameter TARGET = "XILINX"
+    parameter TARGET = "XILINX",
+    parameter MAC_ADDRESS = 48'h02_00_00_00_00_00,
+    parameter IP_ADDRESS = 32'hC0_A8_01_80,
+    parameter GATEWAY_IP = 32'hC0_A8_01_01,
+    parameter SUBNET_MASK = 32'hFF_FF_FF_00,
+    parameter UDP_PORT = 1234
 )
 (
     /*
@@ -234,10 +239,10 @@ wire tx_udp_payload_axis_tuser;
 // wire tx_fifo_udp_payload_axis_tuser;
 
 // Configuration
-wire [47:0] local_mac   = 48'h02_00_00_00_00_00;
-wire [31:0] local_ip    = {8'd172,  8'd28,   8'd0, 8'd128};
-wire [31:0] gateway_ip  = {8'd172,  8'd28,   8'd0,   8'd1};
-wire [31:0] subnet_mask = {8'd255, 8'd255, 8'd255,   8'd0};
+wire [47:0] local_mac   = MAC_ADDRESS;
+wire [31:0] local_ip    = IP_ADDRESS;
+wire [31:0] gateway_ip  = GATEWAY_IP;
+wire [31:0] subnet_mask = SUBNET_MASK;
 
 // IP ports not used
 assign rx_ip_hdr_ready = 1;
@@ -257,7 +262,7 @@ assign tx_ip_payload_axis_tlast = 0;
 assign tx_ip_payload_axis_tuser = 0;
 
 // Loop back UDP
-wire match_cond = rx_udp_dest_port == 1234;
+wire match_cond = rx_udp_dest_port == UDP_PORT;
 wire no_match = !match_cond;
 
 reg match_cond_reg = 0;

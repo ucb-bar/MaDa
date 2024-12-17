@@ -37,7 +37,13 @@ class TinyRocketArty100T extends Arty100TShell {
 
   
   val digital_top = Module(new DigitalTop)
-  val udp_core = Module(new udp_core)
+  val udp_core = Module(new udp_core(
+    mac_address = 0x02_00_00_00_00_00L,
+    ip_address = 0x0a_00_00_80,
+    gateway_ip = 0x0a_00_00_01,
+    subnet_mask = 0xff_ff_ff_00,
+    udp_port = 1234
+  ))
 
 
   digital_top.io.auto_chipyard_prcictrl_domain_reset_setter_clock_in_member_allClocks_uncore_clock := clock
@@ -92,7 +98,7 @@ class TinyRocketArty100T extends Arty100TShell {
   io.led3.g := udp_core.io.led3_g
   io.led3.b := udp_core.io.led3_b
 
-  io.led := Cat(udp_core.io.led7, udp_core.io.led6, udp_core.io.led5, udp_core.io.led4)
+  // io.led := Cat(udp_core.io.led7, udp_core.io.led6, udp_core.io.led5, udp_core.io.led4)
   
   io.jd_3 := false.B
 
@@ -127,5 +133,23 @@ class TinyRocketArty100T extends Arty100TShell {
   udp_core.io.tx_fifo_udp_payload_axis_tdata := udp_payload_axis_fifo.io.m_axis_tdata
   udp_core.io.tx_fifo_udp_payload_axis_tlast := udp_payload_axis_fifo.io.m_axis_tlast
   udp_core.io.tx_fifo_udp_payload_axis_tuser := udp_payload_axis_fifo.io.m_axis_tuser
+
+
+  val gpio_0 = Module(new axi_gpio_0)
+  gpio_0.io.s_axi <> digital_top.io.axi4_lite_s_axi
+  gpio_0.io.gpio_io_i := io.btn
+  io.led := gpio_0.io.gpio_io_o
+
+
+
+  // digital_top.io.axi4_lite_s_axi.awready := true.B
+  // digital_top.io.axi4_lite_s_axi.wready := true.B
+  // digital_top.io.axi4_lite_s_axi.bresp := 2.U(2.W)
+  // digital_top.io.axi4_lite_s_axi.bvalid := false.B
+  // digital_top.io.axi4_lite_s_axi.arready := true.B
+  // digital_top.io.axi4_lite_s_axi.rdata := 0.U(32.W)
+  // digital_top.io.axi4_lite_s_axi.rresp := 2.U(2.W)
+  // digital_top.io.axi4_lite_s_axi.rvalid := false.B
+
 
 }

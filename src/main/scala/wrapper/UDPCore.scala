@@ -1,8 +1,21 @@
 import chisel3.{BlackBox, _}
 import chisel3.util._
+import chisel3.experimental.IntParam
 
 
-class udp_core extends BlackBox {
+class udp_core(
+  mac_address: Long = 0x02_00_00_00_00_00L,
+  ip_address: Int = 0xC0_A8_01_80,
+  gateway_ip: Int = 0xC0_A8_01_01,
+  subnet_mask: Int = 0xFF_FF_FF_00,
+  udp_port: Int = 1234
+) extends BlackBox(Map(
+    "MAC_ADDRESS" -> IntParam(mac_address),
+    "IP_ADDRESS" -> IntParam(ip_address),
+    "GATEWAY_IP" -> IntParam(gateway_ip),
+    "SUBNET_MASK" -> IntParam(subnet_mask),
+    "UDP_PORT" -> IntParam(udp_port)
+  )) with HasBlackBoxResource {
   val io = IO(new Bundle {
     val clk = Input(Clock())
     val rst = Input(Reset())
