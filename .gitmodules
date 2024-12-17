@@ -1,3 +1,3 @@
-[submodule "ltrace_chipyard"]
-	path = ltrace_chipyard
-	url = https://github.com/iansseijelly/ltrace_chipyard.git
+[submodule "chipyard"]
+	path = chipyard
+	url = https://github.com/ucb-bar/chipyard.git
