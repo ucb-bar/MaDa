@@ -94,6 +94,9 @@ class ExampleArty100TShell extends Arty100TShell {
 
     io.led := counter(28, 25)
 
+    io.jd_0 := false.B
+    io.jd_3 := false.B
+
     io.uart_rxd_out := io.uart_txd_in
   }
 }
