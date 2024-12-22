@@ -98,5 +98,10 @@ class ExampleArty100TShell extends Arty100TShell {
     io.jd_3 := false.B
 
     io.uart_rxd_out := io.uart_txd_in
+
+    io.eth_ref_clk := clock
+    io.eth_rstn := false.B
+    io.eth_tx_en := false.B
+    io.eth_txd := 0.U
   }
 }
