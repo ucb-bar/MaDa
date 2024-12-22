@@ -14,3 +14,8 @@ toolchains/mill
 # Vivado
 vivado*.jou
 vivado*.log
+vivado*.str
+.gen/
+.srcs/
+.ip_user_files/
+
