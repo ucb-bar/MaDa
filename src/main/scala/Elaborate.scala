@@ -22,8 +22,21 @@ object ParseModuleName {
   }
 }
 
+object CreateVivadoDirectory {
+  def apply(vivado_project_dir: String): Unit = {
+    new File(vivado_project_dir).mkdirs()
+    new File(s"${vivado_project_dir}/scripts").mkdirs()
+  }
+}
+
+
+
 object GenerateVerilog extends App {
   val (module_name, remaining_args) = ParseModuleName(args)
+
+  val vivado_project_dir = "out/VivadoProject"
+  CreateVivadoDirectory(vivado_project_dir)
+
 
   val moduleClass = () => {
     val module = Class.forName(module_name)
@@ -54,6 +67,8 @@ object GenerateBitstream extends App {
   val project_source_dir = "src/main"
   val vivado_project_dir = "out/VivadoProject"
 
+  CreateVivadoDirectory(vivado_project_dir)
+
   /* Arty A7 100T */
   // val fpga_part = "xc7a100ticsg324-1L"
   // val board_part = "digilentinc.com:arty-a7-100t:part0:1.1"
@@ -83,15 +98,11 @@ object GenerateBitstream extends App {
   )
 
 
-  val chipyard_sources = new File("chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.WithAXI4LiteTinyRocketConfig/gen-collateral").listFiles(new FileFilter {
+  val chipyard_sources = new File("chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.TinyRocketConfig/gen-collateral").listFiles(new FileFilter {
     def accept(file: File): Boolean = file.isFile || file.isDirectory
   }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
   // Exclude files listed in excluded_sources
   .filterNot(source => excluded_sources.contains(new File(source).getName))
-
-  // create directory
-  new File(vivado_project_dir).mkdirs()
-  new File(s"${vivado_project_dir}/scripts").mkdirs()
 
   {
     // create a run.tcl file
@@ -111,83 +122,40 @@ object GenerateBitstream extends App {
 
 
     // add sources
+    run_tcl.print(s"add_files")
     sources.foreach(source => {
-      run_tcl.println(s"add_files ${source}")
+      run_tcl.println(s" ${source} \\")
     })
+    run_tcl.println("")
 
+    run_tcl.print(s"add_files")
     verilog_sources.foreach(source => {
-      run_tcl.println(s"add_files ${source}")
+      run_tcl.println(s" ${source} \\")
     })
+    run_tcl.println("")
 
+    run_tcl.print(s"add_files")
     chipyard_sources.foreach(source => {
-      run_tcl.println(s"add_files ${source}")
+      run_tcl.println(s" ${source} \\")
     })
+    run_tcl.println("")
 
     run_tcl.println(s"set_property top ${module_name} [current_fileset]")
 
-
-    // create Vivado IPs
+    /* create Vivado IPs */
     run_tcl.println("update_ip_catalog")
 
-    {
-    val ip_name = "clk_wiz_0"
+    val create_ip_files = new File(s"${vivado_project_dir}/scripts").listFiles(new FileFilter {
+      def accept(file: File): Boolean = file.isFile && file.getName.contains("create_ip")
+    }).map(_.getAbsolutePath)
 
-    run_tcl.println(s"create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 -module_name ${ip_name}")
-  //   run_tcl.println("""
-  // set_property -dict [list \
-  //   CONFIG.CLKOUT1_JITTER {193.154} \
-  //   CONFIG.CLKOUT1_PHASE_ERROR {109.126} \
-  //   CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {25} \
-  //   CONFIG.MMCM_CLKFBOUT_MULT_F {8.500} \
-  //   CONFIG.MMCM_CLKOUT0_DIVIDE_F {42.500} \
-  // ] [get_ips clk_wiz_0]""")
-    run_tcl.println(s"""
-      set_property -dict [list \\
-        CONFIG.CLKOUT1_JITTER {125.247} \\
-        CONFIG.CLKOUT1_PHASE_ERROR {98.575} \\
-        CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {50} \\
-        CONFIG.CLKOUT2_JITTER {175.402} \\
-        CONFIG.CLKOUT2_PHASE_ERROR {98.575} \\
-        CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {25} \\
-        CONFIG.CLKOUT2_USED {true} \\
-        CONFIG.MMCM_CLKFBOUT_MULT_F {10.000} \\
-        CONFIG.MMCM_CLKOUT0_DIVIDE_F {8.000} \\
-        CONFIG.MMCM_CLKOUT1_DIVIDE {40} \\
-        CONFIG.NUM_OUT_CLKS {2} \\
-    ] [get_ips ${ip_name}]""")
+    create_ip_files.foreach(file => {
+      run_tcl.println(s"source ${file}")
+    })
 
-
-    run_tcl.println(s"generate_target {instantiation_template} [get_ips ${ip_name}]")
-    run_tcl.println("update_compile_order -fileset sources_1")
-    run_tcl.println(s"generate_target all [get_ips ${ip_name}]")
-    run_tcl.println(s"catch { config_ip_cache -export [get_ips -all ${ip_name}] }")
-    run_tcl.println(s"export_ip_user_files -of_objects [get_ips ${ip_name}] -no_script -sync -force -quiet")
-    run_tcl.println(s"create_ip_run [get_ips ${ip_name}]")
-    }
-
-    {
-    val ip_name = "axis_data_fifo_0"
-
-    run_tcl.println(s"create_ip -name axis_data_fifo -vendor xilinx.com -library ip -version 2.0 -module_name ${ip_name}")
-
-    run_tcl.println(s"""
-      set_property -dict [list \\
-        CONFIG.HAS_TLAST {1} \\
-        CONFIG.TUSER_WIDTH {1} \\
-      ] [get_ips ${ip_name}]
-    """)
-
-    run_tcl.println(s"generate_target {instantiation_template} [get_ips ${ip_name}]")
-    run_tcl.println("update_compile_order -fileset sources_1")
-    run_tcl.println(s"generate_target all [get_ips ${ip_name}]")
-    run_tcl.println(s"catch { config_ip_cache -export [get_ips -all ${ip_name}] }")
-    run_tcl.println(s"export_ip_user_files -of_objects [get_ips ${ip_name}] -no_script -sync -force -quiet")
-    run_tcl.println(s"create_ip_run [get_ips ${ip_name}]")
-    
-    }
 
     run_tcl.close()
-    run_tcl.flush()   // make sure the file is written to the disk
+    run_tcl.flush()
   }
 
   {

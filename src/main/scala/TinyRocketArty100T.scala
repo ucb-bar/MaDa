@@ -13,7 +13,7 @@ class TinyRocketArty100T extends Arty100TShell {
   val clock_25 = Wire(Clock())
 
 
-  val clk_wiz = Module(new clk_wiz_0())
+  val clk_wiz = Module(new ClockingWizard(50, 25))
   // clocking wizard connection
   clk_wiz.io.clk_in1 := io.CLK100MHZ
   clk_wiz.io.reset := ~io.ck_rst
@@ -118,7 +118,7 @@ class TinyRocketArty100T extends Arty100TShell {
   io.eth_txd := udp_core.io.phy_txd
 
 
-  val udp_payload_axis_fifo = Module(new axis_data_fifo_0(8))
+  val udp_payload_axis_fifo = Module(new AXIStreamDataFifo(8))
   udp_payload_axis_fifo.io.s_axis_aresetn := ~reset
   udp_payload_axis_fifo.io.s_axis_aclk := clock
   
