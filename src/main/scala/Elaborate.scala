@@ -70,12 +70,12 @@ object GenerateBitstream extends App {
   CreateVivadoDirectory(vivado_project_dir)
 
   /* Arty A7 100T */
-  // val fpga_part = "xc7a100ticsg324-1L"
-  // val board_part = "digilentinc.com:arty-a7-100t:part0:1.1"
+  val fpga_part = "xc7a100tcsg324-1"
+  val board_part = "digilentinc.com:arty-a7-100t:part0:1.1"
 
   /* Arty A7 35T */
-  val fpga_part = "xc7a35ticsg324-1L"
-  val board_part = "digilentinc.com:arty-a7-35:part0:1.1"
+  // val fpga_part = "xc7a35ticsg324-1L"
+  // val board_part = "digilentinc.com:arty-a7-35:part0:1.1"
 
   /* Zedboard */
   // val fpga_part = "xc7z020clg484-1"

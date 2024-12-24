@@ -14,19 +14,12 @@ class axi_gpio_0 extends BlackBox {
 
   def generate_tcl_script(): Unit = {
     val vivado_project_dir = "out/VivadoProject"
-    val ip_name = "AXIStreamDataFifo"
+    val ip_name = "axi_gpio_0"
     val ip_name_lower = ip_name.toLowerCase()
 
     val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
     
-    tcl_script.println(s"create_ip -name axis_data_fifo -vendor xilinx.com -library ip -version 2.0 -module_name ${ip_name}")
-
-    tcl_script.println(s"""
-set_property -dict [list \\
-  CONFIG.HAS_TLAST {1} \\
-  CONFIG.TUSER_WIDTH {1} \\
-] [get_ips ${ip_name}]
-""")
+    tcl_script.println(s"create_ip -name axi_gpio -vendor xilinx.com -library ip -version 2.0 -module_name ${ip_name}")
 
     tcl_script.println(s"generate_target {instantiation_template} [get_ips ${ip_name}]")
     tcl_script.println("update_compile_order -fileset sources_1")
