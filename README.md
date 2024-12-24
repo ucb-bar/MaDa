@@ -9,12 +9,12 @@
 ## Build Example
 
 ```bash
-make verilog CONFIG=ExampleArty100TShell
+make verilog CONFIG=MinimalArty100T
 ```
 
 ## Build Bitstream
 
 ```bash
-make bitstream CONFIG=ExampleArty100TShell
+make bitstream CONFIG=MinimalArty100T
 ```
 

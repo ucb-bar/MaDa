@@ -2,7 +2,7 @@ BUILD_DIR = ./generated-src
 
 PRJ = ChiselProject
 
-CONFIG ?= ExampleArty100TShell
+CONFIG ?= MinimalArty100T
 
 
 verilog:

@@ -1,7 +1,8 @@
 import chisel3._
 import chisel3.util._
 
-class ExampleArty100TShell extends RawModule {
+
+class MinimalArty100T extends RawModule {
   val io = IO(new Arty100TIO())
 
   val clock = Wire(Clock())
