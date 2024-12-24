@@ -97,12 +97,12 @@ object GenerateBitstream extends App {
     "TestDriver.v",
   )
 
-
-  val chipyard_sources = new File("chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.TinyRocketConfig/gen-collateral").listFiles(new FileFilter {
+  val chipyard_sources = Option(new File("chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.TinyRocketConfig/gen-collateral").listFiles(new FileFilter {
     def accept(file: File): Boolean = file.isFile || file.isDirectory
-  }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
-  // Exclude files listed in excluded_sources
-  .filterNot(source => excluded_sources.contains(new File(source).getName))
+  }))
+  .map(files => files.flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
+    .filterNot(source => excluded_sources.contains(new File(source).getName)))
+  .getOrElse(Array.empty[String])  // Return empty array if directory doesn't exist
 
   {
     // create a run.tcl file
@@ -134,11 +134,14 @@ object GenerateBitstream extends App {
     })
     run_tcl.println("")
 
-    run_tcl.print(s"add_files")
-    chipyard_sources.foreach(source => {
-      run_tcl.println(s" ${source} \\")
-    })
-    run_tcl.println("")
+
+    if (chipyard_sources.nonEmpty) {
+      run_tcl.print(s"add_files")
+      chipyard_sources.foreach(source => {
+        run_tcl.println(s" ${source} \\")
+      })
+      run_tcl.println("")
+    }
 
     run_tcl.println(s"set_property top ${module_name} [current_fileset]")
 
