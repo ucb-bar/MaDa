@@ -194,4 +194,7 @@ class XilinxArty100TMIG extends RawModule {
   io.s_axi.r.bits.resp     := blackbox.io.s_axi_rresp
   io.s_axi.r.bits.last     := blackbox.io.s_axi_rlast
   io.s_axi.r.valid          := blackbox.io.s_axi_rvalid 
+
+  io.port.init_calib_complete := blackbox.io.init_calib_complete
+  blackbox.io.sys_rst       := io.port.sys_rst
 }

@@ -21,7 +21,7 @@ class DigitalTop(use_mem_axi: Boolean = false) extends BlackBox {
     val uart_0_txd = Output(Bool())
     val uart_0_rxd = Input(Bool())
     val clock_tap = Output(Clock())
-    val axi4_lite_s_axi = new RawAXI4Lite()
+    val periph_axi4_s_axi = new RawAXI4Lite()
     val mem_axi4_0 = if (use_mem_axi) new AXI4() else null
   })
 }

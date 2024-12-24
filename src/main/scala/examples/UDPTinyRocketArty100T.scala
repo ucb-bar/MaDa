@@ -138,7 +138,7 @@ class UDPTinyRocketArty100T extends RawModule {
 
 
   val gpio_0 = Module(new axi_gpio_0)
-  gpio_0.io.s_axi <> digital_top.io.axi4_lite_s_axi
+  gpio_0.io.s_axi <> digital_top.io.periph_axi4_s_axi
   gpio_0.io.gpio_io_i := io.btn
   io.led := gpio_0.io.gpio_io_o
 

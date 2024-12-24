@@ -34,16 +34,12 @@ class AXI4LiteAW extends Bundle {
   val cache = Output(UInt(4.W))
   val prot = Output(UInt(3.W))
   val qos = Output(UInt(4.W))
-  val valid = Output(Bool())
-  val ready = Input(Bool())
 }
 
 class AXI4LiteW extends Bundle {
   val data = Output(UInt(64.W))
   val strb = Output(UInt(8.W))
   val last = Output(Bool())
-  val valid = Output(Bool())
-  val ready = Input(Bool())
 }
 
 class AXI4LiteB extends Bundle {
@@ -61,8 +57,6 @@ class AXI4LiteAR extends Bundle {
   val cache = Output(UInt(4.W))
   val prot = Output(UInt(3.W))
   val qos = Output(UInt(4.W))
-  val valid = Output(Bool())
-  val ready = Input(Bool())
 }
 
 class AXI4LiteR extends Bundle {

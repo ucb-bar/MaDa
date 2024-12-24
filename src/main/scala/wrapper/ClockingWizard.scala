@@ -3,7 +3,6 @@ import chisel3.util._
 
 import java.io.PrintWriter
 
-
 class ClockingWizard(
   clk1_freq: Int,
   clk2_freq: Int = 0,
@@ -18,12 +17,12 @@ class ClockingWizard(
     val reset = Input(Bool())
     val locked = Output(Bool())
     val clk_out1 = Output(Clock())
-    val clk_out2 = Output(Clock())
-    val clk_out3 = Output(Clock())
-    val clk_out4 = Output(Clock())
-    val clk_out5 = Output(Clock())
-    val clk_out6 = Output(Clock())
-    val clk_out7 = Output(Clock())
+    val clk_out2 = if (clk2_freq > 0) Output(Clock()) else null
+    val clk_out3 = if (clk3_freq > 0) Output(Clock()) else null
+    val clk_out4 = if (clk4_freq > 0) Output(Clock()) else null
+    val clk_out5 = if (clk5_freq > 0) Output(Clock()) else null
+    val clk_out6 = if (clk6_freq > 0) Output(Clock()) else null
+    val clk_out7 = if (clk7_freq > 0) Output(Clock()) else null
   })
 
   def generate_tcl_script(): Unit = {

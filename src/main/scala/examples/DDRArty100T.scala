@@ -1,6 +1,6 @@
 import chisel3._
 import chisel3.util._
-
+import chisel3.experimental.attach
 
 class DDRArty100T extends RawModule {
   val io = IO(new Arty100TWithDDRIO())
@@ -14,14 +14,14 @@ class DDRArty100T extends RawModule {
 
   val clock_25 = Wire(Clock())
   val clock_ddr_166 = Wire(Clock())
-  val clock_ddr_100 = Wire(Clock())
+  val clock_ddr_200 = Wire(Clock())
 
 
   val clk_wiz = Module(new ClockingWizard(
     clk1_freq=50,
     clk2_freq=25,
     clk3_freq=166,
-    clk4_freq=100
+    clk4_freq=200
   ))
   // clocking wizard connection
   clk_wiz.io.clk_in1 := io.CLK100MHZ
@@ -31,7 +31,7 @@ class DDRArty100T extends RawModule {
   clock_25 := clk_wiz.io.clk_out2
 
   clock_ddr_166 := clk_wiz.io.clk_out3
-  clock_ddr_100 := clk_wiz.io.clk_out4
+  clock_ddr_200 := clk_wiz.io.clk_out4
 
 
   val sync_reset = Module(new SyncReset())
@@ -129,7 +129,6 @@ class DDRArty100T extends RawModule {
   io.eth_tx_en := udp_core.io.phy_tx_en
   io.eth_txd := udp_core.io.phy_txd
 
-
   val udp_payload_axis_fifo = Module(new AXIStreamDataFifo(8))
   udp_payload_axis_fifo.io.s_axis_aresetn := ~reset
   udp_payload_axis_fifo.io.s_axis_aclk := clock
@@ -146,24 +145,32 @@ class DDRArty100T extends RawModule {
   udp_core.io.tx_fifo_udp_payload_axis_tlast := udp_payload_axis_fifo.io.m_axis_tlast
   udp_core.io.tx_fifo_udp_payload_axis_tuser := udp_payload_axis_fifo.io.m_axis_tuser
 
-
   val gpio_0 = Module(new axi_gpio_0)
-  gpio_0.io.s_axi <> digital_top.io.axi4_lite_s_axi
+  gpio_0.io.s_axi <> digital_top.io.periph_axi4_s_axi
   gpio_0.io.gpio_io_i := io.btn
   io.led := gpio_0.io.gpio_io_o
 
   val mig_wrapper = Module(new XilinxArty100TMIG)
   mig_wrapper.io.port.aresetn := reset
+  mig_wrapper.io.port.sys_clk_i := clock_ddr_166.asBool
+  mig_wrapper.io.port.clk_ref_i := clock_ddr_200.asBool
+  mig_wrapper.io.port.sys_rst := DontCare
   mig_wrapper.io.s_axi <> digital_top.io.mem_axi4_0
+  
+  attach(mig_wrapper.io.port.ddr3_dq, io.ddr.ddr3_dq)
+  attach(mig_wrapper.io.port.ddr3_dqs_n, io.ddr.ddr3_dqs_n)
+  attach(mig_wrapper.io.port.ddr3_dqs_p, io.ddr.ddr3_dqs_p)
 
-  // digital_top.io.axi4_lite_s_axi.awready := true.B
-  // digital_top.io.axi4_lite_s_axi.wready := true.B
-  // digital_top.io.axi4_lite_s_axi.bresp := 2.U(2.W)
-  // digital_top.io.axi4_lite_s_axi.bvalid := false.B
-  // digital_top.io.axi4_lite_s_axi.arready := true.B
-  // digital_top.io.axi4_lite_s_axi.rdata := 0.U(32.W)
-  // digital_top.io.axi4_lite_s_axi.rresp := 2.U(2.W)
-  // digital_top.io.axi4_lite_s_axi.rvalid := false.B
-
-
+  io.ddr.ddr3_addr := mig_wrapper.io.port.ddr3_addr
+  io.ddr.ddr3_ba := mig_wrapper.io.port.ddr3_ba
+  io.ddr.ddr3_ras_n := mig_wrapper.io.port.ddr3_ras_n
+  io.ddr.ddr3_cas_n := mig_wrapper.io.port.ddr3_cas_n
+  io.ddr.ddr3_we_n := mig_wrapper.io.port.ddr3_we_n
+  io.ddr.ddr3_reset_n := mig_wrapper.io.port.ddr3_reset_n
+  io.ddr.ddr3_ck_p := mig_wrapper.io.port.ddr3_ck_p
+  io.ddr.ddr3_ck_n := mig_wrapper.io.port.ddr3_ck_n
+  io.ddr.ddr3_cke := mig_wrapper.io.port.ddr3_cke
+  io.ddr.ddr3_cs_n := mig_wrapper.io.port.ddr3_cs_n
+  io.ddr.ddr3_dm := mig_wrapper.io.port.ddr3_dm
+  io.ddr.ddr3_odt := mig_wrapper.io.port.ddr3_odt
 }
