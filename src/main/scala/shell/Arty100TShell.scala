@@ -61,7 +61,3 @@ class Arty100TIO extends Bundle {
 class Arty100TWithDDRIO extends Arty100TIO {
   val ddr = new Arty100TMIGIODDR()
 }
-
-class Arty100TShell extends RawModule {
-  val io = IO(new Arty100TIO())
-}

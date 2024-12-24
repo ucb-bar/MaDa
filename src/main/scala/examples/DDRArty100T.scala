@@ -2,9 +2,9 @@ import chisel3._
 import chisel3.util._
 
 
-class MIGArty100T extends RawModule {
-
+class DDRArty100T extends RawModule {
   val io = IO(new Arty100TWithDDRIO())
+
   val clock = Wire(Clock())
   val reset = Wire(Bool())
   
@@ -13,15 +13,25 @@ class MIGArty100T extends RawModule {
   val jtag_reset = Wire(Bool())
 
   val clock_25 = Wire(Clock())
+  val clock_ddr_166 = Wire(Clock())
+  val clock_ddr_100 = Wire(Clock())
 
 
-  val clk_wiz = Module(new ClockingWizard(50, 25))
+  val clk_wiz = Module(new ClockingWizard(
+    clk1_freq=50,
+    clk2_freq=25,
+    clk3_freq=166,
+    clk4_freq=100
+  ))
   // clocking wizard connection
   clk_wiz.io.clk_in1 := io.CLK100MHZ
   clk_wiz.io.reset := ~io.ck_rst
   pll_locked := clk_wiz.io.locked
   clock := clk_wiz.io.clk_out1
   clock_25 := clk_wiz.io.clk_out2
+
+  clock_ddr_166 := clk_wiz.io.clk_out3
+  clock_ddr_100 := clk_wiz.io.clk_out4
 
 
   val sync_reset = Module(new SyncReset())

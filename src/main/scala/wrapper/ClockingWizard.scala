@@ -5,13 +5,13 @@ import java.io.PrintWriter
 
 
 class ClockingWizard(
-  clk_out1_freq: Int,
-  clk_out2_freq: Int = 0,
-  clk_out3_freq: Int = 0,
-  clk_out4_freq: Int = 0,
-  clk_out5_freq: Int = 0,
-  clk_out6_freq: Int = 0,
-  clk_out7_freq: Int = 0
+  clk1_freq: Int,
+  clk2_freq: Int = 0,
+  clk3_freq: Int = 0,
+  clk4_freq: Int = 0,
+  clk5_freq: Int = 0,
+  clk6_freq: Int = 0,
+  clk7_freq: Int = 0
 ) extends BlackBox {
   val io = IO(new Bundle {
     val clk_in1 = Input(Clock())
@@ -32,22 +32,22 @@ class ClockingWizard(
     val ip_name_lower = ip_name.toLowerCase()
 
     var num_out_clks = 1
-    if (clk_out2_freq > 0) {
+    if (clk2_freq > 0) {
       num_out_clks += 1
     }
-    if (clk_out3_freq > 0) {
+    if (clk3_freq > 0) {
       num_out_clks += 1
     }
-    if (clk_out4_freq > 0) {
+    if (clk4_freq > 0) {
       num_out_clks += 1
     }
-    if (clk_out5_freq > 0) {
+    if (clk5_freq > 0) {
       num_out_clks += 1
     }
-    if (clk_out6_freq > 0) {
+    if (clk6_freq > 0) {
       num_out_clks += 1
     }
-    if (clk_out7_freq > 0) {
+    if (clk7_freq > 0) {
       num_out_clks += 1
     }
     
@@ -61,32 +61,32 @@ set_property -dict [list \\
   CONFIG.MMCM_CLKFBOUT_MULT_F {10.000} \\
   CONFIG.MMCM_CLKOUT0_DIVIDE_F {8.000} \\
   CONFIG.MMCM_CLKOUT1_DIVIDE {40} \\
-  CONFIG.CLKOUT1_USED {${clk_out1_freq > 0}} \\
-  CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {${clk_out1_freq}} \\
+  CONFIG.CLKOUT1_USED {${clk1_freq > 0}} \\
+  CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {${clk1_freq}} \\
   CONFIG.CLKOUT1_REQUESTED_PHASE {0.0} \\
   CONFIG.CLKOUT1_REQUESTED_DUTY_CYCLE {50.0} \\
-  CONFIG.CLKOUT2_USED {${clk_out2_freq > 0}} \\
-  CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {${clk_out2_freq}} \\
+  CONFIG.CLKOUT2_USED {${clk2_freq > 0}} \\
+  CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {${clk2_freq}} \\
   CONFIG.CLKOUT2_REQUESTED_PHASE {0.0} \\
   CONFIG.CLKOUT2_REQUESTED_DUTY_CYCLE {50.0} \\
-  CONFIG.CLKOUT3_USED {${clk_out3_freq > 0}} \\
-  CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {${clk_out3_freq}} \\
+  CONFIG.CLKOUT3_USED {${clk3_freq > 0}} \\
+  CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {${clk3_freq}} \\
   CONFIG.CLKOUT3_REQUESTED_PHASE {0.0} \\
   CONFIG.CLKOUT3_REQUESTED_DUTY_CYCLE {50.0} \\
-  CONFIG.CLKOUT4_USED {${clk_out4_freq > 0}} \\
-  CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {${clk_out4_freq}} \\
+  CONFIG.CLKOUT4_USED {${clk4_freq > 0}} \\
+  CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {${clk4_freq}} \\
   CONFIG.CLKOUT4_REQUESTED_PHASE {0.0} \\
   CONFIG.CLKOUT4_REQUESTED_DUTY_CYCLE {50.0} \\
-  CONFIG.CLKOUT5_USED {${clk_out5_freq > 0}} \\
-  CONFIG.CLKOUT5_REQUESTED_OUT_FREQ {${clk_out5_freq}} \\
+  CONFIG.CLKOUT5_USED {${clk5_freq > 0}} \\
+  CONFIG.CLKOUT5_REQUESTED_OUT_FREQ {${clk5_freq}} \\
   CONFIG.CLKOUT5_REQUESTED_PHASE {0.0} \\
   CONFIG.CLKOUT5_REQUESTED_DUTY_CYCLE {50.0} \\
-  CONFIG.CLKOUT6_USED {${clk_out6_freq > 0}} \\
-  CONFIG.CLKOUT6_REQUESTED_OUT_FREQ {${clk_out6_freq}} \\
+  CONFIG.CLKOUT6_USED {${clk6_freq > 0}} \\
+  CONFIG.CLKOUT6_REQUESTED_OUT_FREQ {${clk6_freq}} \\
   CONFIG.CLKOUT6_REQUESTED_PHASE {0.0} \\
   CONFIG.CLKOUT6_REQUESTED_DUTY_CYCLE {50.0} \\
-  CONFIG.CLKOUT7_USED {${clk_out7_freq > 0}} \\
-  CONFIG.CLKOUT7_REQUESTED_OUT_FREQ {${clk_out7_freq}} \\
+  CONFIG.CLKOUT7_USED {${clk7_freq > 0}} \\
+  CONFIG.CLKOUT7_REQUESTED_OUT_FREQ {${clk7_freq}} \\
   CONFIG.CLKOUT7_REQUESTED_PHASE {0.0} \\
   CONFIG.CLKOUT7_REQUESTED_DUTY_CYCLE {50.0} \\
 ] [get_ips ${ip_name}]

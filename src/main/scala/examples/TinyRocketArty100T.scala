@@ -2,7 +2,9 @@ import chisel3._
 import chisel3.util._
 
 
-class TinyRocketArty100T extends Arty100TShell {
+class TinyRocketArty100T extends RawModule {
+  val io = IO(new Arty100TIO())
+
   val clock = Wire(Clock())
   val reset = Wire(Bool())
   
