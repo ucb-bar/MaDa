@@ -3,7 +3,7 @@ import chisel3.util._
 
 
 
-class DigitalTop extends BlackBox {
+class DigitalTop(use_mem_axi: Boolean = false) extends BlackBox {
   val io = IO(new Bundle {
     val auto_chipyard_prcictrl_domain_reset_setter_clock_in_member_allClocks_uncore_clock = Input(Clock())
     val auto_chipyard_prcictrl_domain_reset_setter_clock_in_member_allClocks_uncore_reset = Input(Bool())
@@ -22,5 +22,6 @@ class DigitalTop extends BlackBox {
     val uart_0_rxd = Input(Bool())
     val clock_tap = Output(Clock())
     val axi4_lite_s_axi = new RawAXI4Lite()
+    val mem_axi4_0 = if (use_mem_axi) new AXI4() else null
   })
 }
