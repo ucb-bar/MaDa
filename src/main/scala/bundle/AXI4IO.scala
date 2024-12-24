@@ -48,9 +48,7 @@ class AXI4LiteW extends Bundle {
 
 class AXI4LiteB extends Bundle {
   val id = Input(UInt(4.W))
-  val ready = Output(Bool())
   val resp = Input(UInt(2.W))
-  val valid = Input(Bool())
 }
 
 class AXI4LiteAR extends Bundle {
@@ -72,14 +70,12 @@ class AXI4LiteR extends Bundle {
   val data = Input(UInt(64.W))
   val resp = Input(UInt(2.W))
   val last = Input(Bool())
-  val valid = Input(Bool())
-  val ready = Output(Bool())
 }
 
 class AXI4 extends Bundle {
   val aw = new DecoupledIO(new AXI4LiteAW)
   val w = new DecoupledIO(new AXI4LiteW)
-  val b = new DecoupledIO(new AXI4LiteB)
+  val b = Flipped(new DecoupledIO(new AXI4LiteB))
   val ar = new DecoupledIO(new AXI4LiteAR)
-  val r = new DecoupledIO(new AXI4LiteR)
+  val r = Flipped(new DecoupledIO(new AXI4LiteR))
 }

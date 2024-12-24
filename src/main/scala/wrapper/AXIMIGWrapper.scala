@@ -1,6 +1,7 @@
 import chisel3.{BlackBox, withClockAndReset, _}
 import chisel3.experimental.{Analog, attach}
 import chisel3.util._
+import chisel3.SpecifiedDirection.Flip
 
 
 class Arty100TMIGIODDR extends Bundle {
@@ -100,7 +101,7 @@ class arty100tmig extends BlackBox
 class XilinxArty100TMIG extends RawModule {
   val io = IO(new Bundle {
     val port = new Arty100TMIGIODDR with Arty100TMIGIOClocksReset
-    val s_axi = new AXI4()
+    val s_axi = Flipped(new AXI4())
   })
 
   val blackbox = withClockAndReset(io.port.ui_clk, io.port.ui_clk_sync_rst) {Module(new arty100tmig)}
@@ -125,6 +126,8 @@ class XilinxArty100TMIG extends RawModule {
   io.port.ddr3_cs_n         := blackbox.io.ddr3_cs_n
   io.port.ddr3_dm           := blackbox.io.ddr3_dm
   io.port.ddr3_odt          := blackbox.io.ddr3_odt
+
+  io.port.init_calib_complete := blackbox.io.init_calib_complete
 
  //inputs
   //NO_BUFFER clock
