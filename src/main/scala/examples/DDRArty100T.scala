@@ -144,7 +144,7 @@ class DDRArty100T extends RawModule {
   val gpio_0 = Module(new axi_gpio_0)
   gpio_0.io.s_axi <> digital_top.io.periph_axi4_s_axi
   gpio_0.io.gpio_io_i := io.btn
-  io.led := gpio_0.io.gpio_io_o
+  // io.led := gpio_0.io.gpio_io_o
 
   val mig_wrapper = Module(new XilinxArty100TMIG)
 
@@ -187,4 +187,6 @@ class DDRArty100T extends RawModule {
   io.ddr.ddr3_cs_n := mig_wrapper.io.port.ddr3_cs_n
   io.ddr.ddr3_dm := mig_wrapper.io.port.ddr3_dm
   io.ddr.ddr3_odt := mig_wrapper.io.port.ddr3_odt
+
+  io.led := Cat(mig_wrapper.io.port.init_calib_complete, mig_wrapper.io.port.mmcm_locked, mig_wrapper.io.port.ui_clk_sync_rst, true.B)
 }
