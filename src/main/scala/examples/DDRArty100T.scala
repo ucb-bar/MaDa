@@ -58,8 +58,7 @@ class DDRArty100T extends RawModule {
   ))
 
 
-  digital_top.io.auto_chipyard_prcictrl_domain_reset_setter_clock_in_member_allClocks_uncore_clock := clock
-  digital_top.io.auto_chipyard_prcictrl_domain_reset_setter_clock_in_member_allClocks_uncore_reset := reset
+
 
   cbus_reset := digital_top.io.auto_cbus_fixedClockNode_anon_out_reset
   digital_top.io.resetctrl_hartIsInReset_0 := cbus_reset
@@ -84,9 +83,6 @@ class DDRArty100T extends RawModule {
 
   digital_top.io.uart_0_rxd := false.B
   // io.uart_rxd_out := digital_top.io.uart_0_txd
-
-
-
 
   udp_core.io.clk := clock
   udp_core.io.rst := reset
@@ -151,10 +147,28 @@ class DDRArty100T extends RawModule {
   io.led := gpio_0.io.gpio_io_o
 
   val mig_wrapper = Module(new XilinxArty100TMIG)
-  mig_wrapper.io.port.aresetn := reset
+
+  val reset_wrangler = Module(new ResetWrangler)
+  // 0 connects to system clock
+  reset_wrangler.io.auto_in_0_clock := clock
+  reset_wrangler.io.auto_in_0_reset := reset
+  // 1 connects to ddr clock
+  reset_wrangler.io.auto_in_1_clock := clock_ddr_166
+  reset_wrangler.io.auto_in_1_reset := reset
+  // 2 connects to ddr clock
+  reset_wrangler.io.auto_in_2_clock := clock_ddr_200
+  reset_wrangler.io.auto_in_2_reset := reset
+  // 3 connects to ui clock
+  reset_wrangler.io.auto_in_3_clock := mig_wrapper.io.port.ui_clk
+  reset_wrangler.io.auto_in_3_reset := ~mig_wrapper.io.port.mmcm_locked | mig_wrapper.io.port.ui_clk_sync_rst
+
+  digital_top.io.auto_chipyard_prcictrl_domain_reset_setter_clock_in_member_allClocks_uncore_clock := reset_wrangler.io.auto_out_0_clock
+  digital_top.io.auto_chipyard_prcictrl_domain_reset_setter_clock_in_member_allClocks_uncore_reset := reset_wrangler.io.auto_out_0_reset
+  
+  mig_wrapper.io.port.aresetn := ~reset_wrangler.io.auto_out_3_reset
   mig_wrapper.io.port.sys_clk_i := clock_ddr_166.asBool
   mig_wrapper.io.port.clk_ref_i := clock_ddr_200.asBool
-  mig_wrapper.io.port.sys_rst := DontCare
+  mig_wrapper.io.port.sys_rst := ~io.ck_rst
   mig_wrapper.io.s_axi <> digital_top.io.mem_axi4_0
   
   attach(mig_wrapper.io.port.ddr3_dq, io.ddr.ddr3_dq)

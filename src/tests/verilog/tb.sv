@@ -39,23 +39,23 @@ module TB_Chip();
   logic ft_link_txd, ft_link_rxd;
   initial ft_link_txd = 'b0;
 
-  Arty100TShell u_chip(
-    .CLK100MHZ(clk),
-    .ck_rst(rst),
-    .uart_txd_in(uart_txd_in),
-    .uart_rxd_out(uart_rxd_out),
-    .led0_b(led0_b),
-    .led1_b(led1_b),
-    .led2_b(led2_b),
+  DDRArty100T u_chip(
+    .io_CLK100MHZ(clk),
+    .io_ck_rst(rst),
+    .io_uart_txd_in(uart_txd_in),
+    .io_uart_rxd_out(uart_rxd_out),
+    .io_led0_b(led0_b),
+    .io_led1_b(led1_b),
+    .io_led2_b(led2_b),
     
-    .jd_0(),
-    .jd_1('b0),
-    .jd_2(jtag_clk),
-    .jd_3(ft_link_rxd),
-    .jd_4('b0),
-    .jd_5('b0),
-    .jd_6('b0),
-    .jd_7(ft_link_txd)
+    .io_jd_0(),
+    .io_jd_1('b0),
+    .io_jd_2(jtag_clk),
+    .io_jd_3(ft_link_rxd),
+    .io_jd_4('b0),
+    .io_jd_5('b0),
+    .io_jd_6('b0),
+    .io_jd_7(ft_link_txd)
   );
   
   initial begin
