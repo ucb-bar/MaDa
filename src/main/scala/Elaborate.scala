@@ -98,7 +98,7 @@ object GenerateBitstream extends App {
   )
 
 
-  val chipyard_sources = new File("chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.TinyRocketConfig/gen-collateral").listFiles(new FileFilter {
+  val chipyard_sources = new File("chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.WithPeripheralAXI4LiteTinyRocketConfig/gen-collateral").listFiles(new FileFilter {
     def accept(file: File): Boolean = file.isFile || file.isDirectory
   }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
   // Exclude files listed in excluded_sources
