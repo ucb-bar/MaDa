@@ -1,3 +1,10 @@
+/**
+ * Elaborate.scala
+ *
+ * This file is responsible for elaborating the Chisel design into SystemVerilog. It is the main entry point for
+ * generating the hardware description.
+ */
+
 import circt.stage.ChiselStage
 import scala.sys.process._
 import java.io.PrintWriter
