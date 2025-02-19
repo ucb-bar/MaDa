@@ -17,25 +17,6 @@ import mill.bsp._
 
 
 /**
- * OtherProject module containing shared constants and utilities
- */
-object OtherProject extends ScalaModule with ScalafmtModule {
-  // Override sources to point to the submodule directory
-  override def sources = T.sources {
-    Seq(PathRef(millSourcePath))
-  }
-  
-  override def scalaVersion = ChiselProject.scalaVersion
-  override def scalacOptions = ChiselProject.scalacOptions
-  override def ivyDeps = ChiselProject.ivyDeps
-  override def scalacPluginIvyDeps = ChiselProject.scalacPluginIvyDeps
-  
-  // Override millSourcePath to go up one directory and then add paths
-  override def millSourcePath = super.millSourcePath / os.up / "generators" / "OtherProject" / "src"
-}
-
-
-/**
  * Main build definition for the Chisel project.
  * This object defines the project structure and its dependencies.
  */
@@ -69,9 +50,6 @@ object ChiselProject extends ScalaModule with ScalafmtModule { m =>
     else
       ivy"org.chipsalliance:::chisel-plugin:6.6.0"
   )
-
-  // Add OtherProject as a module dependency
-  override def moduleDeps = Seq(OtherProject)
 
   /**
    * Test configuration object that includes ScalaTest support
