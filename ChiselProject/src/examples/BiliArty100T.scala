@@ -2,15 +2,15 @@ import chisel3._
 import chisel3.util._
 
 
-class TinyRocketArty100T extends RawModule {
+class BiliArty100T extends RawModule {
   val io = IO(new Arty100TIO())
+
+  io := DontCare
 
   val clock = Wire(Clock())
   val reset = Wire(Bool())
   
   val pll_locked = Wire(Bool())
-  val cbus_reset = Wire(Bool())
-  val jtag_reset = Wire(Bool())
 
   val clock_25 = Wire(Clock())
 
@@ -29,16 +29,4 @@ class TinyRocketArty100T extends RawModule {
   sync_reset.io.clock := clock
   sync_reset.io.reset := ~pll_locked
   reset := sync_reset.io.out
-
-
-  val debug_sync_reset = Module(new SyncReset())
-  // jtag reset connection
-  debug_sync_reset.io.clock := io.jd_2.asClock
-  debug_sync_reset.io.reset := cbus_reset
-  jtag_reset := debug_sync_reset.io.out
-
-  
-  val digital_top = Module(new DigitalTop)
-
-
 }

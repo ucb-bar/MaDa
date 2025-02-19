@@ -2,7 +2,6 @@ import chisel3._
 import chisel3.util._
 import chisel3.experimental.Analog
 
-import OtherProject.RiscvConstants._
 
 class MinimalArty100T extends RawModule {
   val io = IO(new Arty100TIO())
