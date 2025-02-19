@@ -71,7 +71,7 @@ object GenerateVerilog extends App {
 object GenerateBitstream extends App {
   val (module_name, remaining_args) = ParseModuleName(args)
 
-  val project_source_dir = "src/main"
+  val project_source_dir = "ChiselProject/"
   val vivado_project_dir = "out/VivadoProject"
 
   CreateVivadoDirectory(vivado_project_dir)
@@ -92,9 +92,9 @@ object GenerateBitstream extends App {
   val sources = new File("generated-src").listFiles(new FileFilter {
     def accept(file: File): Boolean = file.isFile || file.isDirectory
   }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
-  val verilog_sources = new File("src/main/vsrc").listFiles(new FileFilter {
-    def accept(file: File): Boolean = file.isFile || file.isDirectory
-  }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
+  // val verilog_sources = new File("src/main/vsrc").listFiles(new FileFilter {
+  //   def accept(file: File): Boolean = file.isFile || file.isDirectory
+  // }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
 
   val excluded_sources = Array(
     "ClockSourceAtFreqMHz.v",
@@ -105,11 +105,11 @@ object GenerateBitstream extends App {
   )
 
 
-  val chipyard_sources = new File("chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.WithPeripheralAXI4LiteTinyRocketConfig/gen-collateral").listFiles(new FileFilter {
-    def accept(file: File): Boolean = file.isFile || file.isDirectory
-  }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
-  // Exclude files listed in excluded_sources
-  .filterNot(source => excluded_sources.contains(new File(source).getName))
+  // val chipyard_sources = new File("chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.WithPeripheralAXI4LiteTinyRocketConfig/gen-collateral").listFiles(new FileFilter {
+  //   def accept(file: File): Boolean = file.isFile || file.isDirectory
+  // }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
+  // // Exclude files listed in excluded_sources
+  // .filterNot(source => excluded_sources.contains(new File(source).getName))
 
   {
     // create a run.tcl file
@@ -120,12 +120,12 @@ object GenerateBitstream extends App {
     // run_tcl.println(s"set_property board_part $board_part [current_project]")
     
     // add constraints
-    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/constraints/Arty-A7-100-Master.xdc")
+    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/resources/constraints/Arty-A7-100-Master.xdc")
 
-    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/constraints/axis_async_fifo.tcl")
-    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/constraints/eth_mac_fifo.tcl")
-    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/constraints/mii_phy_if.tcl")
-    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/constraints/sync_reset.tcl")
+    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/resources/constraints/axis_async_fifo.tcl")
+    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/resources/constraints/eth_mac_fifo.tcl")
+    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/resources/constraints/mii_phy_if.tcl")
+    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/resources/constraints/sync_reset.tcl")
 
 
     // add sources
@@ -135,17 +135,17 @@ object GenerateBitstream extends App {
     })
     run_tcl.println("")
 
-    run_tcl.print(s"add_files")
-    verilog_sources.foreach(source => {
-      run_tcl.println(s" ${source} \\")
-    })
-    run_tcl.println("")
+    // run_tcl.print(s"add_files")
+    // verilog_sources.foreach(source => {
+    //   run_tcl.println(s" ${source} \\")
+    // })
+    // run_tcl.println("")
 
-    run_tcl.print(s"add_files")
-    chipyard_sources.foreach(source => {
-      run_tcl.println(s" ${source} \\")
-    })
-    run_tcl.println("")
+    // run_tcl.print(s"add_files")
+    // chipyard_sources.foreach(source => {
+    //   run_tcl.println(s" ${source} \\")
+    // })
+    // run_tcl.println("")
 
     run_tcl.println(s"set_property top ${module_name} [current_fileset]")
 

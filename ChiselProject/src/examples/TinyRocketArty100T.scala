@@ -26,14 +26,14 @@ class TinyRocketArty100T extends RawModule {
 
   val sync_reset = Module(new SyncReset())
   // sync reset connection
-  sync_reset.io.clk := clock
+  sync_reset.io.clock := clock
   sync_reset.io.reset := ~pll_locked
   reset := sync_reset.io.out
 
 
   val debug_sync_reset = Module(new SyncReset())
   // jtag reset connection
-  debug_sync_reset.io.clk := io.jd_2.asClock
+  debug_sync_reset.io.clock := io.jd_2.asClock
   debug_sync_reset.io.reset := cbus_reset
   jtag_reset := debug_sync_reset.io.out
 
@@ -119,39 +119,23 @@ class TinyRocketArty100T extends RawModule {
   io.eth_tx_en := udp_core.io.phy_tx_en
   io.eth_txd := udp_core.io.phy_txd
 
+  withClockAndReset(clock, reset) {
+    val udp_payload_axis_fifo = Module(new Axi4LiteStreamDataFifo(8))
+    udp_payload_axis_fifo.io.s_axis.t.valid := udp_core.io.rx_fifo_udp_payload_axis_tvalid
+    udp_core.io.rx_fifo_udp_payload_axis_tready := udp_payload_axis_fifo.io.s_axis.t.ready
+    udp_payload_axis_fifo.io.s_axis.t.bits.data := udp_core.io.rx_fifo_udp_payload_axis_tdata
+    udp_payload_axis_fifo.io.s_axis.t.bits.last := udp_core.io.rx_fifo_udp_payload_axis_tlast
+    udp_payload_axis_fifo.io.s_axis.t.bits.user := udp_core.io.rx_fifo_udp_payload_axis_tuser
+    
+    udp_core.io.tx_fifo_udp_payload_axis_tvalid := udp_payload_axis_fifo.io.m_axis.t.valid
+    udp_payload_axis_fifo.io.m_axis.t.ready := udp_core.io.tx_fifo_udp_payload_axis_tready
+    udp_core.io.tx_fifo_udp_payload_axis_tdata := udp_payload_axis_fifo.io.m_axis.t.bits.data
+    udp_core.io.tx_fifo_udp_payload_axis_tlast := udp_payload_axis_fifo.io.m_axis.t.bits.last
+    udp_core.io.tx_fifo_udp_payload_axis_tuser := udp_payload_axis_fifo.io.m_axis.t.bits.user
 
-  val udp_payload_axis_fifo = Module(new AXIStreamDataFifo(8))
-  udp_payload_axis_fifo.io.s_axis_aresetn := ~reset
-  udp_payload_axis_fifo.io.s_axis_aclk := clock
-  
-  udp_payload_axis_fifo.io.s_axis_tvalid := udp_core.io.rx_fifo_udp_payload_axis_tvalid
-  udp_core.io.rx_fifo_udp_payload_axis_tready := udp_payload_axis_fifo.io.s_axis_tready
-  udp_payload_axis_fifo.io.s_axis_tdata := udp_core.io.rx_fifo_udp_payload_axis_tdata
-  udp_payload_axis_fifo.io.s_axis_tlast := udp_core.io.rx_fifo_udp_payload_axis_tlast
-  udp_payload_axis_fifo.io.s_axis_tuser := udp_core.io.rx_fifo_udp_payload_axis_tuser
-  
-  udp_core.io.tx_fifo_udp_payload_axis_tvalid := udp_payload_axis_fifo.io.m_axis_tvalid
-  udp_payload_axis_fifo.io.m_axis_tready := udp_core.io.tx_fifo_udp_payload_axis_tready
-  udp_core.io.tx_fifo_udp_payload_axis_tdata := udp_payload_axis_fifo.io.m_axis_tdata
-  udp_core.io.tx_fifo_udp_payload_axis_tlast := udp_payload_axis_fifo.io.m_axis_tlast
-  udp_core.io.tx_fifo_udp_payload_axis_tuser := udp_payload_axis_fifo.io.m_axis_tuser
-
-
-  val gpio_0 = Module(new axi_gpio_0)
-  gpio_0.io.s_axi <> digital_top.io.periph_axi4_s_axi
-  gpio_0.io.gpio_io_i := io.btn
-  io.led := gpio_0.io.gpio_io_o
-
-
-
-  // digital_top.io.axi4_lite_s_axi.awready := true.B
-  // digital_top.io.axi4_lite_s_axi.wready := true.B
-  // digital_top.io.axi4_lite_s_axi.bresp := 2.U(2.W)
-  // digital_top.io.axi4_lite_s_axi.bvalid := false.B
-  // digital_top.io.axi4_lite_s_axi.arready := true.B
-  // digital_top.io.axi4_lite_s_axi.rdata := 0.U(32.W)
-  // digital_top.io.axi4_lite_s_axi.rresp := 2.U(2.W)
-  // digital_top.io.axi4_lite_s_axi.rvalid := false.B
-
-
+    val gpio_0 = Module(new Axi4LiteGpio)
+    gpio_0.io.s_axi <> digital_top.io.periph_axi4_s_axi
+    gpio_0.io.gpio_io_i := io.btn
+    io.led := gpio_0.io.gpio_io_o
+  }
 }

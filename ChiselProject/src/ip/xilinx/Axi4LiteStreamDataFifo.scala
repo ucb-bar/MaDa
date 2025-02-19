@@ -1,23 +1,29 @@
-import chisel3.{BlackBox, _}
+import chisel3._
 import chisel3.util._
 
 import java.io.PrintWriter
 
 
-class AXIStreamDataFifo(width: Int) extends BlackBox {
+class Axi4LiteStreamDataFifo(width: Int) extends Module {
   val io = IO(new Bundle {
-    val s_axis_aresetn = Input(Reset())
+    val s_axis = Flipped(new Axi4LiteStreamBundle())
+    val m_axis = new Axi4LiteStreamBundle()
+  })
+
+  val blackbox = Module(new Axi4LiteStreamDataFifoBlackbox(width))
+
+  blackbox.io.s_axis_aclk := clock
+  blackbox.io.s_axis_aresetn := ~reset.asBool
+  blackbox.io.s_axis.connect(io.s_axis)
+  blackbox.io.m_axis.flipConnect(io.m_axis)
+}
+
+class Axi4LiteStreamDataFifoBlackbox(width: Int) extends BlackBox {
+  val io = IO(new Bundle {
     val s_axis_aclk = Input(Clock())
-    val s_axis_tvalid = Input(Bool())
-    val s_axis_tready = Output(Bool())
-    val s_axis_tdata = Input(UInt(width.W))
-    val s_axis_tlast = Input(Bool())
-    val s_axis_tuser = Input(Bool())
-    val m_axis_tvalid = Output(Bool())
-    val m_axis_tready = Input(Bool())
-    val m_axis_tdata = Output(UInt(width.W))
-    val m_axis_tlast = Output(Bool())
-    val m_axis_tuser = Output(Bool())
+    val s_axis_aresetn = Input(Reset())
+    val s_axis = Flipped(new Axi4LiteStreamBlackboxBundle())
+    val m_axis = new Axi4LiteStreamBlackboxBundle()
   })
 
   def generate_tcl_script(): Unit = {
