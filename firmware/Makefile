@@ -1,17 +1,18 @@
 
-PHONY: build build-hex dump clean
+.PHONY: build hex dump clean
 
+default: hex dump
 
 build:
-	riscv64-unknown-elf-gcc -march=rv32i -mabi=ilp32 -mcmodel=medany -specs=nosys.specs -nostdlib main.c -o main.elf
+	riscv64-unknown-elf-gcc -O2 -march=rv32i -mabi=ilp32 -mcmodel=medany -specs=nosys.specs -nostdlib main.c -T link.ld -o firmware.elf
 
-build-hex: build
-	riscv64-unknown-elf-objcopy -O binary main.elf main.bin
-	python bintohex.py main.bin main.hex
+hex: build
+	riscv64-unknown-elf-objcopy -O binary firmware.elf firmware.bin
+	python bintohex.py firmware.bin firmware.hex
 
 dump: build
-	riscv64-unknown-elf-objdump -S main.elf > main.dis
-	riscv64-unknown-elf-objdump -h main.elf > main.section
+	riscv64-unknown-elf-objdump -S firmware.elf > firmware.dis
+	riscv64-unknown-elf-objdump -h firmware.elf > firmware.section
 
 clean:
-	rm -f main.elf main.bin main.hex main.dis main.section
+	rm -f firmware.elf firmware.bin firmware.hex firmware.dis firmware.section

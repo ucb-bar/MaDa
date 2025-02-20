@@ -20,6 +20,10 @@ def bin_to_hex(input_file, output_file):
                 value = struct.unpack("<I", word)[0]  # Little-endian
                 hex_line = f"{value:08x}\n"  # 8 characters, no '0x' prefix
                 hex_file.write(hex_line)
+            
+            # add several 0x00000000 to the end of the file
+            for _ in range(10):
+                hex_file.write("00000000\n")
                 
     except IOError as e:
         print(f"Error: {e}", file=sys.stderr)

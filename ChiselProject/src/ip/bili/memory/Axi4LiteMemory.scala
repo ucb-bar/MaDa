@@ -65,7 +65,7 @@ class Axi4LiteMemory(
       val ip_name_lower = ip_name.toLowerCase()
       
       // Get current working directory
-      val file_path = System.getProperty("user.dir") + "/ChiselProject/resources/" + memoryFileHex
+      val file_path = System.getProperty("user.dir") + "/firmware/" + memoryFileHex
       val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
       
       // Use current directory to create paths
