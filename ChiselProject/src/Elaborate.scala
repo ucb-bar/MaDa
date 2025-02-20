@@ -195,7 +195,7 @@ object GenerateBitstream extends App {
   }
 
 
-//   add_files -norecurse /home/tk/Desktop/MaDa/ChiselProject/resources/firmware.hex
+// add_files -norecurse /home/tk/Desktop/MaDa/ChiselProject/resources/firmware.hex
 // set_property file_type {Memory Initialization Files} [get_files  /home/tk/Desktop/MaDa/ChiselProject/resources/firmware.hex]
 
 
