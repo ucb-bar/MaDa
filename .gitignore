@@ -3,6 +3,7 @@
 .metals/
 .bloop/
 .vscode/
+.bsp/
 
 # Build artifacts
 out/
