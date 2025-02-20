@@ -104,4 +104,16 @@ class ExampleArty100TShell extends Arty100TShell {
     io.eth_tx_en := false.B
     io.eth_txd := 0.U
   }
+
+  def instantiate_clk_reset(clk_freqs: Seq[Int]) = {
+    val clk_wiz = Module(new ClockingWizard(clk_freqs))
+    clk_wiz.io.clk_in := io.CLK100MHZ
+    clk_wiz.io.reset := ~io.ck_rst
+    clock := clk_wiz.io.clk_outs(0)
+
+    val sync_reset = Module(new SyncReset())
+    sync_reset.io.clock := clock
+    sync_reset.io.reset := ~clk_wiz.io.locked
+    reset := sync_reset.io.out
+  }
 }
