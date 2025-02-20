@@ -5,6 +5,7 @@ import CsrControlConstants._
 import RiscvConstants._
 import Instructions._
 import ScalarControlConstants._
+import SimdControlConstants._
 
 
 class DebugIO extends Bundle() {
@@ -60,6 +61,8 @@ class Core extends Module {
 
   val ex_wb_en = Wire(Bool())
 
+  val ex_vwb_en = Wire(Bool())
+
 
   
   // Instruction Fetch (IF) Stage
@@ -70,6 +73,8 @@ class Core extends Module {
 
 
   val ex_wb_data = Wire(UInt(32.W))
+
+  val ex_vwb_data = Wire(Vec(1, UInt(32.W)))
 
 
   val ifu = Module(new InstructionFetch())
@@ -125,7 +130,7 @@ class Core extends Module {
   
   val rs1_addr = inst(RS1_MSB, RS1_LSB)
   val rs2_addr = inst(RS2_MSB, RS2_LSB)
-  val wb_addr  = inst(RD_MSB,  RD_LSB)
+  val rd_addr  = inst(RD_MSB,  RD_LSB)
 
   // debug signal connections
   io.debug.x1 := regfile(1)
@@ -138,8 +143,8 @@ class Core extends Module {
   io.debug.x8 := regfile(8)
   
 
-  when(ex_wb_en && (wb_addr =/= 0.U)) {
-    regfile(wb_addr) := ex_wb_data
+  when(ex_wb_en && (rd_addr =/= 0.U)) {
+    regfile(rd_addr) := ex_wb_data
   }
   
   val rs1_data = Mux((rs1_addr =/= 0.U), regfile(rs1_addr), 0.U)
@@ -202,7 +207,7 @@ class Core extends Module {
 
   if_pc_sel := Mux(exception || eret, PC_EXC, ctrl_pc_sel_no_exception)
 
-  val reg_kill_next = RegInit(false.B)
+  val reg_kill_next = RegInit(true.B)
   when(if_pc_sel =/= PC_4) {
     reg_kill_next := true.B
   }
@@ -230,6 +235,42 @@ class Core extends Module {
 
   io.debug.tohost := csr.io.tohost
 
+
+
+
+
+
+
+  // Vector Register File
+  val vregfile = Mem(32, Vec(1, UInt(32.W)))
+
+  when(ex_vwb_en && (rd_addr =/= 0.U)) {
+    vregfile(rd_addr) := ex_vwb_data
+  }
+  
+  val vrs1_data = Mux((rs1_addr =/= 0.U), vregfile(rs1_addr)(0), 0.U)
+  val vrs2_data = Mux((rs2_addr =/= 0.U), vregfile(rs2_addr)(0), 0.U)
+  val vrd_data = Mux((rd_addr =/= 0.U), vregfile(rd_addr)(0), 0.U)
+
+
+  val valu = Module(new SimdFloatingPoint())
+  // result = a * b + c
+
+  valu.io.func := ctrl.valu_func
+  valu.io.op1 := vrs1_data
+  valu.io.op2 := vrs2_data
+  valu.io.op3 := vrd_data
+
+  ex_vwb_data(0) := valu.io.out
+
+  dontTouch(valu.io.out)
+
+
+
+
+
+
+
   
   // Memory Access (MEM)
   lsu.io.addr := alu.io.out
@@ -247,6 +288,7 @@ class Core extends Module {
 
   // Write Back (WB)
   ex_wb_en := Mux(retire, ctrl.wb_en, false.B) // && !io.ctl.exception
+  ex_vwb_en := Mux(retire, ctrl.vwb_en, false.B)
 
   // write back mux
   ex_wb_data := MuxCase(0.U, Seq(

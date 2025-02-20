@@ -4,7 +4,7 @@ import chisel3.util._
 import CsrControlConstants._
 import Instructions._
 import ScalarControlConstants._
-
+import SimdControlConstants._
 
 
 class InstructionDecode extends Module {
@@ -23,6 +23,13 @@ class InstructionDecode extends Module {
       val wb_sel = UInt(WB_X.getWidth.W)
       val wb_en = Bool()
       val csr_cmd = UInt(CSR_N.getWidth.W)
+
+      val valu_op1_sel = UInt(OP1_X.getWidth.W)
+      val valu_op2_sel = UInt(OP2_X.getWidth.W)
+      val valu_func = UInt(ALU_X.getWidth.W)
+      val vmem_func = UInt(M_X.getWidth.W)
+      val vwb_sel = UInt(WB_X.getWidth.W)
+      val vwb_en = Bool()
     })
   })
 
@@ -30,11 +37,11 @@ class InstructionDecode extends Module {
   
   val control_signals = ListLookup(
     io.instruction,
-                /* | valid | BR     | ALU     | ALU     | ALU      | mem  | mem  | sign |        | WB | CSR   | */
-                /* | inst? | type   | op1 sel | op2 sel | function | op   | size | ext? | WB sel | en | cmd   | */
+                /* | valid | BR     | ALU     | ALU     | ALU      | mem  | mem   | sign |        | WB | CSR   | */
+                /* | inst? | type   | op1 sel | op2 sel | function | op   | size  | ext? | WB sel | en | cmd   | */
                    // default values
                    List( F , BR_X   , OP1_X   , OP2_X   , ALU_X    , M_X  , MSK_X , X    , WB_X   , F  , CSR_N ),
-    Array(    
+    Array(
       LW        -> List( T , BR_X   , OP1_RS1 , OP2_IMI , ALU_ADD  , M_RD , MSK_W , T    , WB_MEM , T  , CSR_N ),
       LB        -> List( T , BR_X   , OP1_RS1 , OP2_IMI , ALU_ADD  , M_RD , MSK_B , T    , WB_MEM , T  , CSR_N ),
       LBU       -> List( T , BR_X   , OP1_RS1 , OP2_IMI , ALU_ADD  , M_RD , MSK_B , F    , WB_MEM , T  , CSR_N ),
@@ -84,12 +91,28 @@ class InstructionDecode extends Module {
       EBREAK    -> List( T , BR_X   , OP1_X   , OP2_X   , ALU_X    , M_X  , MSK_X , F    , WB_X   , F  , CSR_I ),
       WFI       -> List( T , BR_X   , OP1_X   , OP2_X   , ALU_X    , M_X  , MSK_X , F    , WB_X   , F  , CSR_N ),  // implemented as a NOP
       FENCE_I   -> List( T , BR_X   , OP1_X   , OP2_X   , ALU_X    , M_X  , MSK_X , F    , WB_X   , F  , CSR_N ),
-      FENCE     -> List( T , BR_X   , OP1_X   , OP2_X   , ALU_X    , M_X  , MSK_X , F    , WB_X   , F  , CSR_N )  // we are already sequentially consistent, so no need to honor the fence instruction
+      FENCE     -> List( T , BR_X   , OP1_X   , OP2_X   , ALU_X    , M_X  , MSK_X , F    , WB_X   , F  , CSR_N ),  // we are already sequentially consistent, so no need to honor the fence instruction
+    )
+  )
+
+  val vector_control_signals = ListLookup(
+    io.instruction,
+                /* | valid | ALU     | ALU     | VALU      | mem  |        | WB | */
+                /* | inst? | op1 sel | op2 sel | function  | op   | WB sel | en | */
+                   // default values
+                   List( F , OP1_X   , OP2_X   , SIMD_X    , M_X  , WB_X   , F  ),
+    Array(
+      VADD_VV   -> List( T , OP1_RS1 , OP2_RS2 , SIMD_ADD  , M_X  , WB_ALU , T  ),
+      VADD_VF   -> List( T , OP1_RS1 , OP2_RS2 , SIMD_ADD  , M_X  , WB_ALU , T  ),
+      VFMIN_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MIN  , M_X  , WB_ALU , T  ),
+      VFMAX_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MAX  , M_X  , WB_ALU , T  ),
+      VFMUL_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MUL  , M_X  , WB_ALU , T  ),
+      VFMACC_VV -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MACC , M_X  , WB_ALU , T  ),
     )
   )
 
   // Put these control signals in variables
-  val ((c_valid_inst: Bool)
+  val ((c_valid_base_inst: Bool)
    :: c_branch_type
    :: c_alu_op1_sel
    :: c_alu_op2_sel
@@ -101,8 +124,18 @@ class InstructionDecode extends Module {
    :: (c_wb_en: Bool)
    :: c_csr_cmd
    :: Nil) = control_signals
+
+  // Put these control signals in variables
+  val ((c_valid_vector_inst: Bool)
+   :: c_valu_op1_sel
+   :: c_valu_op2_sel
+   :: c_valu_func
+   :: c_vmem_func
+   :: c_vwb_sel
+   :: (c_vwb_en: Bool)
+   :: Nil) = vector_control_signals
   
-  io.control_signals.valid_inst := c_valid_inst
+  io.control_signals.valid_inst := c_valid_base_inst || c_valid_vector_inst
   io.control_signals.branch_type := c_branch_type
   io.control_signals.alu_op1_sel := c_alu_op1_sel
   io.control_signals.alu_op2_sel := c_alu_op2_sel
@@ -113,4 +146,15 @@ class InstructionDecode extends Module {
   io.control_signals.wb_sel := c_wb_sel
   io.control_signals.wb_en := c_wb_en
   io.control_signals.csr_cmd := c_csr_cmd
+
+  io.control_signals.valu_op1_sel := c_valu_op1_sel
+  io.control_signals.valu_op2_sel := c_valu_op2_sel
+  io.control_signals.valu_func := c_valu_func
+  io.control_signals.vmem_func := c_vmem_func
+  io.control_signals.vwb_sel := c_vwb_sel
+  io.control_signals.vwb_en := c_vwb_en
+
+  dontTouch(c_valid_base_inst)
+  dontTouch(c_valid_vector_inst)
+  dontTouch(io.control_signals)
 }

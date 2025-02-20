@@ -101,6 +101,14 @@ object ScalarControlConstants {
    val WB_X    = 0.asUInt(2.W)
 }
 
+object SimdControlConstants {
+  val SIMD_X    = 0.asUInt(3.W)
+  val SIMD_ADD  = 1.asUInt(3.W)
+  val SIMD_MIN  = 2.asUInt(3.W)
+  val SIMD_MAX  = 3.asUInt(3.W)
+  val SIMD_MUL  = 4.asUInt(3.W)
+  val SIMD_MACC = 5.asUInt(3.W)
+}
 
 object CsrControlConstants {
   val CSR_N = 0.asUInt(3.W)
