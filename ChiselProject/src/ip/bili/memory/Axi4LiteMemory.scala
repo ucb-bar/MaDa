@@ -63,11 +63,14 @@ class Axi4LiteMemory(
       val vivado_project_dir = "out/VivadoProject"
       val ip_name = "Axi4LiteMemory"
       val ip_name_lower = ip_name.toLowerCase()
-
+      
+      // Get current working directory
+      val file_path = System.getProperty("user.dir") + "/ChiselProject/resources/" + memoryFileHex
       val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
       
-      tcl_script.println(s"add_files -norecurse /home/tk/Desktop/MaDa/ChiselProject/resources/firmware.hex")
-      tcl_script.println(s"set_property file_type {Memory Initialization Files} [get_files  /home/tk/Desktop/MaDa/ChiselProject/resources/firmware.hex]")
+      // Use current directory to create paths
+      tcl_script.println(s"add_files -norecurse ${file_path}")
+      tcl_script.println(s"set_property file_type {Memory Initialization Files} [get_files ${file_path}]")
 
       tcl_script.close()
     }
