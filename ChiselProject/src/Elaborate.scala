@@ -195,10 +195,6 @@ object GenerateBitstream extends App {
   }
 
 
-// add_files -norecurse /home/tk/Desktop/MaDa/ChiselProject/resources/firmware.hex
-// set_property file_type {Memory Initialization Files} [get_files  /home/tk/Desktop/MaDa/ChiselProject/resources/firmware.hex]
-
-
   s"vivado -mode batch -source ${vivado_project_dir}/scripts/create_project.tcl".!
   
   // s"vivado -mode batch -source ${vivado_project_dir}/scripts/generate_bitstream.tcl".!

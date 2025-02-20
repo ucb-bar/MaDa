@@ -1,6 +1,7 @@
 import chisel3._
 import chisel3.util._
 
+import java.io.PrintWriter
 
 class Axi4LiteMemory(
   val addressWidth: Int = 12,
@@ -55,4 +56,21 @@ class Axi4LiteMemory(
   .elsewhen (io.s_axi.r.fire) {
     read_requested := false.B
   }
+
+  
+  def generate_tcl_script(): Unit = {
+    if (memoryFileHex != "") {
+      val vivado_project_dir = "out/VivadoProject"
+      val ip_name = "Axi4LiteMemory"
+      val ip_name_lower = ip_name.toLowerCase()
+
+      val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
+      
+      tcl_script.println(s"add_files -norecurse /home/tk/Desktop/MaDa/ChiselProject/resources/firmware.hex")
+      tcl_script.println(s"set_property file_type {Memory Initialization Files} [get_files  /home/tk/Desktop/MaDa/ChiselProject/resources/firmware.hex]")
+
+      tcl_script.close()
+    }
+  }
+  generate_tcl_script()
 }
