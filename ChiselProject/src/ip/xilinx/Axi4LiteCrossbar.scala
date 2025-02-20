@@ -1,6 +1,8 @@
 import chisel3._
 import chisel3.util._
 
+import java.io.PrintWriter
+
 
 class Axi4LiteCrossbarBlackboxBundle(n: Int) extends Bundle {
   val awaddr = Output(UInt((n*32).W))
@@ -104,4 +106,35 @@ class Axi4LiteCrossbarBlackbox(n_slave: Int, n_master: Int) extends BlackBox {
     val s_axi = Flipped(new Axi4LiteCrossbarBlackboxBundle(n_slave))
     val m_axi = new Axi4LiteCrossbarBlackboxBundle(n_master)
   })
+
+
+  def generate_tcl_script(): Unit = {
+    val vivado_project_dir = "out/VivadoProject"
+    val ip_name = "Axi4LiteCrossbarBlackbox"
+    val ip_name_lower = ip_name.toLowerCase()
+
+    val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
+    
+    tcl_script.println(s"create_ip -name axi_crossbar -vendor xilinx.com -library ip -version 2.1 -module_name ${ip_name}")
+  
+    tcl_script.println(s"""
+set_property -dict [list \\
+  CONFIG.M00_A00_ADDR_WIDTH {16} \\
+  CONFIG.M00_A00_BASE_ADDR {0x0000000008000000} \\
+  CONFIG.M01_A00_ADDR_WIDTH {12} \\
+  CONFIG.M01_A00_BASE_ADDR {0x0000000010000000} \\
+  CONFIG.PROTOCOL {AXI4LITE} \\
+] [get_ips ${ip_name}]
+""")
+
+    tcl_script.println(s"generate_target {instantiation_template} [get_ips ${ip_name}]")
+    tcl_script.println("update_compile_order -fileset sources_1")
+    tcl_script.println(s"generate_target all [get_ips ${ip_name}]")
+    tcl_script.println(s"catch { config_ip_cache -export [get_ips -all ${ip_name}] }")
+    tcl_script.println(s"export_ip_user_files -of_objects [get_ips ${ip_name}] -no_script -sync -force -quiet")
+    tcl_script.println(s"create_ip_run [get_ips ${ip_name}]")
+
+    tcl_script.close()
+  }
+  generate_tcl_script()
 }

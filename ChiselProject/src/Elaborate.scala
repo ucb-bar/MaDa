@@ -92,9 +92,9 @@ object GenerateBitstream extends App {
   val sources = new File("generated-src").listFiles(new FileFilter {
     def accept(file: File): Boolean = file.isFile || file.isDirectory
   }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
-  // val verilog_sources = new File("src/main/vsrc").listFiles(new FileFilter {
-  //   def accept(file: File): Boolean = file.isFile || file.isDirectory
-  // }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
+  val verilog_sources = new File("ChiselProject/test/resources/testbench").listFiles(new FileFilter {
+    def accept(file: File): Boolean = file.isFile || file.isDirectory
+  }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
 
   val excluded_sources = Array(
     "ClockSourceAtFreqMHz.v",
@@ -135,11 +135,11 @@ object GenerateBitstream extends App {
     })
     run_tcl.println("")
 
-    // run_tcl.print(s"add_files")
-    // verilog_sources.foreach(source => {
-    //   run_tcl.println(s" ${source} \\")
-    // })
-    // run_tcl.println("")
+    run_tcl.print(s"add_files -fileset sim_1 {")
+    verilog_sources.foreach(source => {
+      run_tcl.println(s" ${source} \\")
+    })
+    run_tcl.println("}")
 
     // run_tcl.print(s"add_files")
     // chipyard_sources.foreach(source => {
@@ -194,6 +194,9 @@ object GenerateBitstream extends App {
     run_tcl.flush()   // make sure the file is written to the disk
   }
 
+
+//   add_files -norecurse /home/tk/Desktop/MaDa/ChiselProject/resources/firmware.hex
+// set_property file_type {Memory Initialization Files} [get_files  /home/tk/Desktop/MaDa/ChiselProject/resources/firmware.hex]
 
 
   s"vivado -mode batch -source ${vivado_project_dir}/scripts/create_project.tcl".!
