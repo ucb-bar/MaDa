@@ -320,9 +320,9 @@ module EECS252TestBench();
 
     `VRF_PATH[5] = 'h3F800000;
 
-    `IMEM_PATH[INST_ADDR + 0]  = {`FNC6_VADD,   1'b0, RS2, RS1, `FNC3_FVV, 5'd3,  `OPC_VEC_ARI};
-    `IMEM_PATH[INST_ADDR + 1]  = {`FNC6_VFMUL,  1'b0, RS2, RS1, `FNC3_FVV, 5'd4,  `OPC_VEC_ARI};
-    `IMEM_PATH[INST_ADDR + 2]  = {`FNC6_VFMACC, 1'b0, RS2, RS1, `FNC3_FVV, 5'd5,  `OPC_VEC_ARI};
+    `IMEM_PATH[INST_ADDR + 0]  = {`FNC6_VADD,   1'b1, RS2, RS1, `FNC3_FVV, 5'd3,  `OPC_VEC_ARI};
+    `IMEM_PATH[INST_ADDR + 1]  = {`FNC6_VFMUL,  1'b1, RS2, RS1, `FNC3_FVV, 5'd4,  `OPC_VEC_ARI};
+    `IMEM_PATH[INST_ADDR + 2]  = {`FNC6_VFMACC, 1'b1, RS2, RS1, `FNC3_FVV, 5'd5,  `OPC_VEC_ARI};
 
     check_result_vrf(5'd3,  32'h42C80000, "Vector FP ADD");
     check_result_vrf(5'd4,  32'hC69C4000, "Vector FP MUL");
