@@ -10,10 +10,6 @@
 `define DMEM_DEPTH 4096
 
 
-`define FNC7_0  7'b0000000 // ADD, SRL
-`define FNC7_1  7'b0100000 // SUB, SRA
-`define OPC_CSR 7'b1110011
-
 
 
 // ***** Opcodes *****
@@ -33,57 +29,45 @@
 `define OPC_LOAD        7'b0000011
 
 // Arithmetic instructions
-`define OPC_ARI_RTYPE   7'b0110011
-`define OPC_ARI_ITYPE   7'b0010011
+`define OPC_ARI   7'b0110011
+`define OPC_ARI_IMM   7'b0010011
 
-// ***** 5-bit Opcodes *****
-`define OPC_LUI_5       5'b01101
-`define OPC_AUIPC_5     5'b00101
-`define OPC_JAL_5       5'b11011
-`define OPC_JALR_5      5'b11001
-`define OPC_BRANCH_5    5'b11000
-`define OPC_STORE_5     5'b01000
-`define OPC_LOAD_5      5'b00000
-`define OPC_ARI_RTYPE_5 5'b01100
-`define OPC_ARI_ITYPE_5 5'b00100
+// CSR instructions
+`define OPC_CSR 7'b1110011
 
-// ***** Function codes *****
 
+// ***** Function 3 codes *****
 // Branch function codes
-`define FNC_BEQ         3'b000
-`define FNC_BNE         3'b001
-`define FNC_BLT         3'b100
-`define FNC_BGE         3'b101
-`define FNC_BLTU        3'b110
-`define FNC_BGEU        3'b111
+`define FNC3_BEQ         3'b000
+`define FNC3_BNE         3'b001
+`define FNC3_BLT         3'b100
+`define FNC3_BGE         3'b101
+`define FNC3_BLTU        3'b110
+`define FNC3_BGEU        3'b111
 
 // Load and store function codes
-`define FNC_LB          3'b000
-`define FNC_LH          3'b001
-`define FNC_LW          3'b010
-`define FNC_LBU         3'b100
-`define FNC_LHU         3'b101
-`define FNC_SB          3'b000
-`define FNC_SH          3'b001
-`define FNC_SW          3'b010
+`define FNC3_LB          3'b000
+`define FNC3_LH          3'b001
+`define FNC3_LW          3'b010
+`define FNC3_LBU         3'b100
+`define FNC3_LHU         3'b101
+`define FNC3_SB          3'b000
+`define FNC3_SH          3'b001
+`define FNC3_SW          3'b010
 
 // Arithmetic R-type and I-type functions codes
-`define FNC_ADD_SUB     3'b000
-`define FNC_SLL         3'b001
-`define FNC_SLT         3'b010
-`define FNC_SLTU        3'b011
-`define FNC_XOR         3'b100
-`define FNC_OR          3'b110
-`define FNC_AND         3'b111
-`define FNC_SRL_SRA     3'b101
+`define FNC3_ADD_SUB     3'b000
+`define FNC3_SLL         3'b001
+`define FNC3_SLT         3'b010
+`define FNC3_SLTU        3'b011
+`define FNC3_XOR         3'b100
+`define FNC3_OR          3'b110
+`define FNC3_AND         3'b111
+`define FNC3_SRL_SRA     3'b101
 
-// ADD and SUB use the same opcode + function code
-// SRA and SRL also use the same opcode + function code
-// For these operations, we also need to look at bit 30 of the instruction
-`define FNC2_ADD        1'b0
-`define FNC2_SUB        1'b1
-`define FNC2_SRL        1'b0
-`define FNC2_SRA        1'b1
+// ***** Function 7 codes *****
+`define FNC7_0  7'b0000000 // ADD, SRL
+`define FNC7_1  7'b0100000 // SUB, SRA
 
 
 
@@ -97,7 +81,7 @@ module EECS151TestBench();
   initial clock = 0;
   always #(CLOCK_PERIOD/2) clock = ~clock;
 
-  wire [31:0] timeout_cycle = 500;
+  int timeout_cycle = 100;
 
   // Init PC with 32'h1000_0000 -- address space of IMem
   wire [31:0] reset_vector = 32'h1000_0000;
@@ -152,20 +136,20 @@ module EECS151TestBench();
     end
   endtask
 
-  reg [31:0] cycle;
-  reg done;
-  reg [31:0]  current_test_id = 0;
-  reg [255:0] current_test_type;
-  reg [31:0]  current_output;
-  reg [31:0]  current_result;
-  reg all_tests_passed = 0;
+  int cycle;
+  bit done;
+  int current_test_id = 0;
+  string current_test_type;
+  int current_output;
+  int current_result;
+  bit all_tests_passed = 0;
 
 
   // Check for timeout
   // If a test does not return correct value in a given timeout cycle,
   // we terminate the testbench
   initial begin
-    while (all_tests_passed === 0) begin
+    while (!all_tests_passed) begin
       @(posedge clock);
       if (cycle === timeout_cycle) begin
         $display("[Failed] Timeout at [%d] test %s, expected_result = %h, got = %h",
@@ -188,18 +172,33 @@ module EECS151TestBench();
   task check_result_rf;
     input [31:0]  rf_wa;
     input [31:0]  result;
-    input [255:0] test_type;
+    input string test_type;
     begin
       done = 0;
       current_test_id   = current_test_id + 1;
       current_test_type = test_type;
       current_result    = result;
+      current_output    = `RF_PATH[rf_wa];
+      
+      fork
+        begin : timeout_block
+          repeat(timeout_cycle) @(posedge clock);
+          $display("[Failed] Timeout at [%d] test %s, expected_result = %h, got = %h",
+                  current_test_id, test_type, result, `RF_PATH[rf_wa]);
+          $finish();
+        end
+        
+        begin : check_block
       while (`RF_PATH[rf_wa] !== result) begin
         current_output = `RF_PATH[rf_wa];
         @(posedge clock);
       end
+          disable timeout_block;
       done = 1;
       $display("[%d] Test %s passed!", current_test_id, test_type);
+        end
+      join_any
+      disable fork;
     end
   endtask
 
@@ -209,25 +208,38 @@ module EECS151TestBench();
   task check_result_dmem;
     input [31:0]  addr;
     input [31:0]  result;
-    input [255:0] test_type;
+    input string test_type;
     begin
       done = 0;
       current_test_id   = current_test_id + 1;
       current_test_type = test_type;
       current_result    = result;
+      current_output    = `DMEM_PATH[addr];
+      
+      fork
+        begin : timeout_block
+          repeat(timeout_cycle) @(posedge clock);
+          $display("[Failed] Timeout at [%d] test %s, expected_result = %h, got = %h",
+                  current_test_id, test_type, result, `DMEM_PATH[addr]);
+          $finish();
+        end
+        
+        begin : check_block
       while (`DMEM_PATH[addr] !== result) begin
         current_output = `DMEM_PATH[addr];
         @(posedge clock);
       end
+          disable timeout_block;
       done = 1;
       $display("[%d] Test %s passed!", current_test_id, test_type);
+        end
+      join_any
+      disable fork;
     end
   endtask
 
   integer i;
 
-  reg [31:0] num_cycles = 0;
-  reg [31:0] num_insts  = 0;
   reg [4:0]  RD, RS1, RS2;
   reg [31:0] RD1, RD2;
   reg [4:0]  SHAMT;
@@ -240,14 +252,14 @@ module EECS151TestBench();
 
   reg [31:0] JUMP_ADDR;
 
-  reg [31:0]  BR_TAKEN_OP1  [5:0];
-  reg [31:0]  BR_TAKEN_OP2  [5:0];
-  reg [31:0]  BR_NTAKEN_OP1 [5:0];
-  reg [31:0]  BR_NTAKEN_OP2 [5:0];
-  reg [2:0]   BR_TYPE       [5:0];
-  reg [255:0] BR_NAME_TK1   [5:0];
-  reg [255:0] BR_NAME_TK2   [5:0];
-  reg [255:0] BR_NAME_NTK   [5:0];
+  reg [31:0] BR_TAKEN_OP1  [5:0];
+  reg [31:0] BR_TAKEN_OP2  [5:0];
+  reg [31:0] BR_NTAKEN_OP1 [5:0];
+  reg [31:0] BR_NTAKEN_OP2 [5:0];
+  reg [2:0]  BR_TYPE       [5:0];
+  string BR_NAME_TK1   [5:0];
+  string BR_NAME_TK2   [5:0];
+  string BR_NAME_NTK   [5:0];
 
   initial begin
     $dumpfile("EECS151_testbench.vcd");
@@ -278,19 +290,19 @@ module EECS151TestBench();
     SHAMT           = 5'd20;
     INST_ADDR       = 14'h0000;
 
-    `IMEM_PATH[INST_ADDR + 0]  = {`FNC7_0, RS2,   RS1, `FNC_ADD_SUB, 5'd3,  `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 1]  = {`FNC7_1, RS2,   RS1, `FNC_ADD_SUB, 5'd4,  `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 2]  = {`FNC7_0, RS2,   RS1, `FNC_SLL,     5'd5,  `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 3]  = {`FNC7_0, RS2,   RS1, `FNC_SLT,     5'd6,  `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 4]  = {`FNC7_0, RS2,   RS1, `FNC_SLTU,    5'd7,  `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 5]  = {`FNC7_0, RS2,   RS1, `FNC_XOR,     5'd8,  `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 6]  = {`FNC7_0, RS2,   RS1, `FNC_OR,      5'd9,  `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 7]  = {`FNC7_0, RS2,   RS1, `FNC_AND,     5'd10, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 8]  = {`FNC7_0, RS2,   RS1, `FNC_SRL_SRA, 5'd11, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 9]  = {`FNC7_1, RS2,   RS1, `FNC_SRL_SRA, 5'd12, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 10] = {`FNC7_0, SHAMT, RS1, `FNC_SLL,     5'd13, `OPC_ARI_ITYPE};
-    `IMEM_PATH[INST_ADDR + 11] = {`FNC7_0, SHAMT, RS1, `FNC_SRL_SRA, 5'd14, `OPC_ARI_ITYPE};
-    `IMEM_PATH[INST_ADDR + 12] = {`FNC7_1, SHAMT, RS1, `FNC_SRL_SRA, 5'd15, `OPC_ARI_ITYPE};
+    `IMEM_PATH[INST_ADDR + 0]  = {`FNC7_0, RS2,   RS1, `FNC3_ADD_SUB, 5'd3,  `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 1]  = {`FNC7_1, RS2,   RS1, `FNC3_ADD_SUB, 5'd4,  `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 2]  = {`FNC7_0, RS2,   RS1, `FNC3_SLL,     5'd5,  `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 3]  = {`FNC7_0, RS2,   RS1, `FNC3_SLT,     5'd6,  `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 4]  = {`FNC7_0, RS2,   RS1, `FNC3_SLTU,    5'd7,  `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 5]  = {`FNC7_0, RS2,   RS1, `FNC3_XOR,     5'd8,  `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 6]  = {`FNC7_0, RS2,   RS1, `FNC3_OR,      5'd9,  `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 7]  = {`FNC7_0, RS2,   RS1, `FNC3_AND,     5'd10, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 8]  = {`FNC7_0, RS2,   RS1, `FNC3_SRL_SRA, 5'd11, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 9]  = {`FNC7_1, RS2,   RS1, `FNC3_SRL_SRA, 5'd12, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 10] = {`FNC7_0, SHAMT, RS1, `FNC3_SLL,     5'd13, `OPC_ARI_IMM};
+    `IMEM_PATH[INST_ADDR + 11] = {`FNC7_0, SHAMT, RS1, `FNC3_SRL_SRA, 5'd14, `OPC_ARI_IMM};
+    `IMEM_PATH[INST_ADDR + 12] = {`FNC7_1, SHAMT, RS1, `FNC3_SRL_SRA, 5'd15, `OPC_ARI_IMM};
 
     check_result_rf(5'd3,  32'h00000064, "R-Type ADD");
     check_result_rf(5'd4,  32'hfffffed4, "R-Type SUB");
@@ -319,12 +331,12 @@ module EECS151TestBench();
     IMM             = -200;
     INST_ADDR       = 14'h0000;
 
-    `IMEM_PATH[INST_ADDR + 0] = {IMM[11:0], RS1, `FNC_ADD_SUB, 5'd3, `OPC_ARI_ITYPE};
-    `IMEM_PATH[INST_ADDR + 1] = {IMM[11:0], RS1, `FNC_SLT,     5'd4, `OPC_ARI_ITYPE};
-    `IMEM_PATH[INST_ADDR + 2] = {IMM[11:0], RS1, `FNC_SLTU,    5'd5, `OPC_ARI_ITYPE};
-    `IMEM_PATH[INST_ADDR + 3] = {IMM[11:0], RS1, `FNC_XOR,     5'd6, `OPC_ARI_ITYPE};
-    `IMEM_PATH[INST_ADDR + 4] = {IMM[11:0], RS1, `FNC_OR,      5'd7, `OPC_ARI_ITYPE};
-    `IMEM_PATH[INST_ADDR + 5] = {IMM[11:0], RS1, `FNC_AND,     5'd8, `OPC_ARI_ITYPE};
+    `IMEM_PATH[INST_ADDR + 0] = {IMM[11:0], RS1, `FNC3_ADD_SUB, 5'd3, `OPC_ARI_IMM};
+    `IMEM_PATH[INST_ADDR + 1] = {IMM[11:0], RS1, `FNC3_SLT,     5'd4, `OPC_ARI_IMM};
+    `IMEM_PATH[INST_ADDR + 2] = {IMM[11:0], RS1, `FNC3_SLTU,    5'd5, `OPC_ARI_IMM};
+    `IMEM_PATH[INST_ADDR + 3] = {IMM[11:0], RS1, `FNC3_XOR,     5'd6, `OPC_ARI_IMM};
+    `IMEM_PATH[INST_ADDR + 4] = {IMM[11:0], RS1, `FNC3_OR,      5'd7, `OPC_ARI_IMM};
+    `IMEM_PATH[INST_ADDR + 5] = {IMM[11:0], RS1, `FNC3_AND,     5'd8, `OPC_ARI_IMM};
 
     check_result_rf(5'd3,  32'hfffffed4, "I-Type ADD");
     check_result_rf(5'd4,  32'h00000000, "I-Type SLT");
@@ -344,25 +356,25 @@ module EECS151TestBench();
     INST_ADDR       = 14'h0000;
     DATA_ADDR       = (`RF_PATH[1] + IMM0[11:0]) >> 2;
 
-    `IMEM_PATH[INST_ADDR + 0] = {IMM0[11:0], 5'd1, `FNC_LW,  5'd2,  `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 1] = {IMM0[11:0], 5'd1, `FNC_LH,  5'd3,  `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 2] = {IMM1[11:0], 5'd1, `FNC_LH,  5'd4,  `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 3] = {IMM2[11:0], 5'd1, `FNC_LH,  5'd5,  `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 4] = {IMM3[11:0], 5'd1, `FNC_LH,  5'd6,  `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 5] = {IMM0[11:0], 5'd1, `FNC_LB,  5'd7,  `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 6] = {IMM1[11:0], 5'd1, `FNC_LB,  5'd8,  `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 7] = {IMM2[11:0], 5'd1, `FNC_LB,  5'd9,  `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 8] = {IMM3[11:0], 5'd1, `FNC_LB,  5'd10, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 0] = {IMM0[11:0], 5'd1, `FNC3_LW,  5'd2,  `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 1] = {IMM0[11:0], 5'd1, `FNC3_LH,  5'd3,  `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 2] = {IMM1[11:0], 5'd1, `FNC3_LH,  5'd4,  `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 3] = {IMM2[11:0], 5'd1, `FNC3_LH,  5'd5,  `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 4] = {IMM3[11:0], 5'd1, `FNC3_LH,  5'd6,  `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 5] = {IMM0[11:0], 5'd1, `FNC3_LB,  5'd7,  `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 6] = {IMM1[11:0], 5'd1, `FNC3_LB,  5'd8,  `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 7] = {IMM2[11:0], 5'd1, `FNC3_LB,  5'd9,  `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 8] = {IMM3[11:0], 5'd1, `FNC3_LB,  5'd10, `OPC_LOAD};
 
-    `IMEM_PATH[INST_ADDR + 9] = {IMM0[11:0], 5'd1, `FNC_LHU, 5'd11, `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 10] = {IMM1[11:0], 5'd1, `FNC_LHU, 5'd12, `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 11] = {IMM2[11:0], 5'd1, `FNC_LHU, 5'd13, `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 12] = {IMM3[11:0], 5'd1, `FNC_LHU, 5'd14, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 9] = {IMM0[11:0], 5'd1, `FNC3_LHU, 5'd11, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 10] = {IMM1[11:0], 5'd1, `FNC3_LHU, 5'd12, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 11] = {IMM2[11:0], 5'd1, `FNC3_LHU, 5'd13, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 12] = {IMM3[11:0], 5'd1, `FNC3_LHU, 5'd14, `OPC_LOAD};
 
-    `IMEM_PATH[INST_ADDR + 13] = {IMM0[11:0], 5'd1, `FNC_LBU, 5'd15, `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 14] = {IMM1[11:0], 5'd1, `FNC_LBU, 5'd16, `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 15] = {IMM2[11:0], 5'd1, `FNC_LBU, 5'd17, `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 16] = {IMM3[11:0], 5'd1, `FNC_LBU, 5'd18, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 13] = {IMM0[11:0], 5'd1, `FNC3_LBU, 5'd15, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 14] = {IMM1[11:0], 5'd1, `FNC3_LBU, 5'd16, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 15] = {IMM2[11:0], 5'd1, `FNC3_LBU, 5'd17, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 16] = {IMM3[11:0], 5'd1, `FNC3_LBU, 5'd18, `OPC_LOAD};
 
     `DMEM_PATH[DATA_ADDR] = 32'hdeadbeef;
 
@@ -426,17 +438,17 @@ module EECS151TestBench();
     DATA_ADDR7 = (`RF_PATH[9]  + IMM2[11:0]) >> 2;
     DATA_ADDR8 = (`RF_PATH[10] + IMM3[11:0]) >> 2;
 
-    `IMEM_PATH[INST_ADDR + 0] = {IMM0[11:5], 5'd1, 5'd2,  `FNC_SW, IMM0[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 0] = {IMM0[11:5], 5'd1, 5'd2,  `FNC3_SW, IMM0[4:0], `OPC_STORE};
 
-    `IMEM_PATH[INST_ADDR + 1] = {IMM0[11:5], 5'd1, 5'd3,  `FNC_SH, IMM0[4:0], `OPC_STORE};
-    `IMEM_PATH[INST_ADDR + 2] = {IMM1[11:5], 5'd1, 5'd4,  `FNC_SH, IMM1[4:0], `OPC_STORE};
-    `IMEM_PATH[INST_ADDR + 3] = {IMM2[11:5], 5'd1, 5'd5,  `FNC_SH, IMM2[4:0], `OPC_STORE};
-    `IMEM_PATH[INST_ADDR + 4] = {IMM3[11:5], 5'd1, 5'd6,  `FNC_SH, IMM3[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 1] = {IMM0[11:5], 5'd1, 5'd3,  `FNC3_SH, IMM0[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 2] = {IMM1[11:5], 5'd1, 5'd4,  `FNC3_SH, IMM1[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 3] = {IMM2[11:5], 5'd1, 5'd5,  `FNC3_SH, IMM2[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 4] = {IMM3[11:5], 5'd1, 5'd6,  `FNC3_SH, IMM3[4:0], `OPC_STORE};
 
-    `IMEM_PATH[INST_ADDR + 5] = {IMM0[11:5], 5'd1, 5'd7,  `FNC_SB, IMM0[4:0], `OPC_STORE};
-    `IMEM_PATH[INST_ADDR + 6] = {IMM1[11:5], 5'd1, 5'd8,  `FNC_SB, IMM1[4:0], `OPC_STORE};
-    `IMEM_PATH[INST_ADDR + 7] = {IMM2[11:5], 5'd1, 5'd9,  `FNC_SB, IMM2[4:0], `OPC_STORE};
-    `IMEM_PATH[INST_ADDR + 8] = {IMM3[11:5], 5'd1, 5'd10, `FNC_SB, IMM3[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 5] = {IMM0[11:5], 5'd1, 5'd7,  `FNC3_SB, IMM0[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 6] = {IMM1[11:5], 5'd1, 5'd8,  `FNC3_SB, IMM1[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 7] = {IMM2[11:5], 5'd1, 5'd9,  `FNC3_SB, IMM2[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 8] = {IMM3[11:5], 5'd1, 5'd10, `FNC3_SB, IMM3[4:0], `OPC_STORE};
 
     `DMEM_PATH[DATA_ADDR0] = 0;
     `DMEM_PATH[DATA_ADDR1] = 0;
@@ -486,8 +498,8 @@ module EECS151TestBench();
     JUMP_ADDR = (32'h1000_0000 + {IMM[20:1], 1'b0}) >> 2;
 
     `IMEM_PATH[INST_ADDR + 0]   = {IMM[20], IMM[10:1], IMM[11], IMM[19:12], 5'd5, `OPC_JAL};
-    `IMEM_PATH[INST_ADDR + 1]   = {`FNC7_0, 5'd2, 5'd1, `FNC_ADD_SUB, 5'd6, `OPC_ARI_RTYPE};
-    `IMEM_PATH[JUMP_ADDR[13:0]] = {`FNC7_0, 5'd4, 5'd3, `FNC_ADD_SUB, 5'd7, `OPC_ARI_RTYPE};
+    `IMEM_PATH[INST_ADDR + 1]   = {`FNC7_0, 5'd2, 5'd1, `FNC3_ADD_SUB, 5'd6, `OPC_ARI};
+    `IMEM_PATH[JUMP_ADDR[13:0]] = {`FNC7_0, 5'd4, 5'd3, `FNC3_ADD_SUB, 5'd7, `OPC_ARI};
 
     check_result_rf(5'd5, 32'h1000_0004, "J-Type JAL");
     check_result_rf(5'd7, 700, "J-Type JAL");
@@ -506,8 +518,8 @@ module EECS151TestBench();
     JUMP_ADDR = (`RF_PATH[1] + IMM) >> 2;
 
     `IMEM_PATH[INST_ADDR + 0]   = {IMM[11:0], 5'd1, 3'b000, 5'd5, `OPC_JALR};
-    `IMEM_PATH[INST_ADDR + 1]   = {`FNC7_0,   5'd2, 5'd1, `FNC_ADD_SUB, 5'd6, `OPC_ARI_RTYPE};
-    `IMEM_PATH[JUMP_ADDR[13:0]] = {`FNC7_0,   5'd4, 5'd3, `FNC_ADD_SUB, 5'd7, `OPC_ARI_RTYPE};
+    `IMEM_PATH[INST_ADDR + 1]   = {`FNC7_0,   5'd2, 5'd1, `FNC3_ADD_SUB, 5'd6, `OPC_ARI};
+    `IMEM_PATH[JUMP_ADDR[13:0]] = {`FNC7_0,   5'd4, 5'd3, `FNC3_ADD_SUB, 5'd7, `OPC_ARI};
 
     check_result_rf(5'd5, 32'h1000_0004, "J-Type JALR");
     check_result_rf(5'd7, 700, "J-Type JALR");
@@ -520,7 +532,7 @@ module EECS151TestBench();
     INST_ADDR = 14'h0000;
     JUMP_ADDR = (32'h1000_0000 + IMM[12:0]) >> 2;
 
-    BR_TYPE[0]     = `FNC_BEQ;
+    BR_TYPE[0]     = `FNC3_BEQ;
     BR_NAME_TK1[0] = "U-Type BEQ Taken 1";
     BR_NAME_TK2[0] = "U-Type BEQ Taken 2";
     BR_NAME_NTK[0] = "U-Type BEQ Not Taken";
@@ -528,35 +540,35 @@ module EECS151TestBench();
     BR_TAKEN_OP1[0]  = 100; BR_TAKEN_OP2[0]  = 100;
     BR_NTAKEN_OP1[0] = 100; BR_NTAKEN_OP2[0] = 200;
 
-    BR_TYPE[1]       = `FNC_BNE;
+    BR_TYPE[1]       = `FNC3_BNE;
     BR_NAME_TK1[1]   = "U-Type BNE Taken 1";
     BR_NAME_TK2[1]   = "U-Type BNE Taken 2";
     BR_NAME_NTK[1]   = "U-Type BNE Not Taken";
     BR_TAKEN_OP1[1]  = 100; BR_TAKEN_OP2[1]  = 200;
     BR_NTAKEN_OP1[1] = 100; BR_NTAKEN_OP2[1] = 100;
 
-    BR_TYPE[2]       = `FNC_BLT;
+    BR_TYPE[2]       = `FNC3_BLT;
     BR_NAME_TK1[2]   = "U-Type BLT Taken 1";
     BR_NAME_TK2[2]   = "U-Type BLT Taken 2";
     BR_NAME_NTK[2]   = "U-Type BLT Not Taken";
     BR_TAKEN_OP1[2]  = 100; BR_TAKEN_OP2[2]  = 200;
     BR_NTAKEN_OP1[2] = 200; BR_NTAKEN_OP2[2] = 100;
 
-    BR_TYPE[3]       = `FNC_BGE;
+    BR_TYPE[3]       = `FNC3_BGE;
     BR_NAME_TK1[3]   = "U-Type BGE Taken 1";
     BR_NAME_TK2[3]   = "U-Type BGE Taken 2";
     BR_NAME_NTK[3]   = "U-Type BGE Not Taken";
     BR_TAKEN_OP1[3]  = 300; BR_TAKEN_OP2[3]  = 200;
     BR_NTAKEN_OP1[3] = 100; BR_NTAKEN_OP2[3] = 200;
 
-    BR_TYPE[4]       = `FNC_BLTU;
+    BR_TYPE[4]       = `FNC3_BLTU;
     BR_NAME_TK1[4]   = "U-Type BLTU Taken 1";
     BR_NAME_TK2[4]   = "U-Type BLTU Taken 2";
     BR_NAME_NTK[4]   = "U-Type BLTU Not Taken";
     BR_TAKEN_OP1[4]  = 32'h0000_0001; BR_TAKEN_OP2[4]  = 32'hFFFF_0000;
     BR_NTAKEN_OP1[4] = 32'hFFFF_0000; BR_NTAKEN_OP2[4] = 32'h0000_0001;
 
-    BR_TYPE[5]       = `FNC_BGEU;
+    BR_TYPE[5]       = `FNC3_BGEU;
     BR_NAME_TK1[5]   = "U-Type BGEU Taken 1";
     BR_NAME_TK2[5]   = "U-Type BGEU Taken 2";
     BR_NAME_NTK[5]   = "U-Type BGEU Not Taken";
@@ -573,8 +585,8 @@ module EECS151TestBench();
 
       // Test branch taken
       `IMEM_PATH[INST_ADDR + 0]   = {IMM[12], IMM[10:5], 5'd2, 5'd1, BR_TYPE[i], IMM[4:1], IMM[11], `OPC_BRANCH};
-      `IMEM_PATH[INST_ADDR + 1]   = {`FNC7_0, 5'd4, 5'd3, `FNC_ADD_SUB, 5'd5, `OPC_ARI_RTYPE};
-      `IMEM_PATH[JUMP_ADDR[13:0]] = {`FNC7_0, 5'd4, 5'd3, `FNC_ADD_SUB, 5'd6, `OPC_ARI_RTYPE};
+      `IMEM_PATH[INST_ADDR + 1]   = {`FNC7_0, 5'd4, 5'd3, `FNC3_ADD_SUB, 5'd5, `OPC_ARI};
+      `IMEM_PATH[JUMP_ADDR[13:0]] = {`FNC7_0, 5'd4, 5'd3, `FNC3_ADD_SUB, 5'd6, `OPC_ARI};
 
       check_result_rf(5'd5, 0,   BR_NAME_TK1[i]);
       check_result_rf(5'd6, 700, BR_NAME_TK2[i]);
@@ -588,7 +600,7 @@ module EECS151TestBench();
 
       // Test branch not taken
       `IMEM_PATH[INST_ADDR + 0] = {IMM[12], IMM[10:5], 5'd2, 5'd1, BR_TYPE[i], IMM[4:1], IMM[11], `OPC_BRANCH};
-      `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd4, 5'd3, `FNC_ADD_SUB, 5'd5, `OPC_ARI_RTYPE};
+      `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd4, 5'd3, `FNC3_ADD_SUB, 5'd5, `OPC_ARI};
 
       check_result_rf(5'd5, 700, BR_NAME_NTK[i]);
     end
@@ -625,25 +637,25 @@ module EECS151TestBench();
     reset_system();
     init_rf();
     INST_ADDR = 14'h0000;
-    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC_ADD_SUB, 5'd3, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd3, 5'd4, `FNC_ADD_SUB, 5'd5, `OPC_ARI_RTYPE};
+    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC3_ADD_SUB, 5'd3, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd3, 5'd4, `FNC3_ADD_SUB, 5'd5, `OPC_ARI};
     check_result_rf(5'd5, `RF_PATH[1] + `RF_PATH[2] + `RF_PATH[4], "Hazard 1");
 
     // ALU->ALU hazard (RS2)
     reset_system();
     init_rf();
     INST_ADDR = 14'h0000;
-    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC_ADD_SUB, 5'd3, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd4, 5'd3, `FNC_ADD_SUB, 5'd5, `OPC_ARI_RTYPE};
+    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC3_ADD_SUB, 5'd3, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd4, 5'd3, `FNC3_ADD_SUB, 5'd5, `OPC_ARI};
     check_result_rf(5'd5, `RF_PATH[1] + `RF_PATH[2] + `RF_PATH[4], "Hazard 2");
 
     // Two-cycle ALU->ALU hazard (RS1)
     reset_system();
     init_rf();
     INST_ADDR = 14'h0000;
-    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC_ADD_SUB, 5'd3, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd4, 5'd5, `FNC_ADD_SUB, 5'd6, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 2] = {`FNC7_0, 5'd3, 5'd7, `FNC_ADD_SUB, 5'd8, `OPC_ARI_RTYPE};
+    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC3_ADD_SUB, 5'd3, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd4, 5'd5, `FNC3_ADD_SUB, 5'd6, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 2] = {`FNC7_0, 5'd3, 5'd7, `FNC3_ADD_SUB, 5'd8, `OPC_ARI};
 
     check_result_rf(5'd8, `RF_PATH[1] + `RF_PATH[2] + `RF_PATH[7], "Hazard 3");
 
@@ -651,9 +663,9 @@ module EECS151TestBench();
     reset_system();
     init_rf();
     INST_ADDR = 14'h0000;
-    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC_ADD_SUB, 5'd3, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd4, 5'd5, `FNC_ADD_SUB, 5'd6, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 2] = {`FNC7_0, 5'd7, 5'd3, `FNC_ADD_SUB, 5'd8, `OPC_ARI_RTYPE};
+    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC3_ADD_SUB, 5'd3, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd4, 5'd5, `FNC3_ADD_SUB, 5'd6, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 2] = {`FNC7_0, 5'd7, 5'd3, `FNC3_ADD_SUB, 5'd8, `OPC_ARI};
 
     check_result_rf(5'd8, `RF_PATH[1] + `RF_PATH[2] + `RF_PATH[7], "Hazard 4");
 
@@ -661,9 +673,9 @@ module EECS151TestBench();
     reset_system();
     init_rf();
     INST_ADDR = 14'h0000;
-    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC_ADD_SUB, 5'd3, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd4, 5'd3, `FNC_ADD_SUB, 5'd5, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 2] = {`FNC7_0, 5'd5, 5'd6, `FNC_ADD_SUB, 5'd7, `OPC_ARI_RTYPE};
+    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC3_ADD_SUB, 5'd3, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd4, 5'd3, `FNC3_ADD_SUB, 5'd5, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 2] = {`FNC7_0, 5'd5, 5'd6, `FNC3_ADD_SUB, 5'd7, `OPC_ARI};
 
     check_result_rf(5'd7, `RF_PATH[1] + `RF_PATH[2] + `RF_PATH[4] + `RF_PATH[6], "Hazard 5");
 
@@ -674,8 +686,8 @@ module EECS151TestBench();
     IMM             = 32'h0000_0000;
     INST_ADDR       = 14'h0000;
     DATA_ADDR       = (`RF_PATH[4] + IMM[11:0]) >> 2;
-    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC_ADD_SUB, 5'd3, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 1] = {IMM[11:5], 5'd3, 5'd4, `FNC_SW, IMM[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 0] = {`FNC7_0, 5'd1, 5'd2, `FNC3_ADD_SUB, 5'd3, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 1] = {IMM[11:5], 5'd3, 5'd4, `FNC3_SW, IMM[4:0], `OPC_STORE};
 
     check_result_dmem(DATA_ADDR, `RF_PATH[1] + `RF_PATH[2], "Hazard 6");
 
@@ -687,8 +699,8 @@ module EECS151TestBench();
     INST_ADDR       = 14'h0000;
     DATA_ADDR       = (`RF_PATH[1] + IMM[11:0]) >> 2;
     `DMEM_PATH[DATA_ADDR] = 32'h12345678;
-    `IMEM_PATH[INST_ADDR + 0] = {IMM[11:0], 5'd1, `FNC_LW, 5'd2, `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd2, 5'd3, `FNC_ADD_SUB, 5'd4, `OPC_ARI_RTYPE};
+    `IMEM_PATH[INST_ADDR + 0] = {IMM[11:0], 5'd1, `FNC3_LW, 5'd2, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd2, 5'd3, `FNC3_ADD_SUB, 5'd4, `OPC_ARI};
 
     check_result_rf(5'd4, `DMEM_PATH[DATA_ADDR] + `RF_PATH[3], "Hazard 7");
 
@@ -703,8 +715,8 @@ module EECS151TestBench();
     DATA_ADDR1      = (`RF_PATH[4] + IMM[11:0]) >> 2;
 
     `DMEM_PATH[DATA_ADDR0] = 32'h12345678;
-    `IMEM_PATH[INST_ADDR + 0] = {IMM[11:0], 5'd1, `FNC_LW, 5'd2, `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 1] = {IMM[11:5], 5'd2, 5'd4, `FNC_SW, IMM[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 0] = {IMM[11:0], 5'd1, `FNC3_LW, 5'd2, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 1] = {IMM[11:5], 5'd2, 5'd4, `FNC3_SW, IMM[4:0], `OPC_STORE};
 
     check_result_dmem(DATA_ADDR1, `DMEM_PATH[DATA_ADDR0], "Hazard 8");
 
@@ -718,8 +730,8 @@ module EECS151TestBench();
     `DMEM_PATH[DATA_ADDR0] = 32'h0800_0200;
     DATA_ADDR1      = (`DMEM_PATH[DATA_ADDR0] + IMM[11:0]) >> 2;
 
-    `IMEM_PATH[INST_ADDR + 0] = {IMM[11:0], 5'd1, `FNC_LW, 5'd2, `OPC_LOAD};
-    `IMEM_PATH[INST_ADDR + 1] = {IMM[11:5], 5'd4, 5'd2, `FNC_SW, IMM[4:0], `OPC_STORE};
+    `IMEM_PATH[INST_ADDR + 0] = {IMM[11:0], 5'd1, `FNC3_LW, 5'd2, `OPC_LOAD};
+    `IMEM_PATH[INST_ADDR + 1] = {IMM[11:5], 5'd4, 5'd2, `FNC3_SW, IMM[4:0], `OPC_STORE};
 
     check_result_dmem(DATA_ADDR1, `RF_PATH[4], "Hazard 9");
 
@@ -730,11 +742,11 @@ module EECS151TestBench();
     IMM       = 32'h0000_0FF0;
     JUMP_ADDR = (32'h1000_0008 + IMM[12:0]) >> 2; // note the PC address here
 
-    `IMEM_PATH[INST_ADDR + 0]   = {`FNC7_0, 5'd1, 5'd4, `FNC_ADD_SUB, 5'd6, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 1]   = {`FNC7_0, 5'd2, 5'd3, `FNC_ADD_SUB, 5'd7, `OPC_ARI_RTYPE};
-    `IMEM_PATH[INST_ADDR + 2]   = {IMM[12], IMM[10:5], 5'd6, 5'd7, `FNC_BEQ, IMM[4:1], IMM[11], `OPC_BRANCH}; // Branch will be taken
-    `IMEM_PATH[INST_ADDR + 3]   = {`FNC7_0, 5'd8, 5'd9, `FNC_ADD_SUB, 5'd10, `OPC_ARI_RTYPE};
-    `IMEM_PATH[JUMP_ADDR[13:0]] = {`FNC7_1, 5'd8, 5'd9, `FNC_ADD_SUB, 5'd11, `OPC_ARI_RTYPE};
+    `IMEM_PATH[INST_ADDR + 0]   = {`FNC7_0, 5'd1, 5'd4, `FNC3_ADD_SUB, 5'd6, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 1]   = {`FNC7_0, 5'd2, 5'd3, `FNC3_ADD_SUB, 5'd7, `OPC_ARI};
+    `IMEM_PATH[INST_ADDR + 2]   = {IMM[12], IMM[10:5], 5'd6, 5'd7, `FNC3_BEQ, IMM[4:1], IMM[11], `OPC_BRANCH}; // Branch will be taken
+    `IMEM_PATH[INST_ADDR + 3]   = {`FNC7_0, 5'd8, 5'd9, `FNC3_ADD_SUB, 5'd10, `OPC_ARI};
+    `IMEM_PATH[JUMP_ADDR[13:0]] = {`FNC7_1, 5'd8, 5'd9, `FNC3_ADD_SUB, 5'd11, `OPC_ARI};
 
     check_result_rf(5'd10, `RF_PATH[10], "Hazard 10 1"); // x10 should not be updated
     check_result_rf(5'd11, `RF_PATH[9] - `RF_PATH[8], "Hazard 10 2"); // x11 should be updated
@@ -748,7 +760,7 @@ module EECS151TestBench();
 
 
     `IMEM_PATH[INST_ADDR + 0] = {IMM[20], IMM[10:1], IMM[11], IMM[19:12], 5'd1, `OPC_JAL};
-    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd2, 5'd1, `FNC_ADD_SUB, 5'd3, `OPC_ARI_RTYPE};
+    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd2, 5'd1, `FNC3_ADD_SUB, 5'd3, `OPC_ARI};
 
     check_result_rf(5'd3, `RF_PATH[2] + 32'h1000_0004, "Hazard 11");
 
@@ -761,7 +773,7 @@ module EECS151TestBench();
     JUMP_ADDR = (`RF_PATH[1] + IMM[11:0]) >> 2; // === INST_ADDR + 1
 
     `IMEM_PATH[INST_ADDR + 0] = {IMM[11:0], 5'd4, 3'b000, 5'd1, `OPC_JALR};
-    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd2, 5'd1, `FNC_ADD_SUB, 5'd3, `OPC_ARI_RTYPE};
+    `IMEM_PATH[INST_ADDR + 1] = {`FNC7_0, 5'd2, 5'd1, `FNC3_ADD_SUB, 5'd3, `OPC_ARI};
 
     check_result_rf(5'd3, `RF_PATH[2] + 32'h1000_0004, "Hazard 12");
 

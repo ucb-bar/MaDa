@@ -13,10 +13,6 @@
 `define DMEM_DEPTH 4096
 
 
-`define FNC7_0  7'b0000000 // ADD, SRL
-`define FNC7_1  7'b0100000 // SUB, SRA
-`define OPC_CSR 7'b1110011
-
 
 
 // ***** Opcodes *****
@@ -36,76 +32,51 @@
 `define OPC_LOAD        7'b0000011
 
 // Arithmetic instructions
-`define OPC_ARI_RTYPE   7'b0110011
-`define OPC_ARI_ITYPE   7'b0010011
+`define OPC_ARI   7'b0110011
+`define OPC_ARI_IMM   7'b0010011
+
+// CSR instructions
+`define OPC_CSR 7'b1110011
 
 // Vector instructions
 `define OPC_VECTOR      7'b1010111
 
-// ***** 5-bit Opcodes *****
-`define OPC_LUI_5       5'b01101
-`define OPC_AUIPC_5     5'b00101
-`define OPC_JAL_5       5'b11011
-`define OPC_JALR_5      5'b11001
-`define OPC_BRANCH_5    5'b11000
-`define OPC_STORE_5     5'b01000
-`define OPC_LOAD_5      5'b00000
-`define OPC_ARI_RTYPE_5 5'b01100
-`define OPC_ARI_ITYPE_5 5'b00100
-
 
 // ***** Function codes *****
 
-`define FNC_FVV         3'b001
-`define FNC_FVF         3'b101
+
+// ***** Function 3 codes *****
+// Branch function codes
+`define FNC3_BEQ         3'b000
+`define FNC3_BNE         3'b001
+`define FNC3_BLT         3'b100
+`define FNC3_BGE         3'b101
+`define FNC3_BLTU        3'b110
+`define FNC3_BGEU        3'b111
+
+// Load and store function codes
+`define FNC3_LB          3'b000
+`define FNC3_LH          3'b001
+`define FNC3_LW          3'b010
+`define FNC3_LBU         3'b100
+`define FNC3_LHU         3'b101
+`define FNC3_SB          3'b000
+`define FNC3_SH          3'b001
+`define FNC3_SW          3'b010
+
+// Vector function codes
+`define FNC3_FVV         3'b001
+`define FNC3_FVF         3'b101
 
 
+// ***** Function 7 codes *****
+// vector, lowest 1 bit is mop
 `define FNC6_VADD        6'b000000  // vd[i] = vs1[i] + vs2[i]
 `define FNC6_VFMIN       6'b000100  // vd[i] = min(vs1[i], vs2[i])
 `define FNC6_VFMAX       6'b000110  // vd[i] = max(vs1[i], vs2[i])
 `define FNC6_VFMUL       6'b100100  // vd[i] = vs1[i] * vs2[i]
 `define FNC6_VFMADD      6'b101000  // vd[i] = +(vs1[i] * vd[i]) + vs2[i]
 `define FNC6_VFMACC      6'b101100  // vd[i] = +(vs1[i] * vs2[i]) + vd[i]
-
-
-
-
-// Branch function codes
-`define FNC_BEQ         3'b000
-`define FNC_BNE         3'b001
-`define FNC_BLT         3'b100
-`define FNC_BGE         3'b101
-`define FNC_BLTU        3'b110
-`define FNC_BGEU        3'b111
-
-// Load and store function codes
-`define FNC_LB          3'b000
-`define FNC_LH          3'b001
-`define FNC_LW          3'b010
-`define FNC_LBU         3'b100
-`define FNC_LHU         3'b101
-`define FNC_SB          3'b000
-`define FNC_SH          3'b001
-`define FNC_SW          3'b010
-
-// Arithmetic R-type and I-type functions codes
-`define FNC_ADD_SUB     3'b000
-`define FNC_SLL         3'b001
-`define FNC_SLT         3'b010
-`define FNC_SLTU        3'b011
-`define FNC_XOR         3'b100
-`define FNC_OR          3'b110
-`define FNC_AND         3'b111
-`define FNC_SRL_SRA     3'b101
-
-// ADD and SUB use the same opcode + function code
-// SRA and SRL also use the same opcode + function code
-// For these operations, we also need to look at bit 30 of the instruction
-`define FNC2_ADD        1'b0
-`define FNC2_SUB        1'b1
-`define FNC2_SRL        1'b0
-`define FNC2_SRA        1'b1
-
 
 
 
@@ -118,7 +89,7 @@ module EECS252TestBench();
   initial clock = 0;
   always #(CLOCK_PERIOD/2) clock = ~clock;
 
-  wire [31:0] timeout_cycle = 20;
+  int timeout_cycle = 20;
 
   // Init PC with 32'h1000_0000 -- address space of IMem
   wire [31:0] reset_vector = 32'h1000_0000;
@@ -209,13 +180,13 @@ module EECS252TestBench();
     end
   endtask
 
-  reg [31:0] cycle;
-  reg done;
-  reg [31:0]  current_test_id = 0;
-  reg [255:0] current_test_type;
-  reg [31:0]  current_output;
-  reg [31:0]  current_result;
-  reg all_tests_passed = 0;
+  int cycle;
+  bit done;
+  int current_test_id = 0;
+  string current_test_type;
+  int current_output;
+  int current_result;
+  bit all_tests_passed = 0;
 
 
   // Check for timeout
@@ -245,7 +216,7 @@ module EECS252TestBench();
   task check_result_rf;
     input [31:0]  rf_wa;
     input [31:0]  result;
-    input [255:0] test_type;
+    input string test_type;
     begin
       done = 0;
       current_test_id   = current_test_id + 1;
@@ -266,7 +237,7 @@ module EECS252TestBench();
   task check_result_vrf;
     input [31:0]  vrf_wa;
     input [31:0]  result;
-    input [255:0] test_type;
+    input string test_type;
     begin
       done = 0;
       current_test_id   = current_test_id + 1;
@@ -287,7 +258,7 @@ module EECS252TestBench();
   task check_result_dmem;
     input [31:0]  addr;
     input [31:0]  result;
-    input [255:0] test_type;
+    input string test_type;
     begin
       done = 0;
       current_test_id   = current_test_id + 1;
@@ -302,30 +273,12 @@ module EECS252TestBench();
     end
   endtask
 
-  integer i;
-
-  reg [31:0] num_cycles = 0;
-  reg [31:0] num_insts  = 0;
   reg [4:0]  RD, RS1, RS2;
   reg [31:0] RD1, RD2;
-  reg [4:0]  SHAMT;
-  reg [31:0] IMM, IMM0, IMM1, IMM2, IMM3;
   reg [14:0] INST_ADDR;
   reg [14:0] DATA_ADDR;
-  reg [14:0] DATA_ADDR0, DATA_ADDR1, DATA_ADDR2, DATA_ADDR3;
-  reg [14:0] DATA_ADDR4, DATA_ADDR5, DATA_ADDR6, DATA_ADDR7;
-  reg [14:0] DATA_ADDR8, DATA_ADDR9;
 
   reg [31:0] JUMP_ADDR;
-
-  reg [31:0]  BR_TAKEN_OP1  [5:0];
-  reg [31:0]  BR_TAKEN_OP2  [5:0];
-  reg [31:0]  BR_NTAKEN_OP1 [5:0];
-  reg [31:0]  BR_NTAKEN_OP2 [5:0];
-  reg [2:0]   BR_TYPE       [5:0];
-  reg [255:0] BR_NAME_TK1   [5:0];
-  reg [255:0] BR_NAME_TK2   [5:0];
-  reg [255:0] BR_NAME_NTK   [5:0];
 
   initial begin
     $dumpfile("EECS252_testbench.vcd");
@@ -342,9 +295,8 @@ module EECS252TestBench();
     @(negedge clock);
     reset = 0;
 
-    // Test R-Type Insts --------------------------------------------------
-    // - ADD, SUB, SLL, SLT, SLTU, XOR, OR, AND, SRL, SRA
-    // - SLLI, SRLI, SRAI
+    // Test Vector-Vector Insts --------------------------------------------------
+    // - VADD, VFMUL, VFMACC
     reset_system();
 
     // We can also use $random to generate random values for testing
@@ -353,14 +305,13 @@ module EECS252TestBench();
     RD  = 3;
     `VRF_PATH[RS1] = RD1;
     `VRF_PATH[RS2] = RD2;
-    SHAMT           = 5'd20;
     INST_ADDR       = 14'h0000;
 
     `VRF_PATH[5] = 'h3F800000;
 
-    `IMEM_PATH[INST_ADDR + 0]  = {`FNC6_VADD,   1'b0, RS2, RS1, `FNC_FVV, 5'd3,  `OPC_VECTOR};
-    `IMEM_PATH[INST_ADDR + 1]  = {`FNC6_VFMUL,  1'b0, RS2, RS1, `FNC_FVV, 5'd4,  `OPC_VECTOR};
-    `IMEM_PATH[INST_ADDR + 2]  = {`FNC6_VFMACC, 1'b0, RS2, RS1, `FNC_FVV, 5'd5,  `OPC_VECTOR};
+    `IMEM_PATH[INST_ADDR + 0]  = {`FNC6_VADD,   1'b0, RS2, RS1, `FNC3_FVV, 5'd3,  `OPC_VECTOR};
+    `IMEM_PATH[INST_ADDR + 1]  = {`FNC6_VFMUL,  1'b0, RS2, RS1, `FNC3_FVV, 5'd4,  `OPC_VECTOR};
+    `IMEM_PATH[INST_ADDR + 2]  = {`FNC6_VFMACC, 1'b0, RS2, RS1, `FNC3_FVV, 5'd5,  `OPC_VECTOR};
 
     check_result_vrf(5'd3,  32'h42C80000, "Vector FP ADD");
     check_result_vrf(5'd4,  32'hC69C4000, "Vector FP MUL");
