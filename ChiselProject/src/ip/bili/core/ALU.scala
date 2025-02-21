@@ -17,7 +17,7 @@ class ALU extends Module {
 
   val alu_shamt = io.op2(4,0).asUInt
 
-  io.out := MuxCase(0.U, Seq(
+  io.out := MuxCase(io.op1, Seq(
                   (io.func === ALU_ADD)  -> (io.op1 + io.op2).asUInt,
                   (io.func === ALU_SUB)  -> (io.op1 - io.op2).asUInt,
                   (io.func === ALU_AND)  -> (io.op1 & io.op2).asUInt,

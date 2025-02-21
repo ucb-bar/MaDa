@@ -39,7 +39,10 @@
 `define OPC_CSR 7'b1110011
 
 // Vector instructions
-`define OPC_VECTOR      7'b1010111
+`define OPC_VEC_ARI      7'b1010111
+
+`define OPC_VEC_VL      7'b0000111
+`define OPC_VEC_VS      7'b0100111
 
 
 // ***** Function codes *****
@@ -67,6 +70,14 @@
 // Vector function codes
 `define FNC3_FVV         3'b001
 `define FNC3_FVF         3'b101
+
+`define FNC3_F16         3'b001
+`define FNC3_F32         3'b010
+`define FNC3_F64         3'b011
+`define FNC3_V8          3'b000
+`define FNC3_V16         3'b101
+`define FNC3_V32         3'b110
+`define FNC3_V64         3'b111
 
 
 // ***** Function 7 codes *****
@@ -309,14 +320,50 @@ module EECS252TestBench();
 
     `VRF_PATH[5] = 'h3F800000;
 
-    `IMEM_PATH[INST_ADDR + 0]  = {`FNC6_VADD,   1'b0, RS2, RS1, `FNC3_FVV, 5'd3,  `OPC_VECTOR};
-    `IMEM_PATH[INST_ADDR + 1]  = {`FNC6_VFMUL,  1'b0, RS2, RS1, `FNC3_FVV, 5'd4,  `OPC_VECTOR};
-    `IMEM_PATH[INST_ADDR + 2]  = {`FNC6_VFMACC, 1'b0, RS2, RS1, `FNC3_FVV, 5'd5,  `OPC_VECTOR};
+    `IMEM_PATH[INST_ADDR + 0]  = {`FNC6_VADD,   1'b0, RS2, RS1, `FNC3_FVV, 5'd3,  `OPC_VEC_ARI};
+    `IMEM_PATH[INST_ADDR + 1]  = {`FNC6_VFMUL,  1'b0, RS2, RS1, `FNC3_FVV, 5'd4,  `OPC_VEC_ARI};
+    `IMEM_PATH[INST_ADDR + 2]  = {`FNC6_VFMACC, 1'b0, RS2, RS1, `FNC3_FVV, 5'd5,  `OPC_VEC_ARI};
 
     check_result_vrf(5'd3,  32'h42C80000, "Vector FP ADD");
     check_result_vrf(5'd4,  32'hC69C4000, "Vector FP MUL");
     check_result_vrf(5'd5,  32'hC69C3E00, "Vector FP MACC");
 
+
+    // Test Vector Load Insts --------------------------------------------------
+    // - VLOAD
+    reset_system();
+    
+    `RF_PATH[1] = 32'h0800_0100;
+    INST_ADDR       = 14'h0000;
+    DATA_ADDR       = (`RF_PATH[1] + 32'h00000000) >> 2;
+
+    // nf = 0 (single value field), mew = 0 (no extended memory element width)
+    // mop = 0 (unit stride), vm = 1 (mask disabled), lumop = 0 (unit-stride load), width = v32b
+    `IMEM_PATH[INST_ADDR + 0]  = {3'b000, 1'b0, 2'b00, 1'b1, 5'b0, 5'd1, `FNC3_V32, 5'd2,  `OPC_VEC_VL};
+
+    `DMEM_PATH[DATA_ADDR] = 32'hdeadbeef;
+
+    check_result_vrf(5'd2,  32'hdeadbeef, "Vector Load");
+
+
+    // Test Vector Store Insts --------------------------------------------------
+    // - VSTORE
+
+    reset_system();
+
+    `VRF_PATH[2] = 32'h12345678;
+
+    `RF_PATH[1] = 32'h0800_0100;
+
+    INST_ADDR = 14'h0000;
+
+    DATA_ADDR = (`RF_PATH[1] + 32'h00000000) >> 2;
+
+    `IMEM_PATH[INST_ADDR + 0]  = {3'b000, 1'b0, 2'b00, 1'b1, 5'b0, 5'd1, `FNC3_V32, 5'd2,  `OPC_VEC_VS};
+
+    `DMEM_PATH[DATA_ADDR] = 0;
+
+    check_result_dmem(DATA_ADDR, 32'h12345678, "Vector Store");
 
     // ... what else?
     all_tests_passed = 1'b1;

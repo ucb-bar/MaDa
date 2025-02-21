@@ -133,6 +133,10 @@ class Core extends Module {
   val rs2_addr = inst(RS2_MSB, RS2_LSB)
   val rd_addr  = inst(RD_MSB,  RD_LSB)
 
+  dontTouch(rs1_addr)
+  dontTouch(rs2_addr)
+  dontTouch(rd_addr)
+
   // debug signal connections
   io.debug.x1 := regfile(1)
   io.debug.x2 := regfile(2)
@@ -245,13 +249,13 @@ class Core extends Module {
   // Vector Register File
   val vregfile = Mem(32, Vec(1, UInt(32.W)))
 
-  when(ex_vwb_en && (rd_addr =/= 0.U)) {
+  when(ex_vwb_en) {
     vregfile(rd_addr) := ex_vwb_data
   }
   
-  val vrs1_data = Mux((rs1_addr =/= 0.U), vregfile(rs1_addr)(0), 0.U)
-  val vrs2_data = Mux((rs2_addr =/= 0.U), vregfile(rs2_addr)(0), 0.U)
-  val vrd_data = Mux((rd_addr =/= 0.U), vregfile(rd_addr)(0), 0.U)
+  val vrs1_data = vregfile(rs1_addr)(0)
+  val vrs2_data = vregfile(rs2_addr)(0)
+  val vrd_data = vregfile(rd_addr)(0)
 
 
   val valu = Module(new SimdFloatingPoint())
@@ -280,7 +284,7 @@ class Core extends Module {
   vlsu.io.mem_func := ctrl.vmem_func
 
   vlsu.io.addr := alu.io.out
-  vlsu.io.wdata := vrs2_data
+  vlsu.io.wdata := vrd_data
 
   vlsu.io.dmem <> io.vdmem
 

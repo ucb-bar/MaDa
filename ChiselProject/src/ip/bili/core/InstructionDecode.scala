@@ -97,7 +97,7 @@ class InstructionDecode extends Module {
 
   val vector_control_signals = ListLookup(
     io.instruction,
-                /* | valid | ALU     | ALU     | VALU      | mem  |        | WB | */
+                /* | valid | VALU    | VALU    | VALU      | mem  |        | WB | */
                 /* | inst? | op1 sel | op2 sel | function  | op   | WB sel | en | */
                    // default values
                    List( F , OP1_X   , OP2_X   , SIMD_X    , M_X  , WB_X   , F  ),
@@ -110,6 +110,10 @@ class InstructionDecode extends Module {
       VFMAX_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MAX  , M_X  , WB_ALU , T  ),
       VFMUL_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MUL  , M_X  , WB_ALU , T  ),
       VFMACC_VV -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MACC , M_X  , WB_ALU , T  ),
+
+      VLE32_V   -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_RD , WB_MEM , T  ),
+      
+      VSE32_V   -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_WR , WB_MEM , T  ),
     )
   )
 
