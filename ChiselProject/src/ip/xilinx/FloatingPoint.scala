@@ -52,7 +52,7 @@ set_property -dict [list \\
   CONFIG.C_A_Exponent_Width {8} \\
   CONFIG.C_A_Fraction_Width {24} \\
   CONFIG.C_Latency {0} \\
-  CONFIG.C_Mult_Usage {Medium_Usage} \\
+  CONFIG.C_Mult_Usage {Full_Usage} \\
   CONFIG.C_Optimization {Speed_Optimized} \\
   CONFIG.C_Rate {1} \\
   CONFIG.C_Result_Exponent_Width {8} \\
