@@ -12,16 +12,13 @@ class BiliArty100T extends RawModule {
   
   val pll_locked = Wire(Bool())
 
-  val clock_25 = Wire(Clock())
 
-
-  val clk_wiz = Module(new ClockingWizard(50, 25))
+  val clk_wiz = Module(new ClockingWizard(25))
   // clocking wizard connection
   clk_wiz.io.clk_in1 := io.CLK100MHZ
   clk_wiz.io.reset := ~io.ck_rst
   pll_locked := clk_wiz.io.locked
   clock := clk_wiz.io.clk_out1
-  clock_25 := clk_wiz.io.clk_out2
 
 
   val sync_reset = Module(new SyncReset())

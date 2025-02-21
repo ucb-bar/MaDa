@@ -7,7 +7,6 @@ import ScalarControlConstants._
 
 class LoadStore extends Module {
   val io = IO(new Bundle {
-
     val mem_func = Input(UInt(M_X.getWidth.W))
 
     val ctl_dmem_mask_sel = Input(UInt(MSK_X.getWidth.W))

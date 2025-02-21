@@ -102,6 +102,8 @@ class InstructionDecode extends Module {
                    // default values
                    List( F , OP1_X   , OP2_X   , SIMD_X    , M_X  , WB_X   , F  ),
     Array(
+      
+
       VADD_VV   -> List( T , OP1_RS1 , OP2_RS2 , SIMD_ADD  , M_X  , WB_ALU , T  ),
       VADD_VF   -> List( T , OP1_RS1 , OP2_RS2 , SIMD_ADD  , M_X  , WB_ALU , T  ),
       VFMIN_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MIN  , M_X  , WB_ALU , T  ),

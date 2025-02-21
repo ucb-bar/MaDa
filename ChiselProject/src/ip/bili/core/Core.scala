@@ -28,6 +28,7 @@ class Core extends Module {
 
     val imem = new Axi4LiteBundle()
     val dmem = new Axi4LiteBundle()
+    val vdmem = new Axi4LiteBundle()
     val debug = new DebugIO()
 
     // val ctl = Flipped(new ControlToDataIo())
@@ -261,14 +262,6 @@ class Core extends Module {
   valu.io.op2 := vrs2_data
   valu.io.op3 := vrd_data
 
-  ex_vwb_data(0) := valu.io.out
-
-  dontTouch(valu.io.out)
-
-
-
-
-
 
 
   
@@ -281,7 +274,20 @@ class Core extends Module {
 
   lsu.io.dmem <> io.dmem
 
-  stall := lsu.io.busy
+
+  val vlsu = Module(new SimdLoadStore())
+
+  vlsu.io.mem_func := ctrl.vmem_func
+
+  vlsu.io.addr := alu.io.out
+  vlsu.io.wdata := vrs2_data
+
+  vlsu.io.dmem <> io.vdmem
+
+
+
+
+  stall := lsu.io.busy || vlsu.io.busy
 
 
 
@@ -297,7 +303,11 @@ class Core extends Module {
               (ctrl.wb_sel === WB_PC4) -> (ifu.io.ex_pc + 4.U),
               (ctrl.wb_sel === WB_CSR) -> csr.io.out_data
   ))
-  
+
+  ex_vwb_data(0) := MuxCase(0.U, Seq(
+              (ctrl.vwb_sel === WB_ALU) -> valu.io.out,
+              (ctrl.vwb_sel === WB_MEM) -> vlsu.io.rdata,
+  ))
 
 
 
