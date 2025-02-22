@@ -1,53 +1,45 @@
 import chisel3._
 import chisel3.util._
-
 import java.io.PrintWriter
 
 
-class Axi4LiteBlockMemory extends Module {
+class Axi4ProtocolConverter extends Module {
   val io = IO(new Bundle {
-    val s_axi = Flipped(new Axi4LiteBundle())
-    val rsta_busy = Output(Bool())
-    val rstb_busy = Output(Bool())
+    val s_axi = Flipped(new Axi4Bundle())
+    val m_axi = new Axi4LiteBundle()
   })
 
-  val blackbox = Module(new Axi4LiteBlockMemoryBlackbox())
+  val blackbox = Module(new Axi4ProtocolConverterBlackbox())
 
-  blackbox.io.s_aclk := clock
-  blackbox.io.s_aresetn := ~reset.asBool
+  blackbox.io.aclk := clock
+  blackbox.io.aresetn := ~reset.asBool
   blackbox.io.s_axi.connect(io.s_axi)
-
-  io.rsta_busy := blackbox.io.rsta_busy
-  io.rstb_busy := blackbox.io.rstb_busy
+  blackbox.io.m_axi.flipConnect(io.m_axi)
 }
 
-class Axi4LiteBlockMemoryBlackbox extends BlackBox {
+class Axi4ProtocolConverterBlackbox extends BlackBox {
   val io = IO(new Bundle {
-    val s_aclk = Input(Clock())
-    val s_aresetn = Input(Bool())
-    val s_axi = Flipped(new Axi4LiteBlackboxBundle())
-    
-    val rsta_busy = Output(Bool())
-    val rstb_busy = Output(Bool())
+    val aclk = Input(Clock())
+    val aresetn = Input(Bool())
+    val s_axi = Flipped(new Axi4BlackboxBundle())
+    val m_axi = new Axi4LiteBlackboxBundle()
   })
 
   def generate_tcl_script(): Unit = {
     val vivado_project_dir = "out/VivadoProject"
-    val ip_name = "Axi4LiteBlockMemoryBlackbox"
+    val ip_name = "Axi4ProtocolConverterBlackbox"
     val ip_name_lower = ip_name.toLowerCase()
 
     val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
     
-    tcl_script.println(s"create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name ${ip_name}")
-
+    tcl_script.println(s"create_ip -name axi_protocol_converter -vendor xilinx.com -library ip -version 2.1 -module_name ${ip_name}")
+    
     tcl_script.println(s"""
 set_property -dict [list \\
-  CONFIG.AXI_Type {AXI4_Lite} \\
-  CONFIG.Interface_Type {AXI4} \\
-  CONFIG.Write_Depth_A {4096} \\
+  CONFIG.ID_WIDTH {4} \\
 ] [get_ips ${ip_name}]
 """)
-    
+
     tcl_script.println(s"generate_target {instantiation_template} [get_ips ${ip_name}]")
     tcl_script.println("update_compile_order -fileset sources_1")
     tcl_script.println(s"generate_target all [get_ips ${ip_name}]")
@@ -58,5 +50,4 @@ set_property -dict [list \\
     tcl_script.close()
   }
   generate_tcl_script()
-
 }

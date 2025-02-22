@@ -27,7 +27,7 @@ class Core extends Module {
     val reset_vector = Input(UInt(32.W))
 
     val imem = new Axi4LiteBundle()
-    val dmem = new Axi4LiteBundle()
+    val dmem = new Axi4Bundle()
     val vdmem = new Axi4LiteBundle()
     val debug = new DebugIO()
 

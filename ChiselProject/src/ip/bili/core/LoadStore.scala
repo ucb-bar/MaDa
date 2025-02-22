@@ -15,7 +15,7 @@ class LoadStore extends Module {
     val addr = Input(UInt(32.W))
     val wdata = Input(UInt(32.W))
 
-    val dmem = new Axi4LiteBundle()
+    val dmem = new Axi4Bundle()
 
     val busy = Output(Bool())
 
@@ -63,16 +63,6 @@ class LoadStore extends Module {
   }
 
   
-  
-  io.dmem.aw.valid := reg_aw_pending
-  
-  io.dmem.w.valid := reg_w_pending
-  
-  io.dmem.ar.valid := reg_ar_pending
-
-  io.dmem.b.ready := true.B
-  io.dmem.r.ready := true.B
-
 
   dontTouch(reg_aw_pending)
   dontTouch(reg_w_pending)
@@ -117,27 +107,32 @@ class LoadStore extends Module {
 
   
   
+  
+  
+  io.dmem.aw.valid := reg_aw_pending
   io.dmem.aw.bits.addr := io.addr
-  // io.dmem.aw.valid := io.ctl.dmem.aw.valid
-  // io.ctl.dmem.aw.ready := io.dmem.aw.ready
-
+  io.dmem.aw.bits.burst := AxBurst.FIXED
+  io.dmem.aw.bits.id := 0.U
+  io.dmem.aw.bits.len := 0.U
+  io.dmem.aw.bits.size := AxSize.S_32_BYTES
+  
+  io.dmem.w.valid := reg_w_pending
   io.dmem.w.bits.strb := dmem_strb
   io.dmem.w.bits.data := dmem_wdata
-  // io.dmem.w.valid := io.ctl.dmem.w.valid
-  // io.ctl.dmem.w.ready := io.dmem.w.ready
+  io.dmem.w.bits.last := true.B
 
-  // io.ctl.dmem.b.valid := io.dmem.b.valid
-  // io.dmem.b.ready := io.ctl.dmem.b.ready
-
-
-  // datapath to data memory outputs
-  io.dmem.ar.bits.addr := io.addr
-  // io.dmem.ar.valid := io.ctl.dmem.ar.valid
-  // io.ctl.dmem.ar.ready := io.dmem.ar.ready
+  io.dmem.b.ready := true.B
   
-  // io.ctl.dmem.r.valid := io.dmem.r.valid
-  // io.dmem.r.ready := io.ctl.dmem.r.ready
-
+  
+  io.dmem.ar.valid := reg_ar_pending
+  io.dmem.ar.bits.addr := io.addr
+  io.dmem.ar.bits.burst := AxBurst.FIXED
+  io.dmem.ar.bits.id := 0.U
+  io.dmem.ar.bits.len := 0.U
+  io.dmem.ar.bits.size := AxSize.S_32_BYTES
+  
+  io.dmem.r.ready := true.B
+  
   
   val dmem_rdata_w = io.dmem.r.bits.data
   val dmem_rdata_h_0 = dmem_rdata_w(15,0)
