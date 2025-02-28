@@ -44,6 +44,7 @@ class Axi4CrossbarBlackboxBundle(n: Int, params: Axi4Params = Axi4Params()) exte
 class Axi4Crossbar(
   numSlave: Int,
   numMaster: Int,
+  params: Axi4Params = Axi4Params(),
   device0Size: Int = 1 << 16,  // 64KB address space
   device0Address: BigInt = 0x08000000,
   device1Size: Int = 1 << 12,  // 4KB address space
@@ -58,13 +59,14 @@ class Axi4Crossbar(
   device5Address: BigInt = 0x30000000,
   ) extends Module {
   val io = IO(new Bundle {
-    val s_axi = Flipped(Vec(numSlave, new Axi4Bundle()))
-    val m_axi = Vec(numMaster, new Axi4Bundle())
+    val s_axi = Flipped(Vec(numSlave, new Axi4Bundle(params)))
+    val m_axi = Vec(numMaster, new Axi4Bundle(params))
   })
 
   val blackbox = Module(new Axi4CrossbarBlackbox(
     numSlave,
     numMaster,
+    params,
     device0Size,
     device0Address,
     device1Size,
@@ -118,7 +120,7 @@ class Axi4Crossbar(
   blackbox.io.s_axi.rready := Cat(io.s_axi.reverse.map(_.r.ready))
   for (i <- 0 until numSlave) {
     io.s_axi(i).r.bits.id := blackbox.io.s_axi.rid(4*i + 3, 4*i)
-    io.s_axi(i).r.bits.data := blackbox.io.s_axi.rdata(32*i + 31, 32*i)
+    io.s_axi(i).r.bits.data := blackbox.io.s_axi.rdata(params.dataWidth*i + params.dataWidth-1, params.dataWidth*i)
     io.s_axi(i).r.bits.resp := AxResponse(blackbox.io.s_axi.rresp(2*i + 1, 2*i))
     io.s_axi(i).r.bits.last := blackbox.io.s_axi.rlast(i)
   }
@@ -127,8 +129,8 @@ class Axi4Crossbar(
   (io.m_axi zip blackbox.io.m_axi.awvalid.asBools).foreach { case (m_axi, awvalid) => m_axi.aw.valid := awvalid }
   blackbox.io.m_axi.awready := Cat(io.m_axi.reverse.map(_.aw.ready))
   for (i <- 0 until numMaster) {
-    io.m_axi(i).aw.bits.id := blackbox.io.m_axi.awid(4*i + 3, 4*i)
-    io.m_axi(i).aw.bits.addr := blackbox.io.m_axi.awaddr(32*i + 31, 32*i)
+    io.m_axi(i).aw.bits.id := blackbox.io.m_axi.awid(params.idWidth*i + params.idWidth-1, params.idWidth*i)
+    io.m_axi(i).aw.bits.addr := blackbox.io.m_axi.awaddr(params.addressWidth*i + params.addressWidth-1, params.addressWidth*i)
     io.m_axi(i).aw.bits.len := blackbox.io.m_axi.awlen(8*i + 7, 8*i)
     io.m_axi(i).aw.bits.size := AxSize(blackbox.io.m_axi.awsize(3*i + 2, 3*i))
     io.m_axi(i).aw.bits.burst := AxBurst(blackbox.io.m_axi.awburst(2*i + 1, 2*i))
@@ -137,8 +139,8 @@ class Axi4Crossbar(
   (io.m_axi zip blackbox.io.m_axi.wvalid.asBools).foreach { case (m_axi, wvalid) => m_axi.w.valid := wvalid }
   blackbox.io.m_axi.wready := Cat(io.m_axi.reverse.map(_.w.ready))
   for (i <- 0 until numMaster) {
-    io.m_axi(i).w.bits.data := blackbox.io.m_axi.wdata(32*i + 31, 32*i)
-    io.m_axi(i).w.bits.strb := blackbox.io.m_axi.wstrb(4*i + 3, 4*i)
+    io.m_axi(i).w.bits.data := blackbox.io.m_axi.wdata(params.dataWidth*i + params.dataWidth-1, params.dataWidth*i)
+    io.m_axi(i).w.bits.strb := blackbox.io.m_axi.wstrb(params.dataWidth/8*i + params.dataWidth/8-1, params.dataWidth/8*i)
     io.m_axi(i).w.bits.last := blackbox.io.m_axi.wlast(i)
   }
 
@@ -150,8 +152,8 @@ class Axi4Crossbar(
   (io.m_axi zip blackbox.io.m_axi.arvalid.asBools).foreach { case (m_axi, arvalid) => m_axi.ar.valid := arvalid }
   blackbox.io.m_axi.arready := Cat(io.m_axi.reverse.map(_.ar.ready))
   for (i <- 0 until numMaster) {
-    io.m_axi(i).ar.bits.id := blackbox.io.m_axi.arid(4*i + 3, 4*i)
-    io.m_axi(i).ar.bits.addr := blackbox.io.m_axi.araddr(32*i + 31, 32*i)
+    io.m_axi(i).ar.bits.id := blackbox.io.m_axi.arid(params.idWidth*i + params.idWidth-1, params.idWidth*i)
+    io.m_axi(i).ar.bits.addr := blackbox.io.m_axi.araddr(params.addressWidth*i + params.addressWidth-1, params.addressWidth*i)
     io.m_axi(i).ar.bits.len := blackbox.io.m_axi.arlen(8*i + 7, 8*i)
     io.m_axi(i).ar.bits.size := AxSize(blackbox.io.m_axi.arsize(3*i + 2, 3*i))
     io.m_axi(i).ar.bits.burst := AxBurst(blackbox.io.m_axi.arburst(2*i + 1, 2*i))
@@ -168,6 +170,7 @@ class Axi4Crossbar(
 class Axi4CrossbarBlackbox(
   numSlave: Int,
   numMaster: Int,
+  params: Axi4Params,
   device0Size: Int = 1 << 16,  // 64KB address space
   device0Address: BigInt = 0x08000000,
   device1Size: Int = 1 << 12,  // 4KB address space
@@ -184,8 +187,8 @@ class Axi4CrossbarBlackbox(
   val io = IO(new Bundle {
     val aclk = Input(Clock())
     val aresetn = Input(Bool())
-    val s_axi = Flipped(new Axi4CrossbarBlackboxBundle(numSlave))
-    val m_axi = new Axi4CrossbarBlackboxBundle(numMaster)
+    val s_axi = Flipped(new Axi4CrossbarBlackboxBundle(numSlave, params))
+    val m_axi = new Axi4CrossbarBlackboxBundle(numMaster, params)
   })
 
 
@@ -211,7 +214,11 @@ set_property -dict [list \\
   CONFIG.PROTOCOL {AXI4} \\
   CONFIG.NUM_MI {${numMaster}} \\
   CONFIG.NUM_SI {${numSlave}} \\
-  CONFIG.ID_WIDTH {4} \\
+  CONFIG.ID_WIDTH {${params.idWidth}} \\
+  CONFIG.S00_SINGLE_THREAD {1} \\
+  CONFIG.S00_THREAD_ID_WIDTH {1} \\
+  CONFIG.S01_SINGLE_THREAD {1} \\
+  CONFIG.S01_THREAD_ID_WIDTH {1} \\
   CONFIG.M00_A00_ADDR_WIDTH {${log2Ceil(device0Size)}} \\
   CONFIG.M00_A00_BASE_ADDR {0x${device0Address.toString(16).reverse.padTo(16, '0').reverse}} \\
   CONFIG.M01_A00_ADDR_WIDTH {${log2Ceil(device1Size)}} \\

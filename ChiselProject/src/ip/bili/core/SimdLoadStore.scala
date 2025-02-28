@@ -5,18 +5,20 @@ import Instructions._
 import ScalarControlConstants._
 
 
-class SimdLoadStore extends Module {
+class SimdLoadStore(
+  dataWidth: Int = 32
+) extends Module {
   val io = IO(new Bundle {
     val mem_func = Input(UInt(M_X.getWidth.W))
 
     val addr = Input(UInt(32.W))
-    val wdata = Input(UInt(32.W))
+    val wdata = Input(UInt(dataWidth.W))
 
-    val dmem = new Axi4Bundle()
+    val dmem = new Axi4Bundle(params=Axi4Params(dataWidth=dataWidth))
 
     val busy = Output(Bool())
 
-    val rdata = Output(UInt(32.W))
+    val rdata = Output(UInt(dataWidth.W))
   })
 
   
@@ -74,7 +76,7 @@ class SimdLoadStore extends Module {
   io.dmem.aw.bits.burst := AxBurst.FIXED
   
   io.dmem.w.valid := reg_w_pending
-  io.dmem.w.bits.strb := "b1111".U
+  io.dmem.w.bits.strb := ~0.U((dataWidth/8).W)
   io.dmem.w.bits.data := io.wdata
   io.dmem.w.bits.last := true.B
   

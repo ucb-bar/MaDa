@@ -4,24 +4,23 @@ import chisel3.util._
 import java.io.PrintWriter
 
 class Axi4Memory(
-  val addressWidth: Int = 12,
-  val dataWidth: Int = 32,
-  val memoryFileHex: String = "",
-  val memoryFileBin: String = ""
+  params: Axi4Params = Axi4Params(),
+  memoryFileHex: String = "",
+  memoryFileBin: String = ""
 ) extends Module {
   val io = IO(new Bundle {
-    val s_axi = Flipped(new Axi4Bundle())
+    val s_axi = Flipped(new Axi4Bundle(params))
   })
 
   val mem = Module(new SyncRam(
-    addressWidth = addressWidth,
-    dataWidth = dataWidth,
+    addressWidth = params.addressWidth,
+    dataWidth = params.dataWidth,
     memoryFileHex = memoryFileHex,
     memoryFileBin = memoryFileBin
   ))
 
   val reg_write_addr_requested = RegInit(false.B)
-  val reg_write_addr = RegInit(0.U(addressWidth.W))
+  val reg_write_addr = RegInit(0.U(params.addressWidth.W))
   val reg_write_id = RegInit(0.U(4.W))
   val write_addr_requested = reg_write_addr_requested || io.s_axi.aw.fire
   
