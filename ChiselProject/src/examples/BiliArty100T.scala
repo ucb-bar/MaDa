@@ -34,7 +34,10 @@ class BiliArty100T extends RawModule {
 
     val axi_gpio = Module(new Axi4LiteGpio())
 
-    val axi_converter = Module(new Axi4ProtocolConverter())
+    val axi_converter = Module(new Axi4ProtocolConverter(
+      s_params = Axi4Params(),
+      m_params = Axi4Params()
+    ))
     
     tile.io.reset_vector := reset_vector
     

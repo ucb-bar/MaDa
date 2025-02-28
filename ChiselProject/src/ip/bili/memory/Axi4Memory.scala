@@ -21,13 +21,13 @@ class Axi4Memory(
 
   val reg_write_addr_requested = RegInit(false.B)
   val reg_write_addr = RegInit(0.U(params.addressWidth.W))
-  val reg_write_id = RegInit(0.U(4.W))
+  val reg_write_id = RegInit(0.U(params.idWidth.W))
   val write_addr_requested = reg_write_addr_requested || io.s_axi.aw.fire
   
   val reg_write_requested = RegInit(false.B)
 
   val reg_read_requested = RegInit(false.B)
-  val reg_read_id = RegInit(0.U(4.W))
+  val reg_read_id = RegInit(0.U(params.idWidth.W))
 
   mem.io.clock := clock
   mem.io.reset := reset
@@ -36,7 +36,7 @@ class Axi4Memory(
   mem.io.raddr := io.s_axi.ar.bits.addr
   mem.io.waddr := Mux(io.s_axi.aw.fire && io.s_axi.w.fire, io.s_axi.aw.bits.addr, reg_write_addr)
   mem.io.wdata := io.s_axi.w.bits.data
-  mem.io.wstrb := Mux(io.s_axi.w.fire, io.s_axi.w.bits.strb, 0.U(4.W))
+  mem.io.wstrb := Mux(io.s_axi.w.fire, io.s_axi.w.bits.strb, 0.U((params.dataWidth/8).W))
   io.s_axi.r.bits.data := mem.io.rdata
 
   // control line connections
@@ -74,24 +74,4 @@ class Axi4Memory(
   .elsewhen (io.s_axi.r.fire) {
     reg_read_requested := false.B
   }
-
-  
-  def generate_tcl_script(): Unit = {
-    if (memoryFileHex != "") {
-      val vivado_project_dir = "out/VivadoProject"
-      val ip_name = "Axi4LiteMemory"
-      val ip_name_lower = ip_name.toLowerCase()
-      
-      // Get current working directory
-      val file_path = System.getProperty("user.dir") + "/firmware/" + memoryFileHex
-      val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
-      
-      // Use current directory to create paths
-      tcl_script.println(s"add_files -norecurse ${file_path}")
-      tcl_script.println(s"set_property file_type {Memory Initialization Files} [get_files ${file_path}]")
-
-      tcl_script.close()
-    }
-  }
-  generate_tcl_script()
 }

@@ -22,13 +22,15 @@ class DebugIO extends Bundle() {
 }
 
 
-class Core extends Module {
+class Core(
+  nVectors: Int = 1
+) extends Module {
   val io = IO(new Bundle {
     val reset_vector = Input(UInt(32.W))
 
     val imem = new Axi4LiteBundle()
     val dmem = new Axi4Bundle()
-    val vdmem = new Axi4Bundle()
+    val vdmem = new Axi4Bundle(params=Axi4Params(dataWidth=nVectors*32))
     val debug = new DebugIO()
 
     // val ctl = Flipped(new ControlToDataIo())
@@ -75,7 +77,7 @@ class Core extends Module {
 
   val ex_wb_data = Wire(UInt(32.W))
 
-  val ex_vwb_data = Wire(Vec(1, UInt(32.W)))
+  val ex_vwb_data = Wire(Vec(nVectors, UInt(32.W)))
 
 
   val ifu = Module(new InstructionFetch())
@@ -247,18 +249,18 @@ class Core extends Module {
 
 
   // Vector Register File
-  val vregfile = Mem(32, Vec(1, UInt(32.W)))
+  val vregfile = Mem(32, Vec(nVectors, UInt(32.W)))
 
   when(ex_vwb_en) {
     vregfile(rd_addr) := ex_vwb_data
   }
   
-  val vrs1_data = vregfile(rs1_addr)(0)
-  val vrs2_data = vregfile(rs2_addr)(0)
-  val vrd_data = vregfile(rd_addr)(0)
+  val vrs1_data = vregfile(rs1_addr)
+  val vrs2_data = vregfile(rs2_addr)
+  val vrd_data = vregfile(rd_addr)
 
 
-  val valu = Module(new SimdFloatingPoint())
+  val valu = Module(new SimdFloatingPoint(nVectors))
   // result = a * b + c
 
   valu.io.func := ctrl.valu_func
@@ -279,7 +281,7 @@ class Core extends Module {
   lsu.io.dmem <> io.dmem
 
 
-  val vlsu = Module(new SimdLoadStore())
+  val vlsu = Module(new SimdLoadStore(nVectors))
 
   vlsu.io.mem_func := Mux(kill, M_X, ctrl.vmem_func)
   vlsu.io.addr := alu.io.out
@@ -307,7 +309,7 @@ class Core extends Module {
               (ctrl.wb_sel === WB_CSR) -> csr.io.out_data
   ))
 
-  ex_vwb_data(0) := MuxCase(0.U, Seq(
+  ex_vwb_data := MuxCase(VecInit.fill(nVectors)(0.U(32.W)), Seq(
               (ctrl.vwb_sel === WB_ALU) -> valu.io.out,
               (ctrl.vwb_sel === WB_MEM) -> vlsu.io.rdata,
   ))

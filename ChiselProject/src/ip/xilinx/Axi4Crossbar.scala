@@ -215,6 +215,7 @@ set_property -dict [list \\
   CONFIG.NUM_MI {${numMaster}} \\
   CONFIG.NUM_SI {${numSlave}} \\
   CONFIG.ID_WIDTH {${params.idWidth}} \\
+  CONFIG.DATA_WIDTH {${params.dataWidth}} \\
   CONFIG.S00_SINGLE_THREAD {1} \\
   CONFIG.S00_THREAD_ID_WIDTH {1} \\
   CONFIG.S01_SINGLE_THREAD {1} \\
