@@ -8,6 +8,11 @@
 # Build artifacts
 out/
 generated-src/
+firmware/*.bin
+firmware/*.dis
+firmware/*.elf
+firmware/*.hex
+firmware/*.section
 
 # Toolchains
 toolchains/mill
