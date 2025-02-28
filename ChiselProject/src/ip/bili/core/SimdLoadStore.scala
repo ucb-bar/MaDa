@@ -12,7 +12,7 @@ class SimdLoadStore extends Module {
     val addr = Input(UInt(32.W))
     val wdata = Input(UInt(32.W))
 
-    val dmem = new Axi4LiteBundle()
+    val dmem = new Axi4Bundle()
 
     val busy = Output(Bool())
 
@@ -66,18 +66,26 @@ class SimdLoadStore extends Module {
   dontTouch(reg_r_pending)
 
   
-  
-  io.dmem.aw.bits.addr := io.addr
   io.dmem.aw.valid := reg_aw_pending
+  io.dmem.aw.bits.id := 0.U
+  io.dmem.aw.bits.addr := io.addr
+  io.dmem.aw.bits.len := 0.U
+  io.dmem.aw.bits.size := AxSize.S_32_BYTES
+  io.dmem.aw.bits.burst := AxBurst.FIXED
   
+  io.dmem.w.valid := reg_w_pending
   io.dmem.w.bits.strb := "b1111".U
   io.dmem.w.bits.data := io.wdata
-  io.dmem.w.valid := reg_w_pending
+  io.dmem.w.bits.last := true.B
   
   io.dmem.b.ready := true.B
   
-  io.dmem.ar.bits.addr := io.addr
   io.dmem.ar.valid := reg_ar_pending
+  io.dmem.ar.bits.id := 0.U
+  io.dmem.ar.bits.addr := io.addr
+  io.dmem.ar.bits.len := 0.U
+  io.dmem.ar.bits.size := AxSize.S_32_BYTES
+  io.dmem.ar.bits.burst := AxBurst.FIXED
   
   io.dmem.r.ready := true.B
 

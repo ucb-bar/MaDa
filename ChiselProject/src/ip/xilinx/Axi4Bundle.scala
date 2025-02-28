@@ -1,5 +1,22 @@
+/**
+  * Axi4Bundle.scala
+  * 
+  * This file contains the definitions for the Axi4 protocol bundles.
+  * 
+  * For AXI4 protocol specification, please @see https://developer.arm.com/documentation/ihi0022/latest/
+  * 
+  */
+
 import chisel3._
 import chisel3.util._
+
+
+case class Axi4Params(
+  idWidth: Int = 4,
+  addressWidth: Int = 32,
+  dataWidth: Int = 32,
+  userWidth: Int = 1
+)
 
 
 object AxBurst extends ChiselEnum {
@@ -27,101 +44,92 @@ object AxResponse extends ChiselEnum {
   val DECERR    = Value(3.U(2.W))  // Decode error.
 }
 
-class Axi4Bundle extends Bundle {
+class Axi4Bundle(params: Axi4Params = Axi4Params()) extends Bundle {
   val aw = Decoupled(new Bundle {
-    val addr = Output(UInt(32.W))
-    val burst = Output(AxBurst())
-    val id = Output(UInt(4.W))
+    val id = Output(UInt(params.idWidth.W))
+    val addr = Output(UInt(params.addressWidth.W))
     val len = Output(UInt(8.W))
     val size = Output(AxSize())
+    val burst = Output(AxBurst())
+    // val lock = Output(Bool())
+    // val cache = Output(UInt(4.W))
+    // val prot = Output(UInt(3.W))
+    // val user = Output(UInt(userWidth.W))
   })
   val w = Decoupled(new Bundle {
-    val data = Output(UInt(32.W))
-    val strb = Output(UInt((32/8).W))
+    val data = Output(UInt(params.dataWidth.W))
+    val strb = Output(UInt((params.dataWidth/8).W))
     val last = Output(Bool())
+    // val user = Output(UInt(userWidth.W))
   })
   val b = Flipped(Decoupled(new Bundle {
+    val id = Input(UInt(params.idWidth.W))
     val resp = Input(AxResponse())
-    val id = Input(UInt(4.W))
+    // val user = Input(UInt(userWidth.W))
   }))
   val ar = Decoupled(new Bundle {
-    val addr = Output(UInt(32.W))
-    val burst = Output(AxBurst())
-    val id = Output(UInt(4.W))
+    val id = Output(UInt(params.idWidth.W))
+    val addr = Output(UInt(params.addressWidth.W))
     val len = Output(UInt(8.W))
     val size = Output(AxSize())
+    val burst = Output(AxBurst())
+    // val lock = Output(Bool())
+    // val cache = Output(UInt(4.W))
+    // val prot = Output(UInt(3.W))
+    // val user = Output(UInt(userWidth.W))
   })
   val r = Flipped(Decoupled(new Bundle {
-    val data = Input(UInt(32.W))
+    val id = Input(UInt(params.idWidth.W))
+    val data = Input(UInt(params.dataWidth.W))
     val resp = Input(AxResponse())
-    val id = Input(UInt(4.W))
     val last = Input(Bool())
+    // val user = Input(UInt(userWidth.W))
   }))
 }
 
-class Axi4LiteBundle extends Bundle {
-  val aw = Decoupled(new Bundle {
-    val addr = Output(UInt(32.W))
-  })
-  val w = Decoupled(new Bundle {
-    val data = Output(UInt(32.W))
-    val strb = Output(UInt((32/8).W))
-  })
-  val b = Flipped(Decoupled(new Bundle {
-    val resp = Input(UInt(2.W))
-  }))
-  val ar = Decoupled(new Bundle {
-    val addr = Output(UInt(32.W))
-  })
-  val r = Flipped(Decoupled(new Bundle {
-    val data = Input(UInt(32.W))
-    val resp = Input(UInt(2.W))
-  }))
-}
-
-class Axi4BlackboxBundle extends Bundle {
+class Axi4BlackboxBundle(params: Axi4Params = Axi4Params()) extends Bundle {
   val awvalid = Output(Bool())
   val awready = Input(Bool())
-  val awaddr = Output(UInt(32.W))
-  val awburst = Output(AxBurst())
-  val awid = Output(UInt(4.W))
+  val awid = Output(UInt(params.idWidth.W))
+  val awaddr = Output(UInt(params.addressWidth.W))
   val awlen = Output(UInt(8.W))
   val awsize = Output(AxSize())
+  val awburst = Output(AxBurst())
 
   val wvalid = Output(Bool())
   val wready = Input(Bool())
-  val wdata = Output(UInt(32.W))
-  val wstrb = Output(UInt((32/8).W))
+  val wdata = Output(UInt(params.dataWidth.W))
+  val wstrb = Output(UInt((params.dataWidth/8).W))
   val wlast = Output(Bool())
 
   val bvalid = Input(Bool())
   val bready = Output(Bool())
+  val bid = Input(UInt(params.idWidth.W))
   val bresp = Input(AxResponse())
-  val bid = Input(UInt(4.W))
 
   val arvalid = Output(Bool())
   val arready = Input(Bool())
-  val araddr = Output(UInt(32.W))
-  val arburst = Output(AxBurst())
-  val arid = Output(UInt(4.W))
+  val arid = Output(UInt(params.idWidth.W))
+  val araddr = Output(UInt(params.addressWidth.W))
   val arlen = Output(UInt(8.W))
   val arsize = Output(AxSize())
+  val arburst = Output(AxBurst())
 
   val rvalid = Input(Bool())
   val rready = Output(Bool())
-  val rdata = Input(UInt(32.W))
+  val rid = Input(UInt(params.idWidth.W))
+  val rdata = Input(UInt(params.dataWidth.W))
   val rresp = Input(AxResponse())
-  val rid = Input(UInt(4.W))
   val rlast = Input(Bool())
 
   def connect(axi: Axi4Bundle): Unit = {
     this.awvalid := axi.aw.valid
     axi.aw.ready := this.awready
-    this.awaddr := axi.aw.bits.addr
-    this.awburst := axi.aw.bits.burst
     this.awid := axi.aw.bits.id
+    this.awaddr := axi.aw.bits.addr
     this.awlen := axi.aw.bits.len
     this.awsize := axi.aw.bits.size
+    this.awburst := axi.aw.bits.burst
 
     this.wvalid := axi.w.valid
     axi.w.ready := this.wready
@@ -131,33 +139,33 @@ class Axi4BlackboxBundle extends Bundle {
 
     axi.b.valid := this.bvalid
     this.bready := axi.b.ready
-    axi.b.bits.resp := this.bresp
     axi.b.bits.id := this.bid
+    axi.b.bits.resp := this.bresp
 
     this.arvalid := axi.ar.valid
     axi.ar.ready := this.arready
-    this.araddr := axi.ar.bits.addr
-    this.arburst := axi.ar.bits.burst
     this.arid := axi.ar.bits.id
+    this.araddr := axi.ar.bits.addr
     this.arlen := axi.ar.bits.len
     this.arsize := axi.ar.bits.size
+    this.arburst := axi.ar.bits.burst
 
     axi.r.valid := this.rvalid
     this.rready := axi.r.ready
+    axi.r.bits.id := this.rid
     axi.r.bits.data := this.rdata
     axi.r.bits.resp := this.rresp
-    axi.r.bits.id := this.rid
     axi.r.bits.last := this.rlast
   }
 
   def flipConnect(axi: Axi4Bundle): Unit = {
     axi.aw.valid := this.awvalid
     this.awready := axi.aw.ready
-    axi.aw.bits.addr := this.awaddr
-    axi.aw.bits.burst := this.awburst
     axi.aw.bits.id := this.awid
+    axi.aw.bits.addr := this.awaddr
     axi.aw.bits.len := this.awlen
     axi.aw.bits.size := this.awsize
+    axi.aw.bits.burst := this.awburst
 
     axi.w.valid := this.wvalid
     this.wready := axi.w.ready
@@ -167,115 +175,42 @@ class Axi4BlackboxBundle extends Bundle {
 
     this.bvalid := axi.b.valid
     axi.b.ready := this.bready
-    this.bresp := axi.b.bits.resp
     this.bid := axi.b.bits.id
+    this.bresp := axi.b.bits.resp
 
     axi.ar.valid := this.arvalid
     this.arready := axi.ar.ready
-    axi.ar.bits.addr := this.araddr
-    axi.ar.bits.burst := this.arburst
     axi.ar.bits.id := this.arid
+    axi.ar.bits.addr := this.araddr
     axi.ar.bits.len := this.arlen
     axi.ar.bits.size := this.arsize
+    axi.ar.bits.burst := this.arburst
 
     this.rvalid := axi.r.valid
     axi.r.ready := this.rready
+    this.rid := axi.r.bits.id
     this.rdata := axi.r.bits.data
     this.rresp := axi.r.bits.resp
-    this.rid := axi.r.bits.id
     this.rlast := axi.r.bits.last
   }
 }
 
-
-class Axi4LiteBlackboxBundle extends Bundle {
-  val awaddr = Output(UInt(32.W))
-  val awvalid = Output(Bool())
-  val awready = Input(Bool())
-
-  val wdata = Output(UInt(32.W))
-  val wstrb = Output(UInt((32/8).W))
-  val wvalid = Output(Bool())
-  val wready = Input(Bool())
-
-  val bresp = Input(UInt(2.W))
-  val bvalid = Input(Bool())
-  val bready = Output(Bool())
-
-  val araddr = Output(UInt(32.W))
-  val arvalid = Output(Bool())
-  val arready = Input(Bool())
-
-  val rdata = Input(UInt(32.W))
-  val rresp = Input(UInt(2.W))
-  val rvalid = Input(Bool())
-  val rready = Output(Bool())
-
-  def connect(axi: Axi4LiteBundle): Unit = {
-    this.awvalid := axi.aw.valid
-    axi.aw.ready := this.awready
-    this.awaddr := axi.aw.bits.addr
-
-    this.wvalid := axi.w.valid
-    axi.w.ready := this.wready
-    this.wdata := axi.w.bits.data
-    this.wstrb := axi.w.bits.strb
-
-    axi.b.valid := this.bvalid
-    this.bready := axi.b.ready
-    axi.b.bits.resp := this.bresp
-
-    this.arvalid := axi.ar.valid
-    axi.ar.ready := this.arready
-    this.araddr := axi.ar.bits.addr
-
-    axi.r.valid := this.rvalid
-    this.rready := axi.r.ready
-    axi.r.bits.data := this.rdata
-    axi.r.bits.resp := this.rresp
-  }
-
-  def flipConnect(axi: Axi4LiteBundle): Unit = {
-    axi.aw.valid := this.awvalid
-    this.awready := axi.aw.ready
-    axi.aw.bits.addr := this.awaddr
-
-    axi.w.valid := this.wvalid
-    this.wready := axi.w.ready
-    axi.w.bits.data := this.wdata
-    axi.w.bits.strb := this.wstrb
-
-    this.bvalid := axi.b.valid
-    axi.b.ready := this.bready
-    this.bresp := axi.b.bits.resp
-
-    axi.ar.valid := this.arvalid
-    this.arready := axi.ar.ready
-    axi.ar.bits.addr := this.araddr
-
-    this.rvalid := axi.r.valid
-    axi.r.ready := this.rready
-    this.rresp := axi.r.bits.resp
-    this.rdata := axi.r.bits.data
-  }
-}
-
-class Axi4LiteStreamBundle extends Bundle {
+class Axi4StreamBundle(params: Axi4Params = Axi4Params()) extends Bundle {
   val t = Decoupled(new Bundle {
-    val data = Output(UInt(32.W))
+    val data = Output(UInt(params.dataWidth.W))
     val last = Output(Bool())
     val user = Output(Bool())
   })
 }
 
-class Axi4LiteStreamBlackboxBundle extends Bundle {
+class Axi4StreamBlackboxBundle(params: Axi4Params = Axi4Params()) extends Bundle {
   val tvalid = Output(Bool())
   val tready = Input(Bool())
-  val tdata = Output(UInt(32.W))
+  val tdata = Output(UInt(params.dataWidth.W))
   val tlast = Output(Bool())
   val tuser = Output(Bool())
 
-  def connect(axi: Axi4LiteStreamBundle): Unit = {
+  def connect(axi: Axi4StreamBundle): Unit = {
     this.tvalid := axi.t.valid
     axi.t.ready := this.tready
 
@@ -284,7 +219,7 @@ class Axi4LiteStreamBlackboxBundle extends Bundle {
     this.tuser := axi.t.bits.user
   }
 
-  def flipConnect(axi: Axi4LiteStreamBundle): Unit = {
+  def flipConnect(axi: Axi4StreamBundle): Unit = {
     axi.t.valid := this.tvalid
     this.tready := axi.t.ready
     

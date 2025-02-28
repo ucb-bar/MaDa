@@ -4,28 +4,28 @@ import chisel3.util._
 import java.io.PrintWriter
 
 
-class Axi4LiteCrossbarBlackboxBundle(n: Int) extends Bundle {
-  val awaddr = Output(UInt((n*32).W))
+class Axi4LiteCrossbarBlackboxBundle(n: Int, params: Axi4Params = Axi4Params()) extends Bundle {
   val awvalid = Output(UInt(n.W))
   val awready = Input(UInt(n.W))
+  val awaddr = Output(UInt((n*params.addressWidth).W))
 
-  val wdata = Output(UInt((n*32).W))
-  val wstrb = Output(UInt((n*4).W))
   val wvalid = Output(UInt(n.W))
   val wready = Input(UInt(n.W))
+  val wdata = Output(UInt((n*params.dataWidth).W))
+  val wstrb = Output(UInt((n*params.dataWidth/8).W))
 
-  val bresp = Input(UInt((n*2).W))
   val bvalid = Input(UInt(n.W))
   val bready = Output(UInt(n.W))
+  val bresp = Input(UInt((n*2).W))
 
-  val araddr = Output(UInt((n*32).W))
   val arvalid = Output(UInt(n.W))
   val arready = Input(UInt(n.W))
+  val araddr = Output(UInt((n*params.addressWidth).W))
 
-  val rdata = Input(UInt((n*32).W))
-  val rresp = Input(UInt((n*2).W))
   val rvalid = Input(UInt(n.W))
   val rready = Output(UInt(n.W))
+  val rdata = Input(UInt((n*params.dataWidth).W))
+  val rresp = Input(UInt((n*2).W))
 }
 
 

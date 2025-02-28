@@ -23,7 +23,7 @@ class Tile extends Module {
   // val dtim = Module(new SimAxi4LiteMemory(readDelay = 10, writeDelay = 10))
   val dtim = Module(new Axi4BlockMemory())
   
-  val xbar = Module(new Axi4Crossbar(1, 2))
+  val xbar = Module(new Axi4Crossbar(2, 2))
   
   core.io.reset_vector := io.reset_vector
   
@@ -32,7 +32,7 @@ class Tile extends Module {
   
   // sbus crossbar connections
   core.io.dmem <> xbar.io.s_axi(0)
-  // core.io.vdmem <> xbar.io.s_axi(1)
+  core.io.vdmem <> xbar.io.s_axi(1)
   xbar.io.m_axi(0) <> dtim.io.s_axi
   xbar.io.m_axi(1) <> io.sbus
 

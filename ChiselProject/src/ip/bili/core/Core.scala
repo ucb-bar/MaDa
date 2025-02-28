@@ -28,7 +28,7 @@ class Core extends Module {
 
     val imem = new Axi4LiteBundle()
     val dmem = new Axi4Bundle()
-    val vdmem = new Axi4LiteBundle()
+    val vdmem = new Axi4Bundle()
     val debug = new DebugIO()
 
     // val ctl = Flipped(new ControlToDataIo())

@@ -4,39 +4,39 @@ import chisel3.util._
 import java.io.PrintWriter
 
 
-class Axi4CrossbarBlackboxBundle(n: Int) extends Bundle {
+class Axi4CrossbarBlackboxBundle(n: Int, params: Axi4Params = Axi4Params()) extends Bundle {
   val awvalid = Output(UInt(n.W))
   val awready = Input(UInt(n.W))
-  val awaddr = Output(UInt((n*32).W))
-  val awburst = Output(UInt((n*2).W))
-  val awid = Output(UInt((n*4).W))
+  val awid = Output(UInt((n*params.idWidth).W))
+  val awaddr = Output(UInt((n*params.addressWidth).W))
   val awlen = Output(UInt((n*8).W))
   val awsize = Output(UInt((n*3).W))
+  val awburst = Output(UInt((n*2).W))
   
   val wvalid = Output(UInt(n.W))
   val wready = Input(UInt(n.W))
-  val wdata = Output(UInt((n*32).W))
-  val wstrb = Output(UInt((n*4).W))
+  val wdata = Output(UInt((n*params.dataWidth).W))
+  val wstrb = Output(UInt((n*params.dataWidth/8).W))
   val wlast = Output(UInt(n.W))
 
   val bvalid = Input(UInt(n.W))
   val bready = Output(UInt(n.W))
+  val bid = Input(UInt((n*params.idWidth).W))
   val bresp = Input(UInt((n*2).W))
-  val bid = Input(UInt((n*4).W))
 
   val arvalid = Output(UInt(n.W))
   val arready = Input(UInt(n.W))
-  val araddr = Output(UInt((n*32).W))
-  val arburst = Output(UInt((n*2).W))
-  val arid = Output(UInt((n*4).W))
+  val arid = Output(UInt((n*params.idWidth).W))
+  val araddr = Output(UInt((n*params.addressWidth).W))
   val arlen = Output(UInt((n*8).W))
   val arsize = Output(UInt((n*3).W))
-
+  val arburst = Output(UInt((n*2).W))
+  
   val rvalid = Input(UInt(n.W))
   val rready = Output(UInt(n.W))
-  val rdata = Input(UInt((n*32).W))
+  val rid = Input(UInt((n*params.idWidth).W))
+  val rdata = Input(UInt((n*params.dataWidth).W))
   val rresp = Input(UInt((n*2).W))
-  val rid = Input(UInt((n*4).W))
   val rlast = Input(UInt(n.W))
 }
 
@@ -87,11 +87,11 @@ class Axi4Crossbar(
   // into a single wide AXI4 Lite signals
   blackbox.io.s_axi.awvalid := Cat(io.s_axi.reverse.map(_.aw.valid))
   (io.s_axi zip blackbox.io.s_axi.awready.asBools).foreach { case (s_axi, awready) => s_axi.aw.ready := awready }
-  blackbox.io.s_axi.awaddr := Cat(io.s_axi.reverse.map(_.aw.bits.addr))
-  blackbox.io.s_axi.awburst := Cat(io.s_axi.reverse.map(_.aw.bits.burst.asUInt))
   blackbox.io.s_axi.awid := Cat(io.s_axi.reverse.map(_.aw.bits.id))
+  blackbox.io.s_axi.awaddr := Cat(io.s_axi.reverse.map(_.aw.bits.addr))
   blackbox.io.s_axi.awlen := Cat(io.s_axi.reverse.map(_.aw.bits.len))
   blackbox.io.s_axi.awsize := Cat(io.s_axi.reverse.map(_.aw.bits.size.asUInt))
+  blackbox.io.s_axi.awburst := Cat(io.s_axi.reverse.map(_.aw.bits.burst.asUInt))
 
   blackbox.io.s_axi.wvalid := Cat(io.s_axi.reverse.map(_.w.valid))
   (io.s_axi zip blackbox.io.s_axi.wready.asBools).foreach { case (s_axi, wready) => s_axi.w.ready := wready }
@@ -102,24 +102,24 @@ class Axi4Crossbar(
   (io.s_axi zip blackbox.io.s_axi.bvalid.asBools).foreach { case (s_axi, bvalid) => s_axi.b.valid := bvalid }
   blackbox.io.s_axi.bready := Cat(io.s_axi.reverse.map(_.b.ready))
   for (i <- 0 until numSlave) {
-    io.s_axi(i).b.bits.resp := AxResponse(blackbox.io.s_axi.bresp(2*i + 1, 2*i))
     io.s_axi(i).b.bits.id := blackbox.io.s_axi.bid(4*i + 3, 4*i)
+    io.s_axi(i).b.bits.resp := AxResponse(blackbox.io.s_axi.bresp(2*i + 1, 2*i))
   }
 
   blackbox.io.s_axi.arvalid := Cat(io.s_axi.reverse.map(_.ar.valid))
   (io.s_axi zip blackbox.io.s_axi.arready.asBools).foreach { case (s_axi, arready) => s_axi.ar.ready := arready }
-  blackbox.io.s_axi.araddr := Cat(io.s_axi.reverse.map(_.ar.bits.addr))
-  blackbox.io.s_axi.arburst := Cat(io.s_axi.reverse.map(_.ar.bits.burst.asUInt))
   blackbox.io.s_axi.arid := Cat(io.s_axi.reverse.map(_.ar.bits.id))
+  blackbox.io.s_axi.araddr := Cat(io.s_axi.reverse.map(_.ar.bits.addr))
   blackbox.io.s_axi.arlen := Cat(io.s_axi.reverse.map(_.ar.bits.len))
   blackbox.io.s_axi.arsize := Cat(io.s_axi.reverse.map(_.ar.bits.size.asUInt))
+  blackbox.io.s_axi.arburst := Cat(io.s_axi.reverse.map(_.ar.bits.burst.asUInt))
 
   (io.s_axi zip blackbox.io.s_axi.rvalid.asBools).foreach { case (s_axi, rvalid) => s_axi.r.valid := rvalid }
   blackbox.io.s_axi.rready := Cat(io.s_axi.reverse.map(_.r.ready))
   for (i <- 0 until numSlave) {
+    io.s_axi(i).r.bits.id := blackbox.io.s_axi.rid(4*i + 3, 4*i)
     io.s_axi(i).r.bits.data := blackbox.io.s_axi.rdata(32*i + 31, 32*i)
     io.s_axi(i).r.bits.resp := AxResponse(blackbox.io.s_axi.rresp(2*i + 1, 2*i))
-    io.s_axi(i).r.bits.id := blackbox.io.s_axi.rid(4*i + 3, 4*i)
     io.s_axi(i).r.bits.last := blackbox.io.s_axi.rlast(i)
   }
 
@@ -127,11 +127,11 @@ class Axi4Crossbar(
   (io.m_axi zip blackbox.io.m_axi.awvalid.asBools).foreach { case (m_axi, awvalid) => m_axi.aw.valid := awvalid }
   blackbox.io.m_axi.awready := Cat(io.m_axi.reverse.map(_.aw.ready))
   for (i <- 0 until numMaster) {
-    io.m_axi(i).aw.bits.addr := blackbox.io.m_axi.awaddr(32*i + 31, 32*i)
-    io.m_axi(i).aw.bits.burst := AxBurst(blackbox.io.m_axi.awburst(2*i + 1, 2*i))
     io.m_axi(i).aw.bits.id := blackbox.io.m_axi.awid(4*i + 3, 4*i)
+    io.m_axi(i).aw.bits.addr := blackbox.io.m_axi.awaddr(32*i + 31, 32*i)
     io.m_axi(i).aw.bits.len := blackbox.io.m_axi.awlen(8*i + 7, 8*i)
     io.m_axi(i).aw.bits.size := AxSize(blackbox.io.m_axi.awsize(3*i + 2, 3*i))
+    io.m_axi(i).aw.bits.burst := AxBurst(blackbox.io.m_axi.awburst(2*i + 1, 2*i))
   }
 
   (io.m_axi zip blackbox.io.m_axi.wvalid.asBools).foreach { case (m_axi, wvalid) => m_axi.w.valid := wvalid }
@@ -144,24 +144,24 @@ class Axi4Crossbar(
 
   (io.m_axi zip blackbox.io.m_axi.bready.asBools).foreach { case (m_axi, bready) => m_axi.b.ready := bready }
   blackbox.io.m_axi.bvalid := Cat(io.m_axi.reverse.map(_.b.valid))
-  blackbox.io.m_axi.bresp := Cat(io.m_axi.reverse.map(_.b.bits.resp.asUInt))
   blackbox.io.m_axi.bid := Cat(io.m_axi.reverse.map(_.b.bits.id))
+  blackbox.io.m_axi.bresp := Cat(io.m_axi.reverse.map(_.b.bits.resp.asUInt))
 
   (io.m_axi zip blackbox.io.m_axi.arvalid.asBools).foreach { case (m_axi, arvalid) => m_axi.ar.valid := arvalid }
   blackbox.io.m_axi.arready := Cat(io.m_axi.reverse.map(_.ar.ready))
   for (i <- 0 until numMaster) {
-    io.m_axi(i).ar.bits.addr := blackbox.io.m_axi.araddr(32*i + 31, 32*i)
-    io.m_axi(i).ar.bits.burst := AxBurst(blackbox.io.m_axi.arburst(2*i + 1, 2*i))
     io.m_axi(i).ar.bits.id := blackbox.io.m_axi.arid(4*i + 3, 4*i)
+    io.m_axi(i).ar.bits.addr := blackbox.io.m_axi.araddr(32*i + 31, 32*i)
     io.m_axi(i).ar.bits.len := blackbox.io.m_axi.arlen(8*i + 7, 8*i)
     io.m_axi(i).ar.bits.size := AxSize(blackbox.io.m_axi.arsize(3*i + 2, 3*i))
+    io.m_axi(i).ar.bits.burst := AxBurst(blackbox.io.m_axi.arburst(2*i + 1, 2*i))
   }
   
   blackbox.io.m_axi.rvalid := Cat(io.m_axi.reverse.map(_.r.valid))
   (io.m_axi zip blackbox.io.m_axi.rready.asBools).foreach { case (m_axi, rready) => m_axi.r.ready := rready }
+  blackbox.io.m_axi.rid := Cat(io.m_axi.reverse.map(_.r.bits.id))
   blackbox.io.m_axi.rdata := Cat(io.m_axi.reverse.map(_.r.bits.data))
   blackbox.io.m_axi.rresp := Cat(io.m_axi.reverse.map(_.r.bits.resp.asUInt))
-  blackbox.io.m_axi.rid := Cat(io.m_axi.reverse.map(_.r.bits.id))
   blackbox.io.m_axi.rlast := Cat(io.m_axi.reverse.map(_.r.bits.last))
 }
 

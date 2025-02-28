@@ -69,19 +69,7 @@ class LoadStore extends Module {
   dontTouch(reg_r_pending)
 
 
-  // stall entire pipeline on I$ or D$ miss
-  // val imem_transaction_pending = !io.dat.imem_resp_valid
-  // val dmem_transaction_pending = c_mem_en && !(ex_reg_dmem_pending /*|| io.dat.data_misaligned)*/)
-  io.busy := (io.mem_func =/= M_X || reg_aw_pending || reg_w_pending || reg_b_pending || reg_ar_pending || reg_r_pending) && !(io.dmem.r.fire || io.dmem.b.fire)
-
-
-
-
-
-
-  
   val dmem_strb = Wire(UInt(4.W))
-  val dmem_wdata = Wire(UInt(32.W))
 
   dmem_strb := MuxCase(0.U, Seq(
     ((io.ctl_dmem_mask_sel === MSK_W)) -> "b1111".U,
@@ -102,34 +90,27 @@ class LoadStore extends Module {
     ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 2.U)) -> 16.U,
     ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 3.U)) -> 24.U
   ))
-
-  dmem_wdata := (io.wdata << dmem_wdata_shamt).asUInt
-
-  
-  
-  
   
   io.dmem.aw.valid := reg_aw_pending
-  io.dmem.aw.bits.addr := io.addr
-  io.dmem.aw.bits.burst := AxBurst.FIXED
   io.dmem.aw.bits.id := 0.U
+  io.dmem.aw.bits.addr := io.addr
   io.dmem.aw.bits.len := 0.U
   io.dmem.aw.bits.size := AxSize.S_32_BYTES
+  io.dmem.aw.bits.burst := AxBurst.FIXED
   
   io.dmem.w.valid := reg_w_pending
   io.dmem.w.bits.strb := dmem_strb
-  io.dmem.w.bits.data := dmem_wdata
+  io.dmem.w.bits.data := (io.wdata << dmem_wdata_shamt).asUInt
   io.dmem.w.bits.last := true.B
 
   io.dmem.b.ready := true.B
   
-  
   io.dmem.ar.valid := reg_ar_pending
-  io.dmem.ar.bits.addr := io.addr
-  io.dmem.ar.bits.burst := AxBurst.FIXED
   io.dmem.ar.bits.id := 0.U
+  io.dmem.ar.bits.addr := io.addr
   io.dmem.ar.bits.len := 0.U
   io.dmem.ar.bits.size := AxSize.S_32_BYTES
+  io.dmem.ar.bits.burst := AxBurst.FIXED
   
   io.dmem.r.ready := true.B
   
@@ -148,6 +129,11 @@ class LoadStore extends Module {
   val dmem_rdata_b_2_sext = Cat(Fill(24, dmem_rdata_b_2(7)), dmem_rdata_b_2)
   val dmem_rdata_b_3_sext = Cat(Fill(24, dmem_rdata_b_3(7)), dmem_rdata_b_3)
 
+
+  // stall entire pipeline on I$ or D$ miss
+  // val imem_transaction_pending = !io.dat.imem_resp_valid
+  // val dmem_transaction_pending = c_mem_en && !(ex_reg_dmem_pending /*|| io.dat.data_misaligned)*/)
+  io.busy := (io.mem_func =/= M_X || reg_aw_pending || reg_w_pending || reg_b_pending || reg_ar_pending || reg_r_pending) && !(io.dmem.r.fire || io.dmem.b.fire)
 
   io.rdata := MuxCase(0.U, Seq(
       (io.ctl_dmem_mask_sel === MSK_W) -> dmem_rdata_w,

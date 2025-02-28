@@ -6,8 +6,8 @@ import java.io.PrintWriter
 
 class Axi4LiteStreamDataFifo(width: Int) extends Module {
   val io = IO(new Bundle {
-    val s_axis = Flipped(new Axi4LiteStreamBundle())
-    val m_axis = new Axi4LiteStreamBundle()
+    val s_axis = Flipped(new Axi4StreamBundle())
+    val m_axis = new Axi4StreamBundle()
   })
 
   val blackbox = Module(new Axi4LiteStreamDataFifoBlackbox(width))
@@ -22,8 +22,8 @@ class Axi4LiteStreamDataFifoBlackbox(width: Int) extends BlackBox {
   val io = IO(new Bundle {
     val s_axis_aclk = Input(Clock())
     val s_axis_aresetn = Input(Reset())
-    val s_axis = Flipped(new Axi4LiteStreamBlackboxBundle())
-    val m_axis = new Axi4LiteStreamBlackboxBundle()
+    val s_axis = Flipped(new Axi4StreamBlackboxBundle())
+    val m_axis = new Axi4StreamBlackboxBundle()
   })
 
   def generate_tcl_script(): Unit = {
