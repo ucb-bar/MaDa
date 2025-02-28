@@ -281,8 +281,7 @@ class Core extends Module {
 
   val vlsu = Module(new SimdLoadStore())
 
-  vlsu.io.mem_func := ctrl.vmem_func
-
+  vlsu.io.mem_func := Mux(kill, M_X, ctrl.vmem_func)
   vlsu.io.addr := alu.io.out
   vlsu.io.wdata := vrd_data
 

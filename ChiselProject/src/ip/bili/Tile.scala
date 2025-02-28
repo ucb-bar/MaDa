@@ -19,9 +19,9 @@ class Tile extends Module {
   ))
 
   // val dtim = Module(new Axi4LiteMemory(addressWidth=17))
-  // val dtim = Module(new Axi4Memory(addressWidth=12))
+  val dtim = Module(new Axi4Memory(addressWidth=12))
   // val dtim = Module(new SimAxi4LiteMemory(readDelay = 10, writeDelay = 10))
-  val dtim = Module(new Axi4BlockMemory())
+  // val dtim = Module(new Axi4BlockMemory())
   
   val xbar = Module(new Axi4Crossbar(2, 2))
   
@@ -37,9 +37,6 @@ class Tile extends Module {
   xbar.io.m_axi(1) <> io.sbus
 
   // core.io.dmem <> dtim.io.s_axi
-
-  
-  core.io.vdmem := DontCare
 
   // debug connection
   io.debug := core.io.debug
