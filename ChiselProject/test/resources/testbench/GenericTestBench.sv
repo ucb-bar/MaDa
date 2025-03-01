@@ -45,8 +45,6 @@ module GenericTestBench();
     repeat (10) @(posedge clock);
     reset = 1'b0;
 
-    $display("dtim.mem.mem: %p", dut.tile.dtim.blackbox.inst.axi_mem_module.blk_mem_gen_v8_4_7_mem_module.memory);
-
     repeat (10000) @(posedge clock);
     $finish;
   end
