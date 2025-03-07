@@ -43,6 +43,9 @@ class Axi4ProtocolConverterBlackbox(
     tcl_script.println(s"""
 set_property -dict [list \\
   CONFIG.ID_WIDTH {${s_params.idWidth}} \\
+  CONFIG.MI_PROTOCOL {AXI4LITE} \\
+  CONFIG.SI_PROTOCOL {AXI4} \\
+  CONFIG.DATA_WIDTH {${s_params.dataWidth}} \\
 ] [get_ips ${ip_name}]
 """)
 
