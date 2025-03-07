@@ -28,7 +28,7 @@ object Axi4ToAxi4Lite {
       s_params = Axi4Params(),
       m_params = Axi4Params()
     ))
-    converter.io.s_axi <> axi
+    axi <> converter.io.s_axi
     converter.io.m_axi
   }
 }

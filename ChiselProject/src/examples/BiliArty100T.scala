@@ -32,20 +32,27 @@ class BiliArty100T extends RawModule {
 
     val tile = Module(new Tile())
 
-    val axi_gpio = Module(new Axi4LiteGpio())
+    val gpio = Module(new Axi4LiteGpio())
+    val uart = Module(new Axi4LiteUartLite())
 
-    val axi_converter = Module(new Axi4ProtocolConverter(
-      s_params = Axi4Params(),
-      m_params = Axi4Params()
+    val sbus_crossbar = Module(new Axi4LiteCrossbar(
+      numSlave = 1,
+      numMaster = 2,
+      device0Address = 0x10000000,
+      device1Address = 0x10001000,
     ))
-    
+
     tile.io.reset_vector := reset_vector
     
-    tile.io.sbus <> axi_converter.io.s_axi
-    axi_converter.io.m_axi <> axi_gpio.io.s_axi
+    sbus_crossbar.io.s_axi(0) <> Axi4ToAxi4Lite(tile.io.sbus)
+    gpio.attach(sbus_crossbar.io.m_axi(0))
+    uart.attach(sbus_crossbar.io.m_axi(1))
     
-    axi_gpio.io.gpio_io_i := 0x05050505.U
-    io.led := axi_gpio.io.gpio_io_o
+    gpio.io.gpio_io_i := 0x05050505.U
+    io.led := gpio.io.gpio_io_o
+
+    io.uart_rxd_out := uart.io.tx
+    uart.io.rx := io.uart_txd_in
     
     // io.debug := tile.io.debug
   }

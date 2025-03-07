@@ -15,6 +15,14 @@ class Axi4LiteUartLite extends Module {
   blackbox.io.s_axi.connect(io.s_axi)
   blackbox.io.rx := io.rx
   io.tx := blackbox.io.tx
+
+  def attach(axi: Axi4LiteBundle): Unit = {
+    io.s_axi <> axi
+  }
+
+  def attach(axi: Axi4Bundle): Unit = {
+    io.s_axi <> Axi4ToAxi4Lite(axi)
+  }
 }
 
 class Axi4LiteUartLiteBlackbox extends BlackBox {
@@ -26,7 +34,7 @@ class Axi4LiteUartLiteBlackbox extends BlackBox {
 
   def generate_tcl_script(): Unit = {
     val vivado_project_dir = "out/VivadoProject"
-    val ip_name = "AXIStreamDataFifo"
+    val ip_name = "Axi4LiteUartLiteBlackbox"
     val ip_name_lower = ip_name.toLowerCase()
 
     val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")

@@ -4,7 +4,7 @@ import chisel3.util._
 import java.io.PrintWriter
 
 
-class Axi4LiteGpio(params: Axi4Params = Axi4Params()) extends Module {
+class Axi4LiteGpio extends Module {
   val io = IO(new Bundle {
     val s_axi = Flipped(new Axi4LiteBundle())
     val gpio_io_i = Input(UInt(32.W))
@@ -24,6 +24,10 @@ class Axi4LiteGpio(params: Axi4Params = Axi4Params()) extends Module {
 
   def attach(axi: Axi4LiteBundle): Unit = {
     io.s_axi <> axi
+  }
+
+  def attach(axi: Axi4Bundle): Unit = {
+    io.s_axi <> Axi4ToAxi4Lite(axi)
   }
 }
 
