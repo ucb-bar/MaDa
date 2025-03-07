@@ -66,11 +66,6 @@ class ZedboardIO extends Bundle {
   val SW7 = Input(Bool())
 }
 
-
-class ZedboardShell extends RawModule {
+class ZedboardTop extends RawModule {
   val io = IO(new ZedboardIO())
-}
-
-class ExampleZedboardShell extends ZedboardShell {
-  // TODO: example implementation
 }

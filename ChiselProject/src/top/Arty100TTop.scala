@@ -3,22 +3,21 @@ import chisel3.util._
 import chisel3.experimental.Analog
 
 
-class RGBLEDIO extends Bundle {
+class RgbLedIO extends Bundle {
   val r = Bool()
   val g = Bool()
   val b = Bool()
 }
-
 
 class Arty100TIO extends Bundle {
   val CLK100MHZ = Input(Clock())
 
   val sw = Input(UInt(4.W))
   
-  val led0 = Output(new RGBLEDIO())
-  val led1 = Output(new RGBLEDIO())
-  val led2 = Output(new RGBLEDIO())
-  val led3 = Output(new RGBLEDIO())
+  val led0 = Output(new RgbLedIO())
+  val led1 = Output(new RgbLedIO())
+  val led2 = Output(new RgbLedIO())
+  val led3 = Output(new RgbLedIO())
 
   val led = Output(UInt(4.W))
 
@@ -59,49 +58,6 @@ class Arty100TIO extends Bundle {
 }
 
 
-class Arty100TShell extends RawModule {
+class Arty100TTop extends RawModule {
   val io = IO(new Arty100TIO())
-}
-
-class ExampleArty100TShell extends Arty100TShell {
-
-  val clock = Wire(Clock())
-  val reset = Wire(Bool())
-
-  clock := io.CLK100MHZ
-  reset := ~io.ck_rst
-
-
-  withClockAndReset(clock, reset) {
-    val counter = RegInit(0.U(32.W))
-    counter := counter + 1.U
-
-    io.led0.r := io.btn(0)
-    io.led0.g := false.B
-    io.led0.b := io.sw(0)
-
-    io.led1.r := io.btn(1)
-    io.led1.g := false.B
-    io.led1.b := io.sw(1)
-
-    io.led2.r := io.btn(2)
-    io.led2.g := false.B
-    io.led2.b := io.sw(2)
-
-    io.led3.r := io.btn(3)
-    io.led3.g := false.B
-    io.led3.b := io.sw(3)
-
-    io.led := counter(28, 25)
-
-    io.jd_0 := false.B
-    io.jd_3 := false.B
-
-    io.uart_rxd_out := io.uart_txd_in
-
-    io.eth_ref_clk := clock
-    io.eth_rstn := false.B
-    io.eth_tx_en := false.B
-    io.eth_txd := 0.U
-  }
 }
