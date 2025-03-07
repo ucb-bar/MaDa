@@ -2,8 +2,7 @@ import chisel3._
 import chisel3.util._
 
 
-class Tile(
-) extends Module {
+class Tile extends Module {
   val io = IO(new Bundle {
     val reset_vector = Input(UInt(32.W))
     val debug = Output(new DebugIO())
@@ -11,7 +10,9 @@ class Tile(
     val sbus = new Axi4Bundle()
   })
 
-  val core = Module(new Core(nVectors = 8))
+  val busWidth = 256
+
+  val core = Module(new Core(nVectors = busWidth / 32))
 
   // instruction memory must be a synchronous 1 cycle read delay memory
   val itim = Module(new Axi4LiteMemory(
@@ -20,15 +21,15 @@ class Tile(
   ))
 
   // val dtim = Module(new Axi4LiteMemory(addressWidth=17))
-  val dtim = Module(new Axi4Memory(params=Axi4Params(addressWidth=12, dataWidth=256)))
+  val dtim = Module(new Axi4Memory(params=Axi4Params(addressWidth=12, dataWidth=busWidth)))
   // val dtim = Module(new SimAxi4LiteMemory(readDelay = 10, writeDelay = 10))
   // val dtim = Module(new Axi4BlockMemory())
   
-  val xbar = Module(new Axi4Crossbar(2, 2, Axi4Params(dataWidth = 256)))
+  val xbar = Module(new Axi4Crossbar(2, 2, Axi4Params(dataWidth = busWidth)))
 
   val dmem_width_converter = Module(new Axi4DataWidthConverter(
     s_params = Axi4Params(),
-    m_params = Axi4Params(idWidth = 0, dataWidth = 256)
+    m_params = Axi4Params(idWidth = 0, dataWidth = busWidth)
   ))
   core.io.dmem <> dmem_width_converter.io.s_axi
   

@@ -57,14 +57,14 @@ void __attribute__((section(".text"), naked)) _start() {
 
 
 int main() {
-
-  // asm volatile("vfadd.vv v3, v2, v1");
-  // asm volatile("vfmul.vv v4, v2, v1");
-  // asm volatile("vfmacc.vv v5, v1, v2");
-  // asm volatile("vle32.v v2, (x1)");
-  // asm volatile("vse32.v v2, (x1)");
-
   while (1) {
+
+    asm volatile("vfadd.vv v3, v2, v1");
+    asm volatile("vfmul.vv v4, v2, v1");
+    asm volatile("vfmacc.vv v5, v1, v2");
+    asm volatile("vle32.v v2, (x1)");
+    asm volatile("vse32.v v2, (x1)");
+
     for (size_t i=0; i<DELAY_CYCLES; i+=1) {
       asm volatile("nop");
     }
