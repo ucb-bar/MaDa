@@ -4,6 +4,38 @@
 
 #define GPIO_OUTPUT  0x10000000
 
+
+/* ======== Axi4Lite Uart Lite ======== */
+#define UART_RXFIFO  0x10001000
+#define UART_TXFIFO  0x10001004
+#define UART_STAT    0x10001008
+#define UART_CTRL    0x1000100C
+
+#define UART_STAT_RX_FIFO_VALID_POS     0x0
+#define UART_STAT_RX_FIFO_VALID_MSK     (0x1 << UART_STAT_RX_FIFO_VALID_POS)
+#define UART_STAT_RX_FIFO_FULL_POS      0x1
+#define UART_STAT_RX_FIFO_FULL_MSK      (0x1 << UART_STAT_RX_FIFO_FULL_POS)
+#define UART_STAT_TX_FIFO_VALID_POS     0x2
+#define UART_STAT_TX_FIFO_VALID_MSK     (0x1 << UART_STAT_TX_FIFO_VALID_POS)
+#define UART_STAT_TX_FIFO_FULL_POS      0x3
+#define UART_STAT_TX_FIFO_FULL_MSK      (0x1 << UART_STAT_TX_FIFO_FULL_POS)
+#define UART_STAT_INTR_ENABLED_POS      0x4
+#define UART_STAT_INTR_ENABLED_MSK      (0x1 << UART_STAT_INTR_ENABLED_POS)
+#define UART_STAT_ERR_OVERRUN_POS       0x5
+#define UART_STAT_ERR_OVERRUN_MSK       (0x1 << UART_STAT_ERR_OVERRUN_POS)
+#define UART_STAT_ERR_FRAME_POS         0x6
+#define UART_STAT_ERR_FRAME_MSK         (0x1 << UART_STAT_ERR_FRAME_POS)
+#define UART_STAT_ERR_PARITY_POS        0x7
+#define UART_STAT_ERR_PARITY_MSK        (0x1 << UART_STAT_ERR_PARITY_POS)
+
+#define UART_CTRL_RST_TX_FIFO_POS       0x0
+#define UART_CTRL_RST_TX_FIFO_MSK       (0x1 << UART_CTRL_RST_TX_FIFO_POS)
+#define UART_CTRL_RST_RX_FIFO_POS       0x1
+#define UART_CTRL_RST_RX_FIFO_MSK       (0x1 << UART_CTRL_RST_RX_FIFO_POS)
+#define UART_CTRL_ENABLE_INTR_POS       0x4
+#define UART_CTRL_ENABLE_INTR_MSK       (0x1 << UART_CTRL_ENABLE_INTR_POS)
+
+
 // #define DELAY_CYCLES 2000000
 #define DELAY_CYCLES 2
 
@@ -46,6 +78,42 @@ void __attribute__((section(".text"), naked)) _start() {
 
   // Set stack pointer to 0x08001000
   asm volatile("li sp, 0x08001000");
+
+  asm volatile("sw zero, 0(sp)");
+  
+  asm volatile("vle32.v v0, 0(sp)");
+  asm volatile("vle32.v v1, 0(sp)");
+  asm volatile("vle32.v v2, 0(sp)");
+  asm volatile("vle32.v v3, 0(sp)");
+  asm volatile("vle32.v v4, 0(sp)");
+  asm volatile("vle32.v v5, 0(sp)");
+  asm volatile("vle32.v v6, 0(sp)");
+  asm volatile("vle32.v v7, 0(sp)");
+  asm volatile("vle32.v v8, 0(sp)");
+  asm volatile("vle32.v v9, 0(sp)");
+  asm volatile("vle32.v v10, 0(sp)");
+  asm volatile("vle32.v v11, 0(sp)");
+  asm volatile("vle32.v v12, 0(sp)");
+  asm volatile("vle32.v v13, 0(sp)");
+  asm volatile("vle32.v v14, 0(sp)");
+  asm volatile("vle32.v v15, 0(sp)");
+  asm volatile("vle32.v v16, 0(sp)");
+  asm volatile("vle32.v v17, 0(sp)");
+  asm volatile("vle32.v v18, 0(sp)");
+  asm volatile("vle32.v v19, 0(sp)");
+  asm volatile("vle32.v v20, 0(sp)");
+  asm volatile("vle32.v v21, 0(sp)");
+  asm volatile("vle32.v v22, 0(sp)");
+  asm volatile("vle32.v v23, 0(sp)");
+  asm volatile("vle32.v v24, 0(sp)");
+  asm volatile("vle32.v v25, 0(sp)");
+  asm volatile("vle32.v v26, 0(sp)");
+  asm volatile("vle32.v v27, 0(sp)");
+  asm volatile("vle32.v v28, 0(sp)");
+  asm volatile("vle32.v v29, 0(sp)");
+  asm volatile("vle32.v v30, 0(sp)");
+  asm volatile("vle32.v v31, 0(sp)");
+  
   
   // call main
   main();
@@ -58,12 +126,10 @@ void __attribute__((section(".text"), naked)) _start() {
 
 int main() {
   while (1) {
-
     asm volatile("vfadd.vv v3, v2, v1");
     asm volatile("vfmul.vv v4, v2, v1");
     asm volatile("vfmacc.vv v5, v1, v2");
-    asm volatile("vle32.v v2, (x1)");
-    asm volatile("vse32.v v2, (x1)");
+    asm volatile("vse32.v v2, 0(x1)");
 
     for (size_t i=0; i<DELAY_CYCLES; i+=1) {
       asm volatile("nop");
@@ -74,5 +140,7 @@ int main() {
       asm volatile("nop");
     }
     *((volatile uint32_t *)GPIO_OUTPUT) = 0x00000000;
+
+    *((volatile uint32_t *)UART_TXFIFO) = 0xCA;
   }
 }

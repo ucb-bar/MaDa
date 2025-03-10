@@ -13,7 +13,7 @@ class BiliArty100T extends RawModule {
   val pll_locked = Wire(Bool())
 
 
-  val clk_wiz = Module(new ClockingWizard(25))
+  val clk_wiz = Module(new ClockingWizard(20))
   // clocking wizard connection
   clk_wiz.io.clk_in1 := io.CLK100MHZ
   clk_wiz.io.reset := ~io.ck_rst
@@ -38,7 +38,9 @@ class BiliArty100T extends RawModule {
     val sbus_crossbar = Module(new Axi4LiteCrossbar(
       numSlave = 1,
       numMaster = 2,
+      device0Size = 0x1000,
       device0Address = 0x10000000,
+      device1Size = 0x1000,
       device1Address = 0x10001000,
     ))
 

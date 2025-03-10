@@ -25,7 +25,7 @@ class Tile extends Module {
   // val dtim = Module(new SimAxi4LiteMemory(readDelay = 10, writeDelay = 10))
   // val dtim = Module(new Axi4BlockMemory())
   
-  val xbar = Module(new Axi4Crossbar(2, 2, Axi4Params(dataWidth = busWidth)))
+  val xbar = Module(new Axi4Crossbar(2, 2, Axi4Params(dataWidth = busWidth), device1Size = 0x10000))
 
   val dmem_width_converter = Module(new Axi4DataWidthConverter(
     s_params = Axi4Params(),

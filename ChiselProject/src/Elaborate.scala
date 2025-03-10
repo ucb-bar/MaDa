@@ -92,7 +92,7 @@ object GenerateBitstream extends App {
   val sources = new File("generated-src").listFiles(new FileFilter {
     def accept(file: File): Boolean = file.isFile || file.isDirectory
   }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
-  val verilog_sources = new File("ChiselProject/test/resources/testbench").listFiles(new FileFilter {
+  val verilog_sources = new File("ChiselProject/test/resources").listFiles(new FileFilter {
     def accept(file: File): Boolean = file.isFile || file.isDirectory
   }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
 

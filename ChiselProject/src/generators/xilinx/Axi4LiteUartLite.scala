@@ -12,6 +12,8 @@ class Axi4LiteUartLite extends Module {
 
   val blackbox = Module(new Axi4LiteUartLiteBlackbox())
 
+  blackbox.io.s_axi_aclk := clock
+  blackbox.io.s_axi_aresetn := ~reset.asBool
   blackbox.io.s_axi.connect(io.s_axi)
   blackbox.io.rx := io.rx
   io.tx := blackbox.io.tx
@@ -27,6 +29,8 @@ class Axi4LiteUartLite extends Module {
 
 class Axi4LiteUartLiteBlackbox extends BlackBox {
   val io = IO(new Bundle {
+    val s_axi_aclk = Input(Clock())
+    val s_axi_aresetn = Input(Bool())
     val s_axi = Flipped(new Axi4LiteBlackboxBundle())
     val rx = Input(Bool())
     val tx = Output(Bool())
