@@ -28,7 +28,7 @@ class BiliArty100T extends RawModule {
   reset := sync_reset.io.out
 
   withClockAndReset(clock, reset) {
-    val reset_vector = RegInit(0x00000000.U(32.W))
+    val reset_vector = RegInit(0x08000000.U(32.W))
 
     val tile = Module(new Tile())
 
@@ -56,6 +56,6 @@ class BiliArty100T extends RawModule {
     io.uart_rxd_out := uart.io.tx
     uart.io.rx := io.uart_txd_in
     
-    // io.debug := tile.io.debug
+    dontTouch(tile.io.debug.tohost)
   }
 }

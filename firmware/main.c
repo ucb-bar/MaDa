@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 
 
 #define GPIO_OUTPUT  0x10000000
@@ -34,6 +35,36 @@
 #define UART_CTRL_RST_RX_FIFO_MSK       (0x1 << UART_CTRL_RST_RX_FIFO_POS)
 #define UART_CTRL_ENABLE_INTR_POS       0x4
 #define UART_CTRL_ENABLE_INTR_MSK       (0x1 << UART_CTRL_ENABLE_INTR_POS)
+
+
+
+
+
+/* ================ RISC-V specific definitions ================ */
+#define READ_CSR(REG) ({                          \
+  unsigned long __tmp;                            \
+  asm volatile ("csrr %0, " REG : "=r"(__tmp));  \
+  __tmp; })
+
+#define WRITE_CSR(REG, VAL) ({                    \
+  asm volatile ("csrw " REG ", %0" :: "rK"(VAL)); })
+
+#define SWAP_CSR(REG, VAL) ({                     \
+  unsigned long __tmp;                            \
+  asm volatile ("csrrw %0, " REG ", %1" : "=r"(__tmp) : "rK"(VAL)); \
+  __tmp; })
+
+#define SET_CSR_BITS(REG, BIT) ({                 \
+  unsigned long __tmp;                            \
+  asm volatile ("csrrs %0, " REG ", %1" : "=r"(__tmp) : "rK"(BIT)); \
+  __tmp; })
+
+#define CLEAR_CSR_BITS(REG, BIT) ({               \
+  unsigned long __tmp;                            \
+  asm volatile ("csrrc %0, " REG ", %1" : "=r"(__tmp) : "rK"(BIT)); \
+  __tmp; })
+
+
 
 
 // #define DELAY_CYCLES 2000000
@@ -125,7 +156,27 @@ void __attribute__((section(".text"), naked)) _start() {
 
 
 int main() {
+  // Create a union that can access the same memory as either float or uint32_t
+  union {
+    float f;
+    uint32_t i;
+  } converter;
+  
+  // Set the float value
+  converter.f = .1f;
+  
+  // Now converter.i contains the bit pattern of 1.0f
+  uint32_t a = converter.i;
+  
+  
   while (1) {
+    *((volatile uint32_t *)UART_TXFIFO) = 'h';
+    // *((volatile uint32_t *)UART_TXFIFO) = a;
+    // *((volatile uint32_t *)UART_TXFIFO) = a;
+    
+    WRITE_CSR("0x51E", a);
+
+
     asm volatile("vfadd.vv v3, v2, v1");
     asm volatile("vfmul.vv v4, v2, v1");
     asm volatile("vfmacc.vv v5, v1, v2");
@@ -141,6 +192,6 @@ int main() {
     }
     *((volatile uint32_t *)GPIO_OUTPUT) = 0x00000000;
 
-    *((volatile uint32_t *)UART_TXFIFO) = 0xCA;
+    // *((volatile uint32_t *)UART_TXFIFO) = 0xCA;
   }
 }

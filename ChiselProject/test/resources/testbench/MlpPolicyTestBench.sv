@@ -1,5 +1,6 @@
 `timescale 1ns / 1ps
 
+import SimUart::*;
 
 module MlpPolicyTestBench();
   parameter CLOCK_FREQ = 100_000_000;
@@ -13,6 +14,7 @@ module MlpPolicyTestBench();
   logic led;
 
   logic uart_txd;
+  logic uart_rxd;
 
   BiliArty100T dut(
     .io_CLK100MHZ(clock),
@@ -43,7 +45,7 @@ module MlpPolicyTestBench();
     .io_led(led)
   );
 
-  SimUart #(
+  SimUartConsole #(
     .BAUD_RATE(115200)
   ) sim_uart (
     .io_out(uart_rxd),
@@ -59,9 +61,13 @@ module MlpPolicyTestBench();
       begin
         sim_uart.listen();
       end
+      begin
+        sim_uart.write(8'hca, LOGGING_DEBUG);
+        sim_uart.write(8'hca, LOGGING_DEBUG);
+        repeat (1000) @(posedge clock);
+        $finish;
+      end
     join
 
-    repeat (10000) @(posedge clock);
-    $finish;
   end
 endmodule
