@@ -32,6 +32,26 @@ class InstructionDecode extends Module {
       val vwb_en = Bool()
     })
   })
+  
+
+  dontTouch(io.control_signals.valid_inst)
+  dontTouch(io.control_signals.branch_type)
+  dontTouch(io.control_signals.alu_op1_sel)
+  dontTouch(io.control_signals.alu_op2_sel)
+  dontTouch(io.control_signals.alu_func)
+  dontTouch(io.control_signals.mem_func)
+  dontTouch(io.control_signals.mem_mask)
+  dontTouch(io.control_signals.mem_signed)
+  dontTouch(io.control_signals.wb_sel)
+  dontTouch(io.control_signals.wb_en)
+  dontTouch(io.control_signals.csr_cmd)
+
+  dontTouch(io.control_signals.valu_op1_sel)
+  dontTouch(io.control_signals.valu_op2_sel)
+  dontTouch(io.control_signals.valu_func)
+  dontTouch(io.control_signals.vmem_func)
+  dontTouch(io.control_signals.vwb_sel)
+  dontTouch(io.control_signals.vwb_en)
 
   val control_signals = ListLookup(
     io.instruction,
@@ -107,9 +127,7 @@ class InstructionDecode extends Module {
       VFMAX_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MAX  , M_X  , WB_ALU , T  ),
       VFMUL_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MUL  , M_X  , WB_ALU , T  ),
       VFMACC_VV -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MACC , M_X  , WB_ALU , T  ),
-
       VLE32_V   -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_RD , WB_MEM , T  ),
-
       VSE32_V   -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_WR , WB_MEM , T  ),
     )
   )
@@ -156,25 +174,4 @@ class InstructionDecode extends Module {
   io.control_signals.vmem_func := c_vmem_func
   io.control_signals.vwb_sel := c_vwb_sel
   io.control_signals.vwb_en := c_vwb_en
-
-
-  dontTouch(c_valid_base_inst)
-  dontTouch(c_valid_vector_inst)
-  dontTouch(c_branch_type)
-  dontTouch(c_alu_op1_sel)
-  dontTouch(c_alu_op2_sel)
-  dontTouch(c_alu_func)
-  dontTouch(c_mem_func)
-  dontTouch(c_mem_mask)
-  dontTouch(c_mem_signed)
-  dontTouch(c_wb_sel)
-  dontTouch(c_wb_en)
-  dontTouch(c_csr_cmd)
-
-  dontTouch(c_valu_op1_sel)
-  dontTouch(c_valu_op2_sel)
-  dontTouch(c_valu_func)
-  dontTouch(c_vmem_func)
-  dontTouch(c_vwb_sel)
-  dontTouch(c_vwb_en)
 }

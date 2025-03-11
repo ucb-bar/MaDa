@@ -3,78 +3,43 @@
 #include <stdio.h>
 
 
-#define GPIO_OUTPUT  0x10000000
-
-
-/* ======== Axi4Lite Uart Lite ======== */
-#define UART_RXFIFO  0x10001000
-#define UART_TXFIFO  0x10001004
-#define UART_STAT    0x10001008
-#define UART_CTRL    0x1000100C
-
-#define UART_STAT_RX_FIFO_VALID_POS     0x0
-#define UART_STAT_RX_FIFO_VALID_MSK     (0x1 << UART_STAT_RX_FIFO_VALID_POS)
-#define UART_STAT_RX_FIFO_FULL_POS      0x1
-#define UART_STAT_RX_FIFO_FULL_MSK      (0x1 << UART_STAT_RX_FIFO_FULL_POS)
-#define UART_STAT_TX_FIFO_VALID_POS     0x2
-#define UART_STAT_TX_FIFO_VALID_MSK     (0x1 << UART_STAT_TX_FIFO_VALID_POS)
-#define UART_STAT_TX_FIFO_FULL_POS      0x3
-#define UART_STAT_TX_FIFO_FULL_MSK      (0x1 << UART_STAT_TX_FIFO_FULL_POS)
-#define UART_STAT_INTR_ENABLED_POS      0x4
-#define UART_STAT_INTR_ENABLED_MSK      (0x1 << UART_STAT_INTR_ENABLED_POS)
-#define UART_STAT_ERR_OVERRUN_POS       0x5
-#define UART_STAT_ERR_OVERRUN_MSK       (0x1 << UART_STAT_ERR_OVERRUN_POS)
-#define UART_STAT_ERR_FRAME_POS         0x6
-#define UART_STAT_ERR_FRAME_MSK         (0x1 << UART_STAT_ERR_FRAME_POS)
-#define UART_STAT_ERR_PARITY_POS        0x7
-#define UART_STAT_ERR_PARITY_MSK        (0x1 << UART_STAT_ERR_PARITY_POS)
-
-#define UART_CTRL_RST_TX_FIFO_POS       0x0
-#define UART_CTRL_RST_TX_FIFO_MSK       (0x1 << UART_CTRL_RST_TX_FIFO_POS)
-#define UART_CTRL_RST_RX_FIFO_POS       0x1
-#define UART_CTRL_RST_RX_FIFO_MSK       (0x1 << UART_CTRL_RST_RX_FIFO_POS)
-#define UART_CTRL_ENABLE_INTR_POS       0x4
-#define UART_CTRL_ENABLE_INTR_MSK       (0x1 << UART_CTRL_ENABLE_INTR_POS)
-
-
-
-
-
-/* ================ RISC-V specific definitions ================ */
-#define READ_CSR(REG) ({                          \
-  unsigned long __tmp;                            \
-  asm volatile ("csrr %0, " REG : "=r"(__tmp));  \
-  __tmp; })
-
-#define WRITE_CSR(REG, VAL) ({                    \
-  asm volatile ("csrw " REG ", %0" :: "rK"(VAL)); })
-
-#define SWAP_CSR(REG, VAL) ({                     \
-  unsigned long __tmp;                            \
-  asm volatile ("csrrw %0, " REG ", %1" : "=r"(__tmp) : "rK"(VAL)); \
-  __tmp; })
-
-#define SET_CSR_BITS(REG, BIT) ({                 \
-  unsigned long __tmp;                            \
-  asm volatile ("csrrs %0, " REG ", %1" : "=r"(__tmp) : "rK"(BIT)); \
-  __tmp; })
-
-#define CLEAR_CSR_BITS(REG, BIT) ({               \
-  unsigned long __tmp;                            \
-  asm volatile ("csrrc %0, " REG ", %1" : "=r"(__tmp) : "rK"(BIT)); \
-  __tmp; })
-
-
+#include "metal.h"
+#include "riscv.h"
+#include "uart.h"
+#include "gpio.h"
 
 
 // #define DELAY_CYCLES 2000000
 #define DELAY_CYCLES 2
 
-// function declaration
+
+// === function declarations === //
 int main();
 
 
-void __attribute__((section(".text"), naked)) _start() {
+// === system functions === //
+int putchar(int c) {
+  while (READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_FULL_MSK)) {
+    asm volatile("nop");
+  }
+  UART0->TXFIFO = READ_BITS(c, 0xFF);
+}
+
+void prints(const char *str) {
+  while (*str) {
+    putchar(*str);
+    str += 1;
+  }
+}
+void exit() {
+  WRITE_CSR("0x51E", 0x01);
+}
+
+
+
+// === startup code === //
+void __attribute__((section(".text.init"), naked)) _start() {
+  // clear all registers to avoid X's
   asm volatile("li x1, 0");
   asm volatile("li x2, 0");
   asm volatile("li x3, 0");
@@ -107,91 +72,112 @@ void __attribute__((section(".text"), naked)) _start() {
   asm volatile("li x30, 0");
   asm volatile("li x31, 0");
 
-  // Set stack pointer to 0x08001000
+  // set stack pointer to 0x08001000
+  // and set C runtime argc to 0
   asm volatile("li sp, 0x08001000");
-
-  asm volatile("sw zero, 0(sp)");
+  asm volatile("addi s0, sp, -32");
+  asm volatile("sw zero, 0x00(s0)");
+  asm volatile("sw zero, 0x04(s0)");
+  asm volatile("sw zero, 0x08(s0)");
+  asm volatile("sw zero, 0x0C(s0)");
+  asm volatile("sw zero, 0x10(s0)");
+  asm volatile("sw zero, 0x14(s0)");
+  asm volatile("sw zero, 0x18(s0)");
+  asm volatile("sw zero, 0x1C(s0)");
   
-  asm volatile("vle32.v v0, 0(sp)");
-  asm volatile("vle32.v v1, 0(sp)");
-  asm volatile("vle32.v v2, 0(sp)");
-  asm volatile("vle32.v v3, 0(sp)");
-  asm volatile("vle32.v v4, 0(sp)");
-  asm volatile("vle32.v v5, 0(sp)");
-  asm volatile("vle32.v v6, 0(sp)");
-  asm volatile("vle32.v v7, 0(sp)");
-  asm volatile("vle32.v v8, 0(sp)");
-  asm volatile("vle32.v v9, 0(sp)");
-  asm volatile("vle32.v v10, 0(sp)");
-  asm volatile("vle32.v v11, 0(sp)");
-  asm volatile("vle32.v v12, 0(sp)");
-  asm volatile("vle32.v v13, 0(sp)");
-  asm volatile("vle32.v v14, 0(sp)");
-  asm volatile("vle32.v v15, 0(sp)");
-  asm volatile("vle32.v v16, 0(sp)");
-  asm volatile("vle32.v v17, 0(sp)");
-  asm volatile("vle32.v v18, 0(sp)");
-  asm volatile("vle32.v v19, 0(sp)");
-  asm volatile("vle32.v v20, 0(sp)");
-  asm volatile("vle32.v v21, 0(sp)");
-  asm volatile("vle32.v v22, 0(sp)");
-  asm volatile("vle32.v v23, 0(sp)");
-  asm volatile("vle32.v v24, 0(sp)");
-  asm volatile("vle32.v v25, 0(sp)");
-  asm volatile("vle32.v v26, 0(sp)");
-  asm volatile("vle32.v v27, 0(sp)");
-  asm volatile("vle32.v v28, 0(sp)");
-  asm volatile("vle32.v v29, 0(sp)");
-  asm volatile("vle32.v v30, 0(sp)");
-  asm volatile("vle32.v v31, 0(sp)");
-  
+  // clear all vector registers to avoid X's
+  // we use the argc as the initializer
+  asm volatile("vle32.v v0, (s0)");
+  asm volatile("vle32.v v1, (s0)");
+  asm volatile("vle32.v v2, (s0)");
+  asm volatile("vle32.v v3, (s0)");
+  asm volatile("vle32.v v4, (s0)");
+  asm volatile("vle32.v v5, (s0)");
+  asm volatile("vle32.v v6, (s0)");
+  asm volatile("vle32.v v7, (s0)");
+  asm volatile("vle32.v v8, (s0)");
+  asm volatile("vle32.v v9, (s0)");
+  asm volatile("vle32.v v10, (s0)");
+  asm volatile("vle32.v v11, (s0)");
+  asm volatile("vle32.v v12, (s0)");
+  asm volatile("vle32.v v13, (s0)");
+  asm volatile("vle32.v v14, (s0)");
+  asm volatile("vle32.v v15, (s0)");
+  asm volatile("vle32.v v16, (s0)");
+  asm volatile("vle32.v v17, (s0)");
+  asm volatile("vle32.v v18, (s0)");
+  asm volatile("vle32.v v19, (s0)");
+  asm volatile("vle32.v v20, (s0)");
+  asm volatile("vle32.v v21, (s0)");
+  asm volatile("vle32.v v22, (s0)");
+  asm volatile("vle32.v v23, (s0)");
+  asm volatile("vle32.v v24, (s0)");
+  asm volatile("vle32.v v25, (s0)");
+  asm volatile("vle32.v v26, (s0)");
+  asm volatile("vle32.v v27, (s0)");
+  asm volatile("vle32.v v28, (s0)");
+  asm volatile("vle32.v v29, (s0)");
+  asm volatile("vle32.v v30, (s0)");
+  asm volatile("vle32.v v31, (s0)");
   
   // call main
   main();
 
-  while (1) {
-    // don't exit
-  }
+  exit();
+}
+
+typedef union {
+  float f32;
+  uint32_t u32;
+} vec_t;
+
+
+void matvec(uint32_t *c, uint32_t *a, uint32_t *b) {
+  // Load values from pointers into vector registers
+  asm volatile("vle32.v v1, (%0)" : : "r"(a) : "v1");
+  asm volatile("vle32.v v2, (%0)" : : "r"(b) : "v2");
+  
+  // Perform vector addition
+  asm volatile("vfadd.vv v3, v2, v1");
+  
+  // Store result back to the destination pointer
+  asm volatile("vse32.v v3, (%0)" : : "r"(c) : "memory");
+  
+  // asm volatile("vfadd.vv v3, v2, v1");
+  // asm volatile("vfmul.vv v4, v2, v1");
+  // asm volatile("vfmacc.vv v5, v1, v2");
+  // asm volatile("vse32.v v2, 0(x1)");
 }
 
 
-int main() {
-  // Create a union that can access the same memory as either float or uint32_t
-  union {
-    float f;
-    uint32_t i;
-  } converter;
-  
-  // Set the float value
-  converter.f = .1f;
-  
-  // Now converter.i contains the bit pattern of 1.0f
-  uint32_t a = converter.i;
-  
-  
+
+int main(void) {
+  // prints("start.\n");
+
   while (1) {
-    *((volatile uint32_t *)UART_TXFIFO) = 'h';
-    // *((volatile uint32_t *)UART_TXFIFO) = a;
-    // *((volatile uint32_t *)UART_TXFIFO) = a;
+    vec_t a, b, c;
+
+    a.f32 = 1.0622f;
+    b.f32 = 2.25f;
+    c.f32 = 0.0f;
+
+    uint64_t ua = a.u32;
+    uint64_t ub = b.u32;
+    uint64_t uc = c.u32;
+
+    matvec(&uc, &ua, &ub);
+  
+    // load C into tohost CSR
+    WRITE_CSR("0x51E", uc);
+
+    // prints("finish loop.\n");
+
+
+    // wait FIFO to be empty
+    // while (!READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_EMPTY_MSK)) {
+    //   asm volatile("nop");
+    // }
     
-    WRITE_CSR("0x51E", a);
-
-
-    asm volatile("vfadd.vv v3, v2, v1");
-    asm volatile("vfmul.vv v4, v2, v1");
-    asm volatile("vfmacc.vv v5, v1, v2");
-    asm volatile("vse32.v v2, 0(x1)");
-
-    for (size_t i=0; i<DELAY_CYCLES; i+=1) {
-      asm volatile("nop");
-    }
-    *((volatile uint32_t *)GPIO_OUTPUT) = 0x00000001;
-    
-    for (size_t i=0; i<DELAY_CYCLES; i+=1) {
-      asm volatile("nop");
-    }
-    *((volatile uint32_t *)GPIO_OUTPUT) = 0x00000000;
-
-    // *((volatile uint32_t *)UART_TXFIFO) = 0xCA;
+    // exit();
   }
 }

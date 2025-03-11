@@ -10,7 +10,7 @@ class Tile extends Module {
     val sbus = new Axi4Bundle()
   })
 
-  val busWidth = 256
+  val busWidth = 64
 
   val core = Module(new Core(nVectors = busWidth / 32))
 
@@ -21,17 +21,25 @@ class Tile extends Module {
   ))
 
   // val dtim = Module(new Axi4LiteMemory(addressWidth=17))
-  val dtim = Module(new Axi4Memory(params=Axi4Params(addressWidth=12, dataWidth=busWidth)))
+  val dtim = Module(new Axi4Memory(
+    params=Axi4Params(addressWidth=14, dataWidth=busWidth),
+    memoryFileHex="firmware.64.hex"
+  ))
   // val dtim = Module(new SimAxi4LiteMemory(readDelay = 10, writeDelay = 10))
   // val dtim = Module(new Axi4BlockMemory())
   
   val xbar = Module(new Axi4Crossbar(2, 2, Axi4Params(dataWidth = busWidth), device1Size = 0x10000))
 
-  val dmem_width_converter = Module(new Axi4DataWidthConverter(
-    s_params = Axi4Params(),
-    m_params = Axi4Params(idWidth = 0, dataWidth = busWidth)
+  val dmem_upsizer = Module(new Axi4WidthUpsizer(
+    s_params = Axi4Params(dataWidth = 32),
+    m_params = Axi4Params(dataWidth = busWidth)
   ))
-  core.io.dmem <> dmem_width_converter.io.s_axi
+  val sbus_downsizer = Module(new Axi4WidthDownsizer(
+    s_params = Axi4Params(dataWidth = busWidth),
+    m_params = Axi4Params(dataWidth = 32)
+  ))
+  
+  core.io.dmem <> dmem_upsizer.io.s_axi
   
   core.io.reset_vector := io.reset_vector
   
@@ -41,10 +49,11 @@ class Tile extends Module {
   
   // sbus crossbar connections
   // core.io.dmem <> xbar.io.s_axi(0)
-  dmem_width_converter.io.m_axi <> xbar.io.s_axi(0)
+  dmem_upsizer.io.m_axi <> xbar.io.s_axi(0)
   core.io.vdmem <> xbar.io.s_axi(1)
   xbar.io.m_axi(0) <> dtim.io.s_axi
-  xbar.io.m_axi(1) <> io.sbus
+  xbar.io.m_axi(1) <> sbus_downsizer.io.s_axi
+  sbus_downsizer.io.m_axi <> io.sbus
 
   // core.io.dmem <> dtim.io.s_axi
 

@@ -23,7 +23,7 @@ class Arty100TIO extends Bundle {
 
   val btn = Input(UInt(4.W))
 
-  val ja = Input(UInt(8.W))
+  val ja = Output(UInt(8.W))
   val jb = Input(UInt(8.W))
   val jc = Input(UInt(8.W))
   // val jd = Analog(8.W)

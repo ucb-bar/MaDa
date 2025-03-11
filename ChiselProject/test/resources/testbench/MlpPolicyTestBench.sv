@@ -5,6 +5,9 @@ import SimUart::*;
 module MlpPolicyTestBench();
   parameter CLOCK_FREQ = 100_000_000;
   parameter CLOCK_PERIOD = 1_000_000_000 / CLOCK_FREQ;
+
+  // parameter TIMEOUT_CYCLES = 2_000_000;
+  parameter TIMEOUT_CYCLES = 2_000;
   
   // setup clock and reset
   reg clock, reset;
@@ -16,11 +19,13 @@ module MlpPolicyTestBench();
   logic uart_txd;
   logic uart_rxd;
 
+  logic [7:0] tohost;
+
   BiliArty100T dut(
     .io_CLK100MHZ(clock),
     .io_sw(4'b0),
     .io_btn(4'b0),
-    .io_ja(8'b0),
+    .io_ja(tohost),
     .io_jb(1'b0),
     .io_jc(1'b0),
     .io_jd_0(),
@@ -59,13 +64,25 @@ module MlpPolicyTestBench();
     
     fork
       begin
-        sim_uart.listen();
+        sim_uart.listen(LOGGING_INFO);
       end
       begin
-        sim_uart.write(8'hca, LOGGING_DEBUG);
-        sim_uart.write(8'hca, LOGGING_DEBUG);
-        repeat (1000) @(posedge clock);
+        sim_uart.write(8'hca);
+        sim_uart.write(8'hca);
+      end
+      begin
+        repeat (TIMEOUT_CYCLES) @(posedge clock);
+        $display("Timeout! called at %t.", $time);
         $finish;
+      end
+      begin
+        forever begin
+          @(posedge clock);
+          if (tohost == 8'h01) begin
+            $display("exit() called from DUT at %t.", $time);
+            $finish;
+          end
+        end
       end
     join
 

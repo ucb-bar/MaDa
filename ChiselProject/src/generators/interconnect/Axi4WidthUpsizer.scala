@@ -2,13 +2,9 @@ import chisel3._
 import chisel3.util._
 
 class Axi4WidthUpsizer(
-  // s_params: Axi4Params = Axi4Params()
-  // m_params: Axi4Params = Axi4Params(dataWidth = 64)
+  s_params: Axi4Params = Axi4Params(),
+  m_params: Axi4Params = Axi4Params(dataWidth = 64)
 ) extends Module {
-  
-  val s_params: Axi4Params = Axi4Params()
-  val m_params: Axi4Params = Axi4Params(dataWidth = 64)
-
   val io = IO(new Bundle {
     val s_axi = Flipped(new Axi4Bundle(s_params))
     val m_axi = new Axi4Bundle(m_params)
@@ -21,11 +17,6 @@ class Axi4WidthUpsizer(
   val reg_read_addr_offset = RegInit(0.U((m_addr_index - s_addr_index).W))
   val write_addr_offset = io.m_axi.aw.bits.addr(m_addr_index-1, s_addr_index)
   val read_addr_offset = io.m_axi.ar.bits.addr(m_addr_index-1, s_addr_index)
-
-  dontTouch(reg_write_addr_offset)
-  dontTouch(reg_read_addr_offset)
-  dontTouch(write_addr_offset)
-  dontTouch(read_addr_offset)
 
   when (io.m_axi.aw.fire) {
     reg_write_addr_offset := write_addr_offset
@@ -46,13 +37,13 @@ class Axi4WidthUpsizer(
   io.s_axi.w.ready := io.m_axi.w.ready
   io.m_axi.w.bits.data := Mux(
     io.m_axi.aw.fire,
-    io.s_axi.w.bits.data << (m_params.dataWidth.U * write_addr_offset),
-    io.s_axi.w.bits.data << (m_params.dataWidth.U * reg_write_addr_offset)
+    io.s_axi.w.bits.data << (s_params.dataWidth.U * write_addr_offset),
+    io.s_axi.w.bits.data << (s_params.dataWidth.U * reg_write_addr_offset)
   )
   io.m_axi.w.bits.strb := Mux(
     io.m_axi.aw.fire,
-    io.s_axi.w.bits.strb << ((m_params.dataWidth.U / 8.U) * write_addr_offset),
-    io.s_axi.w.bits.strb << ((m_params.dataWidth.U / 8.U) * reg_write_addr_offset)
+    io.s_axi.w.bits.strb << ((s_params.dataWidth.U / 8.U) * write_addr_offset),
+    io.s_axi.w.bits.strb << ((s_params.dataWidth.U / 8.U) * reg_write_addr_offset)
   )
   io.m_axi.w.bits.last := io.s_axi.w.bits.last
 
@@ -74,8 +65,8 @@ class Axi4WidthUpsizer(
   io.s_axi.r.bits.id := io.m_axi.r.bits.id
   io.s_axi.r.bits.data := Mux(
     io.m_axi.ar.fire,
-    io.m_axi.r.bits.data >> (m_params.addressWidth.U * read_addr_offset),
-    io.m_axi.r.bits.data >> (m_params.addressWidth.U * reg_read_addr_offset)
+    io.m_axi.r.bits.data >> (s_params.dataWidth.U * read_addr_offset),
+    io.m_axi.r.bits.data >> (s_params.dataWidth.U * reg_read_addr_offset)
   )
   io.s_axi.r.bits.resp := io.m_axi.r.bits.resp
   io.s_axi.r.bits.last := io.m_axi.r.bits.last

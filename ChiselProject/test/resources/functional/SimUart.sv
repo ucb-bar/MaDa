@@ -64,6 +64,12 @@ module SimUartConsole #(
     int j;
     begin
       automatic logic [9:0] rx_char;
+
+      // Display message at the start of task execution
+      if (logging_mode == SimUart::LOGGING_INFO) begin
+        $display("[UART] UART0 is here (stdin/stdout):");
+      end
+
       forever begin
         // Wait until serial_out is LOW (start of transaction)
         wait (io_in === 1'b0);
@@ -76,7 +82,8 @@ module SimUartConsole #(
         end
 
         if (logging_mode == SimUart::LOGGING_INFO) begin
-          $display("%c", rx_char[8:1]);
+          $write("%c", rx_char[8:1]);
+          $fflush();
         end
         if (logging_mode == SimUart::LOGGING_DEBUG) begin
           $display("[time %t] <SimUART> RX <-- 0x%h, start_bit=%b, stop_bit=%b", $time, rx_char[8:1], rx_char[0], rx_char[9]);

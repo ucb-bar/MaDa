@@ -55,7 +55,7 @@ class BiliArty100T extends RawModule {
 
     io.uart_rxd_out := uart.io.tx
     uart.io.rx := io.uart_txd_in
-    
-    dontTouch(tile.io.debug.tohost)
+
+    io.ja := tile.io.debug.tohost(7, 0)
   }
 }
