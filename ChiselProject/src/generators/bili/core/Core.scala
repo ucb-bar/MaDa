@@ -284,6 +284,7 @@ class Core(
   val vlsu = Module(new SimdLoadStore(nVectors))
 
   vlsu.io.mem_func := Mux(kill, M_X, ctrl.vmem_func)
+  vlsu.io.strided := ctrl.vmem_stride
   vlsu.io.addr := alu.io.out
   vlsu.io.wdata := vrd_data
 

@@ -108,6 +108,10 @@ object SimdControlConstants {
   val SIMD_MAX  = 3.asUInt(3.W)
   val SIMD_MUL  = 4.asUInt(3.W)
   val SIMD_MACC = 5.asUInt(3.W)
+
+  val STRIDE_X    = 0.asUInt(1.W)
+  val STRIDE_UNIT = 0.asUInt(1.W)
+  val STRIDE_0    = 1.asUInt(1.W)
 }
 
 object CsrControlConstants {

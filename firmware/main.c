@@ -134,8 +134,8 @@ typedef union {
 
 void matvec(uint32_t *c, uint32_t *a, uint32_t *b) {
   // Load values from pointers into vector registers
-  asm volatile("vle32.v v1, (%0)" : : "r"(a) : "v1");
-  asm volatile("vle32.v v2, (%0)" : : "r"(b) : "v2");
+  asm volatile("vlse32.v v1, (%0), zero" : : "r"(a) : "v1");
+  asm volatile("vlse32.v v2, (%0), zero" : : "r"(b) : "v2");
   
   // Perform vector addition
   asm volatile("vfadd.vv v3, v2, v1");
@@ -161,9 +161,9 @@ int main(void) {
     b.f32 = 2.25f;
     c.f32 = 0.0f;
 
-    uint64_t ua = a.u32;
-    uint64_t ub = b.u32;
-    uint64_t uc = c.u32;
+    uint32_t ua = a.u32;
+    uint32_t ub = b.u32;
+    uint32_t uc = c.u32;
 
     matvec(&uc, &ua, &ub);
   

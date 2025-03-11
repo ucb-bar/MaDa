@@ -28,6 +28,7 @@ class InstructionDecode extends Module {
       val valu_op2_sel = UInt(OP2_X.getWidth.W)
       val valu_func = UInt(ALU_X.getWidth.W)
       val vmem_func = UInt(M_X.getWidth.W)
+      val vmem_stride = UInt(STRIDE_X.getWidth.W)
       val vwb_sel = UInt(WB_X.getWidth.W)
       val vwb_en = Bool()
     })
@@ -50,6 +51,7 @@ class InstructionDecode extends Module {
   dontTouch(io.control_signals.valu_op2_sel)
   dontTouch(io.control_signals.valu_func)
   dontTouch(io.control_signals.vmem_func)
+  dontTouch(io.control_signals.vmem_stride)
   dontTouch(io.control_signals.vwb_sel)
   dontTouch(io.control_signals.vwb_en)
 
@@ -115,20 +117,21 @@ class InstructionDecode extends Module {
 
   val vector_control_signals = ListLookup(
     io.instruction,
-                /* | valid | VALU    | VALU    | VALU      | mem  |        | WB | */
-                /* | inst? | op1 sel | op2 sel | function  | op   | WB sel | en | */
+                /* | valid | VALU    | VALU    | VALU      | mem  | memory   |        | WB | */
+                /* | inst? | op1 sel | op2 sel | function  | op   | stride   | WB sel | en | */
                    // default values
-                   List( F , OP1_X   , OP2_X   , SIMD_X    , M_X  , WB_X   , F  ),
+                   List( F , OP1_X   , OP2_X   , SIMD_X    , M_X  , STRIDE_X , WB_X   , F  ),
     Array(
 
-      VADD_VV   -> List( T , OP1_RS1 , OP2_RS2 , SIMD_ADD  , M_X  , WB_ALU , T  ),
-      VADD_VF   -> List( T , OP1_RS1 , OP2_RS2 , SIMD_ADD  , M_X  , WB_ALU , T  ),
-      VFMIN_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MIN  , M_X  , WB_ALU , T  ),
-      VFMAX_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MAX  , M_X  , WB_ALU , T  ),
-      VFMUL_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MUL  , M_X  , WB_ALU , T  ),
-      VFMACC_VV -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MACC , M_X  , WB_ALU , T  ),
-      VLE32_V   -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_RD , WB_MEM , T  ),
-      VSE32_V   -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_WR , WB_MEM , T  ),
+      VADD_VV   -> List( T , OP1_RS1 , OP2_RS2 , SIMD_ADD  , M_X  , STRIDE_X , WB_ALU , T  ),
+      VADD_VF   -> List( T , OP1_RS1 , OP2_RS2 , SIMD_ADD  , M_X  , STRIDE_X , WB_ALU , T  ),
+      VFMIN_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MIN  , M_X  , STRIDE_X , WB_ALU , T  ),
+      VFMAX_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MAX  , M_X  , STRIDE_X , WB_ALU , T  ),
+      VFMUL_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MUL  , M_X  , STRIDE_X , WB_ALU , T  ),
+      VFMACC_VV -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MACC , M_X  , STRIDE_X , WB_ALU , T  ),
+      VLE32_V   -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_RD , STRIDE_X , WB_MEM , T  ),
+      VLSE32_V  -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_RD , STRIDE_0 , WB_MEM , T  ),  // used as broadcast load
+      VSE32_V   -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_WR , STRIDE_X , WB_MEM , T  ),
     )
   )
 
@@ -152,6 +155,7 @@ class InstructionDecode extends Module {
    :: c_valu_op2_sel
    :: c_valu_func
    :: c_vmem_func
+   :: c_vmem_stride
    :: c_vwb_sel
    :: (c_vwb_en: Bool)
    :: Nil) = vector_control_signals
@@ -172,6 +176,7 @@ class InstructionDecode extends Module {
   io.control_signals.valu_op2_sel := c_valu_op2_sel
   io.control_signals.valu_func := c_valu_func
   io.control_signals.vmem_func := c_vmem_func
+  io.control_signals.vmem_stride := c_vmem_stride
   io.control_signals.vwb_sel := c_vwb_sel
   io.control_signals.vwb_en := c_vwb_en
 }

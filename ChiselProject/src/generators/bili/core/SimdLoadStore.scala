@@ -3,22 +3,25 @@ import chisel3.util._
 
 import Instructions._
 import ScalarControlConstants._
+import SimdControlConstants._
 
 
 class SimdLoadStore(
-  nVectors: Int = 1
+  nVectors: Int = 1,
+  dataWidth: Int = 32
 ) extends Module {
   val io = IO(new Bundle {
     val mem_func = Input(UInt(M_X.getWidth.W))
+    val strided = Input(UInt(STRIDE_X.getWidth.W))
 
     val addr = Input(UInt(32.W))
-    val wdata = Input(Vec(nVectors, UInt(32.W)))
+    val wdata = Input(Vec(nVectors, UInt(dataWidth.W)))
 
-    val dmem = new Axi4Bundle(params=Axi4Params(dataWidth=nVectors*32))
+    val dmem = new Axi4Bundle(params=Axi4Params(dataWidth=nVectors*dataWidth))
 
     val busy = Output(Bool())
 
-    val rdata = Output(Vec(nVectors, UInt(32.W)))
+    val rdata = Output(Vec(nVectors, UInt(dataWidth.W)))
   })
 
   
@@ -76,7 +79,7 @@ class SimdLoadStore(
   io.dmem.aw.bits.burst := AxBurst.FIXED
   
   io.dmem.w.valid := reg_w_pending
-  io.dmem.w.bits.strb := ~0.U(((nVectors*32)/8).W)
+  io.dmem.w.bits.strb := ~0.U(((nVectors*dataWidth)/8).W)
   io.dmem.w.bits.data := Cat(io.wdata.reverse)
   io.dmem.w.bits.last := true.B
   
@@ -96,8 +99,14 @@ class SimdLoadStore(
   // val dmem_transaction_pending = c_mem_en && !(ex_reg_dmem_pending /*|| io.dat.data_misaligned)*/)
   io.busy := (io.mem_func =/= M_X || reg_aw_pending || reg_w_pending || reg_b_pending || reg_ar_pending || reg_r_pending) && !(io.dmem.r.fire || io.dmem.b.fire)
   
+  // @see Axi4WidthUpsizer.scala
+  val s_addr_index = log2Ceil(dataWidth / 8)
+  val bus_addr_index = log2Ceil(nVectors*dataWidth / 8)
+
+  val addr_offset = io.dmem.ar.bits.addr(bus_addr_index-1, s_addr_index)
+
   // Split the wide AXI read data into individual 32-bit vectors
   for (i <- 0 until nVectors) {
-    io.rdata(i) := io.dmem.r.bits.data((i + 1) * 32 - 1, i * 32)
+    io.rdata(i) := Mux(io.strided === STRIDE_0, io.dmem.r.bits.data >> (dataWidth.U * addr_offset), io.dmem.r.bits.data((i + 1) * 32 - 1, i * 32))
   }
 }
