@@ -7,7 +7,7 @@ module MlpPolicyTestBench();
   parameter CLOCK_PERIOD = 1_000_000_000 / CLOCK_FREQ;
 
   // parameter TIMEOUT_CYCLES = 2_000_000;
-  parameter TIMEOUT_CYCLES = 2_000;
+  parameter TIMEOUT_CYCLES = 4_000;
   
   // setup clock and reset
   reg clock, reset;

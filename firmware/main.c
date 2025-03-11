@@ -31,7 +31,8 @@ void prints(const char *str) {
     str += 1;
   }
 }
-void exit() {
+
+void exit(int code) {
   WRITE_CSR("0x51E", 0x01);
 }
 
@@ -123,7 +124,7 @@ void __attribute__((section(".text.init"), naked)) _start() {
   // call main
   main();
 
-  exit();
+  exit(1);
 }
 
 typedef union {
@@ -132,17 +133,20 @@ typedef union {
 } vec_t;
 
 
-void matvec(uint32_t *c, uint32_t *a, uint32_t *b) {
+void linear(uint32_t *y, uint32_t *x, uint32_t *w, uint32_t *b) {
   // Load values from pointers into vector registers
-  asm volatile("vlse32.v v1, (%0), zero" : : "r"(a) : "v1");
-  asm volatile("vlse32.v v2, (%0), zero" : : "r"(b) : "v2");
+  asm volatile("vlse32.v v1, (%0), zero" : : "r"(x) : "v1");
+  asm volatile("vle32.v v2, (%0)" : : "r"(w) : "v2");
+  asm volatile("vlse32.v v3, (%0), zero" : : "r"(b) : "v3");
   
-  // Perform vector addition
-  asm volatile("vfadd.vv v3, v2, v1");
+  // y = x * w + b
+  asm volatile("vfmul.vv v4, v1, v2");
+  asm volatile("vfadd.vv v4, v4, v3");
   
   // Store result back to the destination pointer
-  asm volatile("vse32.v v3, (%0)" : : "r"(c) : "memory");
+  asm volatile("vse32.v v4, (%0)" : : "r"(y) : "memory");
   
+
   // asm volatile("vfadd.vv v3, v2, v1");
   // asm volatile("vfmul.vv v4, v2, v1");
   // asm volatile("vfmacc.vv v5, v1, v2");
@@ -150,25 +154,33 @@ void matvec(uint32_t *c, uint32_t *a, uint32_t *b) {
 }
 
 
+static uint32_t w[2] = { 0 };
 
 int main(void) {
   // prints("start.\n");
 
   while (1) {
-    vec_t a, b, c;
+    vec_t vy, vx, vw, vb;
 
-    a.f32 = 1.0622f;
-    b.f32 = 2.25f;
-    c.f32 = 0.0f;
+    // vx.f32 = 0.3367f;
+    // vw.f32 = 0.1288f;
+    // vb.f32 = 0.2345f;
+    vx.f32 = 0.1f;
+    vb.f32 = 1.f;
+    
+    vw.f32 = 4.f;
+    w[0] = vw.u32;
+    vw.f32 = 2.f;
+    w[1] = vw.u32;
 
-    uint32_t ua = a.u32;
-    uint32_t ub = b.u32;
-    uint32_t uc = c.u32;
+    uint32_t uy = vy.u32;
+    uint32_t ux = vx.u32;
+    uint32_t ub = vb.u32;
 
-    matvec(&uc, &ua, &ub);
+    linear(&uy, &ux, w, &ub);
   
     // load C into tohost CSR
-    WRITE_CSR("0x51E", uc);
+    WRITE_CSR("0x51E", uy);
 
     // prints("finish loop.\n");
 
@@ -178,6 +190,6 @@ int main(void) {
     //   asm volatile("nop");
     // }
     
-    // exit();
+    // exit(1);
   }
 }
