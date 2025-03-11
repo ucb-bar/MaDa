@@ -35,9 +35,6 @@ class MinimalArty100T extends RawModule {
 
     io.led := counter(28, 25)
 
-    io.jd_0 := false.B
-    io.jd_3 := false.B
-
     io.uart_rxd_out := io.uart_txd_in
 
     io.eth_ref_clk := clock

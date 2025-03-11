@@ -23,18 +23,10 @@ class Arty100TIO extends Bundle {
 
   val btn = Input(UInt(4.W))
 
-  val ja = Output(UInt(8.W))
-  val jb = Input(UInt(8.W))
-  val jc = Input(UInt(8.W))
-  // val jd = Analog(8.W)
-  val jd_0 = Output(Bool())
-  val jd_1 = Input(Bool())
-  val jd_2 = Input(Bool())
-  val jd_3 = Output(Bool())
-  val jd_4 = Input(Bool())
-  val jd_5 = Input(Bool())
-  val jd_6 = Input(Bool())
-  val jd_7 = Input(Bool())
+  val ja = Vec(8, Analog(1.W))
+  val jb = Vec(8, Analog(1.W))
+  val jc = Vec(8, Analog(1.W))
+  val jd = Vec(8, Analog(1.W))
 
   val uart_rxd_out = Output(Bool())
   val uart_txd_in = Input(Bool())
