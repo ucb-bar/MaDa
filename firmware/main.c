@@ -132,19 +132,112 @@ typedef union {
   uint32_t u32;
 } vec_t;
 
+static uint32_t zero[1] __attribute__((aligned(16))) = { 0 };
+static uint32_t y[4] __attribute__((aligned(16))) = { 0 };
+static uint32_t x[4] __attribute__((aligned(16))) = { 0 };
+static uint32_t w[16] __attribute__((aligned(16))) = { 0 };
+static uint32_t b[4] __attribute__((aligned(16))) = { 0 };
 
-void linear(uint32_t *y, uint32_t *x, uint32_t *w, uint32_t *b) {
-  // Load values from pointers into vector registers
-  asm volatile("vlse32.v v1, (%0), zero" : : "r"(x) : "v1");
-  asm volatile("vle32.v v2, (%0)" : : "r"(w) : "v2");
-  asm volatile("vlse32.v v3, (%0), zero" : : "r"(b) : "v3");
+
+// /**
+//  * nn_print_f32
+//  * 
+//  * Prints a float.
+//  * 
+//  * @param v The float to print.
+//  * @param num_digits The number of decimal digits to print.
+//  */
+// void nn_print_f32(float v, int16_t num_digits) {
+//   if (isinf(v)) {
+//     if (signbit(v)) {
+//       printf("-inf");
+//     } else {
+//       printf("inf");
+//     }
+//     return;
+//   }
   
-  // y = x * w + b
-  asm volatile("vfmul.vv v4, v1, v2");
-  asm volatile("vfadd.vv v4, v4, v3");
-  
-  // Store result back to the destination pointer
-  asm volatile("vse32.v v4, (%0)" : : "r"(y) : "memory");
+//   if (v < 0) {
+//     printf("-");  // Print the minus sign for negative numbers
+//     v = -v;        // Make the number positive for processing
+//   }
+//   else {
+//     printf(" ");
+//   }
+
+//   // Calculate the integer part of the number
+//   long int_part = (long)v;
+//   float fractional_part = v - int_part;
+
+//   // Print the integer part
+//   printf("%ld", int_part);
+
+//   if (num_digits > 0) {
+//     printf("."); // Print the decimal point
+//   }
+
+//   // Handle the fractional part
+//   while (num_digits > 0) {
+//     num_digits -= 1;
+//     fractional_part *= 10;
+//     int digit = (int)(fractional_part);
+//     printf("%d", digit);
+//     fractional_part -= digit;
+//   }
+// }
+
+const size_t SIMD_LEN = 2;
+
+
+void linear(uint32_t out_features, uint32_t in_features, uint32_t *y, uint32_t *x, uint32_t *w, uint32_t *b) {
+  // vy = vw * vx (broadcast x) + vb
+  const size_t batch_size = 1;
+
+  size_t tile_size = 2;
+
+  uint32_t *w_ptr;
+  uint32_t *x_ptr;
+
+  // tiling, when out_features is greater than SIMD length
+  for (size_t tile = 0; tile < 4; tile += tile_size) {
+    w_ptr = w;
+    x_ptr = x;
+
+    // broadcast zero
+    asm volatile("vlse32.v v0, (%0), zero" : : "r"(zero) : "v0");
+
+    WRITE_CSR("0x51F", 4);
+    // loop over x and column vector of w    
+    for (size_t i = 0; i < in_features; i += 1) {
+      // broadcast x
+      asm volatile("vlse32.v v1, (%0), zero" : : "r"(x_ptr) : "v1");
+
+      // load w column
+      asm volatile("vle32.v v2, (%0)" : : "r"(w_ptr) : "v2");
+
+      // y += w.T * x
+      asm volatile("vfmacc.vv v0, v1, v2");
+
+      // increment pointers
+      x_ptr += 1;
+      w_ptr += out_features;
+    }
+    WRITE_CSR("0x51F", 0);
+
+    // load b
+    asm volatile("vle32.v v3, (%0)" : : "r"(b) : "v3");
+    
+    // y += b
+    asm volatile("vfadd.vv v0, v0, v3");
+    
+    // store y
+    asm volatile("vse32.v v0, (%0)" : : "r"(y) : "memory");
+
+    // increment pointers
+    y += tile_size;
+    w += tile_size;
+    b += tile_size;
+  }
   
 
   // asm volatile("vfadd.vv v3, v2, v1");
@@ -154,33 +247,61 @@ void linear(uint32_t *y, uint32_t *x, uint32_t *w, uint32_t *b) {
 }
 
 
-static uint32_t w[2] = { 0 };
-
 int main(void) {
   // prints("start.\n");
 
   while (1) {
-    vec_t vy, vx, vw, vb;
+    vec_t val;
 
-    // vx.f32 = 0.3367f;
-    // vw.f32 = 0.1288f;
-    // vb.f32 = 0.2345f;
-    vx.f32 = 0.1f;
-    vb.f32 = 1.f;
+    val.f32 = 0.11f;  // 3de147ae
+    x[0] = val.u32;
+    val.f32 = 0.22f;  // 3e6147ae
+    x[1] = val.u32;
+    val.f32 = 0.33f;  // 3ea8f5c3
+    x[2] = val.u32;
     
-    vw.f32 = 4.f;
-    w[0] = vw.u32;
-    vw.f32 = 2.f;
-    w[1] = vw.u32;
+    val.f32 = 0.12f;  // 3ea8f5c3
+    w[0] = val.u32;
+    val.f32 = 0.34f;  // 3ee147ae
+    w[1] = val.u32;
+    val.f32 = 0.07f;  // 3ea8f5c3
+    w[2] = val.u32;
+    val.f32 = -0.11f;  // 3ee147ae
+    w[3] = val.u32;
+    val.f32 = 0.56f;  // 3ea8f5c3
+    w[4] = val.u32;
+    val.f32 = -0.78f;  // 3ee147ae
+    w[5] = val.u32;
+    val.f32 = 0.08f;  // 3ea8f5c3
+    w[6] = val.u32;
+    val.f32 = 0.22f;  // 3ee147ae
+    w[7] = val.u32;
+    val.f32 = 0.90f;  // 3ea8f5c3
+    w[8] = val.u32;
+    val.f32 = 1.12f;  // 3ee147ae
+    w[9] = val.u32;
+    val.f32 = 0.09f;  // 3ea8f5c3
+    w[10] = val.u32;
+    val.f32 = -0.33f;  // 3ee147ae
+    w[11] = val.u32;
 
-    uint32_t uy = vy.u32;
-    uint32_t ux = vx.u32;
-    uint32_t ub = vb.u32;
+    val.f32 = -0.55f;  // 3f0ccccd
+    b[0] = val.u32;
+    val.f32 = -0.66f;  // 3f28f5c3
+    b[1] = val.u32;
+    val.f32 = -0.77f;  // 3ea8f5c3
+    b[2] = val.u32;
+    val.f32 = -0.88f;  // 3ee147ae
+    b[3] = val.u32;
 
-    linear(&uy, &ux, w, &ub);
+    WRITE_CSR("0x51F", 0);
+    
+    linear(4, 3, y, x, w, b);
   
     // load C into tohost CSR
-    WRITE_CSR("0x51E", uy);
+    // WRITE_CSR("0x51E", y[0]);
+    // WRITE_CSR("0x51F", y[1]);
+    WRITE_CSR("0x51F", 2);
 
     // prints("finish loop.\n");
 

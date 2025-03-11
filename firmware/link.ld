@@ -7,10 +7,11 @@ SECTIONS {
   .rodata : {
     *(.rodata*)
   }
-  .bss : {
+  .bss : ALIGN(16) {
     *(.bss*)
+    *(.sbss*)
   }
-  .data : {
+  .data : ALIGN(16) {
     *(.data*)
   }
 } 

@@ -7,7 +7,7 @@ module MlpPolicyTestBench();
   parameter CLOCK_PERIOD = 1_000_000_000 / CLOCK_FREQ;
 
   // parameter TIMEOUT_CYCLES = 2_000_000;
-  parameter TIMEOUT_CYCLES = 4_000;
+  parameter TIMEOUT_CYCLES = 8_000;
   
   // setup clock and reset
   reg clock, reset;
@@ -77,7 +77,16 @@ module MlpPolicyTestBench();
       end
       begin
         forever begin
-          @(posedge clock);
+          @(posedge dut.tile.core.clock);
+          // if (tohost == 8'h02) begin
+          if (dut.tile.core.valu.io_func == 'h1) begin
+            $display("R0: %.4f (0x%x)   R1: %.4f (0x%x)",
+              $bitstoshortreal(dut.tile.core.valu.io_out_0),
+              dut.tile.core.valu.io_out_0,
+              $bitstoshortreal(dut.tile.core.valu.io_out_1),
+              dut.tile.core.valu.io_out_1
+            );
+          end
           if (tohost == 8'h01) begin
             $display("exit() called from DUT at %t.", $time);
             $finish;
