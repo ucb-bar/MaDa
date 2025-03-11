@@ -212,7 +212,7 @@ class Core(
     )
   )
 
-  if_pc_sel := Mux(exception || eret, PC_EXC, ctrl_pc_sel_no_exception)
+  if_pc_sel := Mux(exception || eret, PC_EXC, Mux(kill, PC_4, ctrl_pc_sel_no_exception))
 
   val reg_kill_next = RegInit(true.B)
   when(if_pc_sel =/= PC_4) {
