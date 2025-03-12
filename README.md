@@ -18,3 +18,8 @@ make verilog CONFIG=ExampleArty100TShell
 make bitstream CONFIG=ExampleArty100TShell
 ```
 
+## TODOs
+
+- [ ] Better way of doing clock domain
+- [ ] Fix Chipyard IP
+

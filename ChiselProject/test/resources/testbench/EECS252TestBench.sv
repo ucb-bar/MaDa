@@ -4,13 +4,15 @@
 `define RF_PATH dut.core.regfile_ext.Memory
 `define RF_DEPTH 32
 
-`define VRF_PATH dut.core.vregfile_0_ext.Memory
+`define VRF_PATH dut.core.vregfile_ext.Memory
 `define VRF_DEPTH 32
 
 `define IMEM_PATH dut.itim.mem.mem
 
 `define DMEM_PATH dut.dtim.mem.mem
 `define DMEM_DEPTH 4096
+
+`define VLEN       8
 
 
 
@@ -195,8 +197,8 @@ module EECS252TestBench();
   bit done;
   int current_test_id = 0;
   string current_test_type;
-  int current_output;
-  int current_result;
+  logic [`VLEN*32-1:0] current_output;
+  logic [`VLEN*32-1:0] current_result;
   bit all_tests_passed = 0;
 
 
@@ -225,8 +227,8 @@ module EECS252TestBench();
   // If the write_back (destination) register has correct value (matches "result"), test passed
   // This is used to test instructions that update RegFile
   task check_result_rf;
-    input [31:0]  rf_wa;
-    input [31:0]  result;
+    input [`VLEN*32-1:0]  rf_wa;
+    input [`VLEN*32-1:0]  result;
     input string test_type;
     begin
       done = 0;
@@ -246,8 +248,8 @@ module EECS252TestBench();
   // If the write_back (destination) register has correct value (matches "result"), test passed
   // This is used to test instructions that update Vector RegFile
   task check_result_vrf;
-    input [31:0]  vrf_wa;
-    input [31:0]  result;
+    input [`VLEN*32-1:0]  vrf_wa;
+    input [`VLEN*32-1:0]  result;
     input string test_type;
     begin
       done = 0;
@@ -268,7 +270,7 @@ module EECS252TestBench();
   // This is used to test store instructions
   task check_result_dmem;
     input [31:0]  addr;
-    input [31:0]  result;
+    input [`VLEN*32-1:0]  result;
     input string test_type;
     begin
       done = 0;
@@ -285,7 +287,7 @@ module EECS252TestBench();
   endtask
 
   reg [4:0]  RD, RS1, RS2;
-  reg [31:0] RD1, RD2;
+  reg [`VLEN*32-1:0] RD1, RD2;
   reg [14:0] INST_ADDR;
   reg [14:0] DATA_ADDR;
 
@@ -311,22 +313,22 @@ module EECS252TestBench();
     reset_system();
 
     // We can also use $random to generate random values for testing
-    RS1 = 1; RD1 = 'hC2C80000;
-    RS2 = 2; RD2 = 'h43480000;
+    RS1 = 1; RD1 = 128'hC2C80000_C2C80000_C2C80000_C2C80000;
+    RS2 = 2; RD2 = 128'h43480000_43480000_43480000_43480000;
     RD  = 3;
     `VRF_PATH[RS1] = RD1;
     `VRF_PATH[RS2] = RD2;
     INST_ADDR       = 14'h0000;
 
-    `VRF_PATH[5] = 'h3F800000;
+    `VRF_PATH[5] = 128'h3F800000_3F800000_3F800000_3F800000;
 
     `IMEM_PATH[INST_ADDR + 0]  = {`FNC6_VADD,   1'b1, RS2, RS1, `FNC3_FVV, 5'd3,  `OPC_VEC_ARI};
     `IMEM_PATH[INST_ADDR + 1]  = {`FNC6_VFMUL,  1'b1, RS2, RS1, `FNC3_FVV, 5'd4,  `OPC_VEC_ARI};
     `IMEM_PATH[INST_ADDR + 2]  = {`FNC6_VFMACC, 1'b1, RS2, RS1, `FNC3_FVV, 5'd5,  `OPC_VEC_ARI};
 
-    check_result_vrf(5'd3,  32'h42C80000, "Vector FP ADD");
-    check_result_vrf(5'd4,  32'hC69C4000, "Vector FP MUL");
-    check_result_vrf(5'd5,  32'hC69C3E00, "Vector FP MACC");
+    check_result_vrf(5'd3,  128'h42C80000_42C80000_42C80000_42C80000, "Vector FP ADD");
+    check_result_vrf(5'd4,  128'hC69C4000_C69C4000_C69C4000_C69C4000, "Vector FP MUL");
+    check_result_vrf(5'd5,  128'hC69C3E00_C69C3E00_C69C3E00_C69C3E00, "Vector FP MACC");
 
 
     // Test Vector Load Insts --------------------------------------------------
@@ -341,9 +343,9 @@ module EECS252TestBench();
     // mop = 0 (unit stride), vm = 1 (mask disabled), lumop = 0 (unit-stride load), width = v32b
     `IMEM_PATH[INST_ADDR + 0]  = {3'b000, 1'b0, 2'b00, 1'b1, 5'b0, 5'd1, `FNC3_V32, 5'd2,  `OPC_VEC_VL};
 
-    `DMEM_PATH[DATA_ADDR] = 32'hdeadbeef;
+    `DMEM_PATH[DATA_ADDR] = 128'hdeadbeef_deadbeef_deadbeef_deadbeef;
 
-    check_result_vrf(5'd2,  32'hdeadbeef, "Vector Load");
+    check_result_vrf(5'd2,  128'hdeadbeef_deadbeef_deadbeef_deadbeef, "Vector Load");
 
 
     // Test Vector Store Insts --------------------------------------------------
@@ -351,7 +353,7 @@ module EECS252TestBench();
 
     reset_system();
 
-    `VRF_PATH[2] = 32'h12345678;
+    `VRF_PATH[2] = 128'h12345673_12345672_12345671_12345670;
 
     `RF_PATH[1] = 32'h0800_0100;
 
@@ -363,7 +365,7 @@ module EECS252TestBench();
 
     `DMEM_PATH[DATA_ADDR] = 0;
 
-    check_result_dmem(DATA_ADDR, 32'h12345678, "Vector Store");
+    check_result_dmem(DATA_ADDR, 128'h12345673_12345672_12345671_12345670, "Vector Store");
 
     // ... what else?
     all_tests_passed = 1'b1;
