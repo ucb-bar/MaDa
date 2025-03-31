@@ -13,22 +13,22 @@ module Axi4SpiFlashTestBench();
   wire axi_clk;
   wire axi_aresetn;
 
-  wire qspi_axi_arid;
-  wire qspi_axi_araddr;
-  wire qspi_axi_arlen;
-  wire qspi_axi_arsize;
-  wire qspi_axi_arburst;
-  wire qspi_axi_arlock;
-  wire qspi_axi_arcache;
-  wire qspi_axi_arprot;
-  wire qspi_axi_arvalid;
-  wire qspi_axi_arready;
-  wire qspi_axi_rid;
-  wire qspi_axi_rdata;
-  wire qspi_axi_rresp;
-  wire qspi_axi_rlast;
-  wire qspi_axi_rvalid;
-  wire qspi_axi_rready;
+  logic [3:0] qspi_axi_arid;
+  logic [23:0] qspi_axi_araddr;
+  logic [7:0] qspi_axi_arlen;
+  logic [2:0] qspi_axi_arsize;
+  logic [1:0] qspi_axi_arburst;
+  logic qspi_axi_arlock;
+  logic [3:0] qspi_axi_arcache;
+  logic [2:0] qspi_axi_arprot;
+  logic qspi_axi_arvalid;
+  logic qspi_axi_arready;
+  logic [3:0] qspi_axi_rid;
+  logic [31:0] qspi_axi_rdata;
+  logic [1:0] qspi_axi_rresp;
+  logic qspi_axi_rlast;
+  logic qspi_axi_rvalid;
+  logic qspi_axi_rready;
 
   wire io0_i;
   wire io0_o;
@@ -55,8 +55,6 @@ module Axi4SpiFlashTestBench();
   assign axi_aresetn = ~reset;
 
 
-  wire IO0_IO_mem;
-  wire IO1_IO_mem;
 
   wire sio0_i;
   wire sio0_o;
@@ -73,22 +71,22 @@ module Axi4SpiFlashTestBench();
 
 
   IOBUF qspi_io0_mem (
-    .O(sio0_i),
-    .IO(IO0_IO_mem),
-    .I(sio0_o),
-    .T(sio_t_red)
+    .O(sio0_i),         // Buffer output
+    .IO(IO0_IO),    // Buffer inout port (connect directly to top-level port)
+    .I(sio0_o),         // Buffer input
+    .T(sio0_t)       // 3-state enable input, high=input, low=output
    );
            
   IOBUF qspi_io1_mem (
     .O(sio1_i),
-    .IO(IO1_IO_mem),
+    .IO(IO1_IO),
     .I(sio1_o),
     .T(sio1_t)
   );
 
   memory #(
-    .C_FIFO_DEPTH(256),
-    .C_ADDR_WIDTH(256),
+    .C_FIFO_DEPTH(16),
+    .C_ADDR_WIDTH(24),
     .C_SPI_MODE(0),
     .C_DATA_WIDTH(8)
   ) sim_memory (
@@ -226,10 +224,32 @@ module Axi4SpiFlashTestBench();
 
   initial begin
     reset = 1'b1;
+
+    /* initialize axi signals */
+    qspi_axi_arid = 'h0;
+    qspi_axi_araddr = 'h0;
+    qspi_axi_arlen = 'h0;
+    qspi_axi_arsize = 'h2;
+    qspi_axi_arburst = 'h1;
+    qspi_axi_arlock = 'b0;
+    qspi_axi_arcache = 'h3;
+    qspi_axi_arprot = 'h0;
+    qspi_axi_arvalid = 'b0;
+    qspi_axi_rready = 'b0;
+
     repeat (10) @(posedge clock);
     reset = 1'b0;
     repeat (10) @(posedge clock);
 
+    qspi_axi_arvalid = 'b1;
+    qspi_axi_rready = 'b1;
+
+    // Wait for handshake completion (similar to Chisel's .fire)
+    wait(qspi_axi_arvalid && qspi_axi_arready);
+    @(posedge clock);
+    qspi_axi_arvalid = 'b0;
+    
+    wait(qspi_axi_rvalid && qspi_axi_rready);
 
     repeat (10) @(posedge clock);
     $finish;
