@@ -253,6 +253,8 @@ int main(void) {
   while (1) {
     vec_t val;
 
+    zero[0] = 0;
+
     val.f32 = 0.11f;  // 3de147ae
     x[0] = val.u32;
     val.f32 = 0.22f;  // 3e6147ae
