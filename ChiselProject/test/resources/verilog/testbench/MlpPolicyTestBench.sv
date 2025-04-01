@@ -19,23 +19,28 @@ module MlpPolicyTestBench();
   logic uart_txd;
   logic uart_rxd;
 
-  logic [7:0] tohost;
+  wire [7:0] tohost;
 
   BiliArty100T dut(
     .io_CLK100MHZ(clock),
     .io_sw(4'b0),
     .io_btn(4'b0),
-    .io_ja(tohost),
-    .io_jb(1'b0),
-    .io_jc(1'b0),
-    .io_jd_0(),
-    .io_jd_1(1'b0),
-    .io_jd_2(1'b0),
-    .io_jd_3(),
-    .io_jd_4(1'b0),
-    .io_jd_5(1'b0),
-    .io_jd_6(1'b0),
-    .io_jd_7(1'b0),
+    .io_ja_0(tohost[0]),
+    .io_ja_1(tohost[1]),
+    .io_ja_2(tohost[2]),
+    .io_ja_3(tohost[3]),
+    .io_ja_4(tohost[4]),
+    .io_ja_5(tohost[5]),
+    .io_ja_6(tohost[6]),
+    .io_ja_7(tohost[7]),
+//    .io_jd_0(),
+//    .io_jd_1(),
+//    .io_jd_2(),
+//    .io_jd_3(),
+//    .io_jd_4(),
+//    .io_jd_5(),
+//    .io_jd_6(),
+//    .io_jd_7(),
     .io_uart_txd_in(uart_rxd),
     .io_uart_rxd_out(uart_txd),
     .io_ck_ioa(1'b0),

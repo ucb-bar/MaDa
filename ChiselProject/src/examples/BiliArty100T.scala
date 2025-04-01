@@ -56,6 +56,13 @@ class BiliArty100T extends RawModule {
     io.uart_rxd_out := uart.io.tx
     uart.io.rx := io.uart_txd_in
 
-    io.ja := tile.io.debug.tohost(7, 0)
+
+    for (i <- 0 until 8) {
+      val iobuf = Module(new IOBUF())
+      iobuf.io.I := tile.io.debug.tohost(i)
+      iobuf.io.T := false.B
+      iobuf.io.IO <> io.ja(i)
+    }
+      
   }
 }
