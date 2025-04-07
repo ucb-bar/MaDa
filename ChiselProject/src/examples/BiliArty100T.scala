@@ -32,37 +32,87 @@ class BiliArty100T extends RawModule {
 
     val tile = Module(new Tile())
 
-    val gpio = Module(new Axi4LiteGpio())
-    val uart = Module(new Axi4LiteUartLite())
-
-    val sbus_crossbar = Module(new Axi4LiteCrossbar(
-      numSlave = 1,
-      numMaster = 2,
-      device0Size = 0x1000,
-      device0Address = 0x10000000,
-      device1Size = 0x1000,
-      device1Address = 0x10001000,
-    ))
-
     tile.io.reset_vector := reset_vector
+
+
+    val spi = Module(new Axi4QuadSpi())
+    spi.io.ext_spi_clk := clock
+    spi.io.s_axi.aw.bits.addr := 0x00000000.U
+    spi.io.s_axi.aw.valid := false.B
+    spi.io.s_axi.w.bits.data := 0x00000000.U
+    spi.io.s_axi.w.bits.strb := 0x00000000.U
+    spi.io.s_axi.w.valid := false.B
+    spi.io.s_axi.b.ready := false.B
+    spi.io.s_axi.ar.bits.addr := 0x00000000.U
+    spi.io.s_axi.ar.valid := false.B
+    spi.io.s_axi.r.ready := false.B
     
-    sbus_crossbar.io.s_axi(0) <> Axi4ToAxi4Lite(tile.io.sbus)
-    gpio.attach(sbus_crossbar.io.m_axi(0))
-    uart.attach(sbus_crossbar.io.m_axi(1))
+    spi.io.s_axi4 <> tile.io.sbus
+
+    // make sure the write port is not used
+    spi.io.s_axi4.aw.bits.addr := 0x00000000.U
+    spi.io.s_axi4.aw.valid := false.B
+    spi.io.s_axi4.w.bits.data := 0x00000000.U
+    spi.io.s_axi4.w.bits.strb := 0x00000000.U
+    spi.io.s_axi4.w.bits.last := false.B
+    spi.io.s_axi4.w.valid := false.B
+    spi.io.s_axi4.b.ready := false.B
+
+
+    spi.io.s_axi4.ar.bits.size := 2.U.asTypeOf(spi.io.s_axi4.ar.bits.size)
+    spi.io.s_axi4.ar.bits.burst := 1.U.asTypeOf(spi.io.s_axi4.ar.bits.burst)
+
+
+
+    io.qspi_sck := spi.io.sck_o.asClock
+    io.qspi_cs := spi.io.ss_o
+    spi.io.sck_i := 0.B
+    spi.io.ss_i := 0.B
+
+    val qspi_io0_buf = Module(new IOBUF())
+    spi.io.io0_i := qspi_io0_buf.io.O
+    qspi_io0_buf.io.IO <> io.qspi_dq(0)
+    qspi_io0_buf.io.I := spi.io.io0_o
+    qspi_io0_buf.io.T := spi.io.io0_t
+
+    val qspi_io1_buf = Module(new IOBUF())
+    spi.io.io1_i := qspi_io1_buf.io.O
+    qspi_io1_buf.io.IO <> io.qspi_dq(1)
+    qspi_io1_buf.io.I := spi.io.io1_o
+    qspi_io1_buf.io.T := spi.io.io1_t
+
     
-    gpio.io.gpio_io_i := 0x05050505.U
-    io.led := gpio.io.gpio_io_o
+    // val sbus_crossbar = Module(new Axi4LiteCrossbar(
+    //   numSlave = 1,
+    //   numMaster = 2,
+    //   device0Size = 0x1000,
+    //   device0Address = 0x10000000,
+    //   device1Size = 0x1000,
+    //   device1Address = 0x10001000,
+    // ))
 
-    io.uart_rxd_out := uart.io.tx
-    uart.io.rx := io.uart_txd_in
+
+    // val gpio = Module(new Axi4LiteGpio())
+    // val uart = Module(new Axi4LiteUartLite())
+
+    
+    // sbus_crossbar.io.s_axi(0) <> Axi4ToAxi4Lite(tile.io.sbus)
+    // gpio.attach(sbus_crossbar.io.m_axi(0))
+    // uart.attach(sbus_crossbar.io.m_axi(1))
+    
+    // gpio.io.gpio_io_i := 0x05050505.U
+    // io.led := gpio.io.gpio_io_o
+
+    // io.uart_rxd_out := uart.io.tx
+    // uart.io.rx := io.uart_txd_in
 
 
-    for (i <- 0 until 8) {
-      val iobuf = Module(new IOBUF())
-      iobuf.io.I := tile.io.debug.tohost(i)
-      iobuf.io.T := false.B
-      iobuf.io.IO <> io.ja(i)
-    }
+    // for (i <- 0 until 8) {
+    //   val iobuf = Module(new IOBUF())
+    //   iobuf.io.I := tile.io.debug.tohost(i)
+    //   iobuf.io.T := false.B
+    //   iobuf.io.IO <> io.ja(i)
+    // }
       
   }
 }

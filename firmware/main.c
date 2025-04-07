@@ -139,53 +139,6 @@ static uint32_t w[16] __attribute__((aligned(16))) = { 0 };
 static uint32_t b[4] __attribute__((aligned(16))) = { 0 };
 
 
-// /**
-//  * nn_print_f32
-//  * 
-//  * Prints a float.
-//  * 
-//  * @param v The float to print.
-//  * @param num_digits The number of decimal digits to print.
-//  */
-// void nn_print_f32(float v, int16_t num_digits) {
-//   if (isinf(v)) {
-//     if (signbit(v)) {
-//       printf("-inf");
-//     } else {
-//       printf("inf");
-//     }
-//     return;
-//   }
-  
-//   if (v < 0) {
-//     printf("-");  // Print the minus sign for negative numbers
-//     v = -v;        // Make the number positive for processing
-//   }
-//   else {
-//     printf(" ");
-//   }
-
-//   // Calculate the integer part of the number
-//   long int_part = (long)v;
-//   float fractional_part = v - int_part;
-
-//   // Print the integer part
-//   printf("%ld", int_part);
-
-//   if (num_digits > 0) {
-//     printf("."); // Print the decimal point
-//   }
-
-//   // Handle the fractional part
-//   while (num_digits > 0) {
-//     num_digits -= 1;
-//     fractional_part *= 10;
-//     int digit = (int)(fractional_part);
-//     printf("%d", digit);
-//     fractional_part -= digit;
-//   }
-// }
-
 const size_t SIMD_LEN = 2;
 
 
@@ -251,59 +204,65 @@ int main(void) {
   // prints("start.\n");
 
   while (1) {
-    vec_t val;
 
-    zero[0] = 0;
+    uint32_t SPI_MEM_ADDR = 0x10000000;
 
-    val.f32 = 0.11f;  // 3de147ae
-    x[0] = val.u32;
-    val.f32 = 0.22f;  // 3e6147ae
-    x[1] = val.u32;
-    val.f32 = 0.33f;  // 3ea8f5c3
-    x[2] = val.u32;
+    volatile uint32_t data = *((uint32_t *)SPI_MEM_ADDR);
     
-    val.f32 = 0.12f;  // 3ea8f5c3
-    w[0] = val.u32;
-    val.f32 = 0.34f;  // 3ee147ae
-    w[1] = val.u32;
-    val.f32 = 0.07f;  // 3ea8f5c3
-    w[2] = val.u32;
-    val.f32 = -0.11f;  // 3ee147ae
-    w[3] = val.u32;
-    val.f32 = 0.56f;  // 3ea8f5c3
-    w[4] = val.u32;
-    val.f32 = -0.78f;  // 3ee147ae
-    w[5] = val.u32;
-    val.f32 = 0.08f;  // 3ea8f5c3
-    w[6] = val.u32;
-    val.f32 = 0.22f;  // 3ee147ae
-    w[7] = val.u32;
-    val.f32 = 0.90f;  // 3ea8f5c3
-    w[8] = val.u32;
-    val.f32 = 1.12f;  // 3ee147ae
-    w[9] = val.u32;
-    val.f32 = 0.09f;  // 3ea8f5c3
-    w[10] = val.u32;
-    val.f32 = -0.33f;  // 3ee147ae
-    w[11] = val.u32;
 
-    val.f32 = -0.55f;  // 3f0ccccd
-    b[0] = val.u32;
-    val.f32 = -0.66f;  // 3f28f5c3
-    b[1] = val.u32;
-    val.f32 = -0.77f;  // 3ea8f5c3
-    b[2] = val.u32;
-    val.f32 = -0.88f;  // 3ee147ae
-    b[3] = val.u32;
+    // vec_t val;
 
-    WRITE_CSR("0x51F", 0);
+    // zero[0] = 0;
+
+    // val.f32 = 0.11f;  // 3de147ae
+    // x[0] = val.u32;
+    // val.f32 = 0.22f;  // 3e6147ae
+    // x[1] = val.u32;
+    // val.f32 = 0.33f;  // 3ea8f5c3
+    // x[2] = val.u32;
     
-    linear(4, 3, y, x, w, b);
+    // val.f32 = 0.12f;  // 3ea8f5c3
+    // w[0] = val.u32;
+    // val.f32 = 0.34f;  // 3ee147ae
+    // w[1] = val.u32;
+    // val.f32 = 0.07f;  // 3ea8f5c3
+    // w[2] = val.u32;
+    // val.f32 = -0.11f;  // 3ee147ae
+    // w[3] = val.u32;
+    // val.f32 = 0.56f;  // 3ea8f5c3
+    // w[4] = val.u32;
+    // val.f32 = -0.78f;  // 3ee147ae
+    // w[5] = val.u32;
+    // val.f32 = 0.08f;  // 3ea8f5c3
+    // w[6] = val.u32;
+    // val.f32 = 0.22f;  // 3ee147ae
+    // w[7] = val.u32;
+    // val.f32 = 0.90f;  // 3ea8f5c3
+    // w[8] = val.u32;
+    // val.f32 = 1.12f;  // 3ee147ae
+    // w[9] = val.u32;
+    // val.f32 = 0.09f;  // 3ea8f5c3
+    // w[10] = val.u32;
+    // val.f32 = -0.33f;  // 3ee147ae
+    // w[11] = val.u32;
+
+    // val.f32 = -0.55f;  // 3f0ccccd
+    // b[0] = val.u32;
+    // val.f32 = -0.66f;  // 3f28f5c3
+    // b[1] = val.u32;
+    // val.f32 = -0.77f;  // 3ea8f5c3
+    // b[2] = val.u32;
+    // val.f32 = -0.88f;  // 3ee147ae
+    // b[3] = val.u32;
+
+    // WRITE_CSR("0x51F", 0);
+    
+    // linear(4, 3, y, x, w, b);
   
-    // load C into tohost CSR
-    // WRITE_CSR("0x51E", y[0]);
-    // WRITE_CSR("0x51F", y[1]);
-    WRITE_CSR("0x51F", 2);
+    // // load C into tohost CSR
+    // // WRITE_CSR("0x51E", y[0]);
+    // // WRITE_CSR("0x51F", y[1]);
+    // WRITE_CSR("0x51F", 2);
 
     // prints("finish loop.\n");
 
