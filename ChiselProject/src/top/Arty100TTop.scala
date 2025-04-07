@@ -47,6 +47,10 @@ class Arty100TIO extends Bundle {
   val eth_tx_clk = Input(Bool())
   val eth_tx_en = Output(Bool())
   val eth_txd = Output(UInt(4.W))
+
+  val qspi_cs = Output(Bool())
+  val qspi_sck = Output(Clock())
+  val qspi_dq = Vec(4, Analog(1.W))
 }
 
 
