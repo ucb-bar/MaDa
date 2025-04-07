@@ -29,6 +29,16 @@ def process_binary_file(bin_file: BinaryIO, hex_file: TextIO, data_width: int, e
     
     # Read the entire file
     buffer = []
+
+    if data_width == 8:
+        while True:
+            word = bin_file.read(1)
+            if not word:
+                break
+            byte = int.from_bytes(word, "little")
+            hex_line = f"{byte:02x}"
+            hex_file.write(hex_line + "\n")
+        return
     
     while True:
         # Read 4 bytes (32 bits) at a time

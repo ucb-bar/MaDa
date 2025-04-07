@@ -16,6 +16,7 @@ build:
 
 hex: build
 	riscv64-unknown-elf-objcopy -O binary firmware.elf firmware.bin
+	python bintohex.py firmware.bin firmware.8.hex --data_width 8
 	python bintohex.py firmware.bin firmware.hex --data_width 32
 	python bintohex.py firmware.bin firmware.64.hex --data_width 64
 	python bintohex.py firmware.bin firmware.128.hex --data_width 128
