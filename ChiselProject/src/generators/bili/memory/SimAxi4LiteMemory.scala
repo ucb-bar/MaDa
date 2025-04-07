@@ -39,8 +39,8 @@ class SimAxi4LiteMemory(
   mem.io.reset := reset
 
   // data line connections
-  mem.io.raddr := io.s_axi.ar.bits.addr
-  mem.io.waddr := io.s_axi.aw.bits.addr
+  mem.io.raddr := io.s_axi.ar.bits.addr(io.s_axi.ar.bits.addr.getWidth - 1, 2)
+  mem.io.waddr := io.s_axi.aw.bits.addr(io.s_axi.aw.bits.addr.getWidth - 1, 2)
   mem.io.wdata := io.s_axi.w.bits.data
   mem.io.wstrb := Mux(io.s_axi.w.fire, io.s_axi.w.bits.strb, 0.U(4.W))
   io.s_axi.r.bits.data := mem.io.rdata

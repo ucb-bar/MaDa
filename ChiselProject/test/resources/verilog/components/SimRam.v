@@ -11,8 +11,8 @@ module SimRam #(
   parameter DATA_WIDTH = 32,
   parameter MEM_HEX = "",
   parameter MEM_BIN = "",
-  parameter READ_DELAY = 2,
-  parameter WRITE_DELAY = 2
+  parameter READ_DELAY = 1,
+  parameter WRITE_DELAY = 1
 ) (
   input  clock,
   input  reset,
