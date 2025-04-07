@@ -18,9 +18,9 @@ class BUFG extends BlackBox {
 
 class IOBUF extends BlackBox {
   val io = IO(new Bundle {
-    val I = Input(Bool())
     val O = Output(Bool())
-    val T = Input(Bool())
     val IO = Analog(1.W)
+    val I = Input(Bool())
+    val T = Input(Bool())
   })
 }
