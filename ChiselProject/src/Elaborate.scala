@@ -68,7 +68,7 @@ object GenerateVerilog extends App {
   )
 }
 
-object GenerateBitstream extends App {
+object GenerateProject extends App {
   val (module_name, remaining_args) = ParseModuleName(args)
 
   val project_source_dir = "ChiselProject/"
@@ -160,43 +160,59 @@ object GenerateBitstream extends App {
       run_tcl.println(s"source ${file}")
     })
 
+    // update_compile_order -fileset sources_1
+    // set_property -name {xsim.simulate.runtime} -value {1000us} -objects [get_filesets sim_1]
+    // set_property -name {xsim.simulate.log_all_signals} -value {true} -objects [get_filesets sim_1]
+    // set_property top EECS151TestBench [get_filesets sim_1]
+    // set_property top_lib xil_defaultlib [get_filesets sim_1]
+    // set_property top GenericTestBench [get_filesets sim_1]
+    // set_property top_lib xil_defaultlib [get_filesets sim_1]
+    // launch_simulation
+
 
     run_tcl.close()
     run_tcl.flush()
   }
 
-  {
-    // create a generate_bitstream.tcl file
-    val run_tcl = new PrintWriter(s"${vivado_project_dir}/scripts/generate_bitstream.tcl")
-
-    run_tcl.println(s"open_project ${vivado_project_dir}/VivadoProject.xpr")
-
-    val ip_name = "clk_wiz_0"
-
-    run_tcl.println(s"reset_run ${ip_name}_synth_1")
-    run_tcl.println(s"launch_runs ${ip_name}_synth_1")
-
-    run_tcl.println(s"wait_on_run ${ip_name}_synth_1")
-
-    run_tcl.println(s"reset_run synth_1")
-    run_tcl.println(s"launch_runs synth_1 -jobs 8")
-
-    run_tcl.println(s"wait_on_run synth_1")
-
-    run_tcl.println(s"update_compile_order -fileset sources_1")
-    run_tcl.println(s"launch_runs impl_1 -to_step write_bitstream -jobs 8")
-    run_tcl.println(s"wait_on_run impl_1")
-
-    run_tcl.println(s"open_run impl_1")
-    run_tcl.println(s"write_bitstream ${vivado_project_dir}/Arty100TShell.bit -force")
-
-    run_tcl.close()
-    run_tcl.flush()   // make sure the file is written to the disk
-  }
-
 
   s"vivado -mode batch -source ${vivado_project_dir}/scripts/create_project.tcl".!
-  
-  // s"vivado -mode batch -source ${vivado_project_dir}/scripts/generate_bitstream.tcl".!
+}
 
+object GenerateBitstream extends App {
+  val (module_name, remaining_args) = ParseModuleName(args)
+
+  val vivado_project_dir = "out/VivadoProject"
+  CreateVivadoDirectory(vivado_project_dir)
+
+  // {
+  //   // create a generate_bitstream.tcl file
+  //   val run_tcl = new PrintWriter(s"${vivado_project_dir}/scripts/generate_bitstream.tcl")
+
+  //   run_tcl.println(s"open_project ${vivado_project_dir}/VivadoProject.xpr")
+
+  //   val ip_name = "clk_wiz_0"
+
+  //   run_tcl.println(s"reset_run ${ip_name}_synth_1")
+  //   run_tcl.println(s"launch_runs ${ip_name}_synth_1")
+
+  //   run_tcl.println(s"wait_on_run ${ip_name}_synth_1")
+
+  //   run_tcl.println(s"reset_run synth_1")
+  //   run_tcl.println(s"launch_runs synth_1 -jobs 8")
+
+  //   run_tcl.println(s"wait_on_run synth_1")
+
+  //   run_tcl.println(s"update_compile_order -fileset sources_1")
+  //   run_tcl.println(s"launch_runs impl_1 -to_step write_bitstream -jobs 8")
+  //   run_tcl.println(s"wait_on_run impl_1")
+
+  //   run_tcl.println(s"open_run impl_1")
+  //   run_tcl.println(s"write_bitstream ${vivado_project_dir}/Arty100TShell.bit -force")
+
+
+  //   run_tcl.close()
+  //   run_tcl.flush()   // make sure the file is written to the disk
+  // }
+
+  // s"vivado -mode batch -source ${vivado_project_dir}/scripts/generate_bitstream.tcl".!
 }
