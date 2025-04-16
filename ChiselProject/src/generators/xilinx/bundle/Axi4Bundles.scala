@@ -10,50 +10,71 @@
 import chisel3._
 import chisel3.util._
 
+
+/* ================================ Field Definitions ================================ */
+
+
+/**
+  * AXI4 constants.
+  * 
+  * These constants are used to define the width of the signals in the AXI4 protocol.
+  */
+object Axi4Constants {
+  val REGION_WIDTH = 4
+  val LEN_WIDTH = 8
+  val SIZE_WIDTH = 3
+  val BURST_WIDTH = 2
+  val LOCK_WIDTH = 1
+  val CACHE_WIDTH = 4
+  val PROT_WIDTH = 3
+  val RESP_WIDTH = 2
+}
+
+
 /**
   * AXI4 interface burst type definition.
   */
 object AxBurst extends ChiselEnum {
   /** Reads the same address repeatedly. Useful for FIFOs. */
-  val FIXED     = Value(0.U(4.W))
+  val FIXED     = Value(0.U(Axi4Constants.BURST_WIDTH.W))
   
   /** Incrementing burst. */
-  val INCR      = Value(1.U(4.W))
+  val INCR      = Value(1.U(Axi4Constants.BURST_WIDTH.W))
   
   /** Wrapping burst. */
-  val WRAP      = Value(2.U(4.W))
+  val WRAP      = Value(2.U(Axi4Constants.BURST_WIDTH.W))
 
   /** Not for use. */
-  val RESERVED  = Value(3.U(4.W))
+  val RESERVED  = Value(3.U(Axi4Constants.BURST_WIDTH.W))
 }
 
 /**
   * AXI4 interface size definition.
   */
 object AxSize extends ChiselEnum {
-  /** 1 byte. */
-  val S_1_BYTE    = Value(0.U(3.W))
+  /** transfer 1 byte per beat. */
+  val S_1_BYTE    = Value(0.U(Axi4Constants.SIZE_WIDTH.W))
   
-  /** 2 bytes. */
-  val S_2_BYTES   = Value(1.U(3.W))
+  /** transfer 2 bytes per beat. */
+  val S_2_BYTES   = Value(1.U(Axi4Constants.SIZE_WIDTH.W))
   
-  /** 4 bytes. */
-  val S_4_BYTES   = Value(2.U(3.W))
+  /** transfer 4 bytes per beat. */
+  val S_4_BYTES   = Value(2.U(Axi4Constants.SIZE_WIDTH.W))
   
-  /** 8 bytes. */
-  val S_8_BYTES   = Value(3.U(3.W))
+  /** transfer 8 bytes per beat. */
+  val S_8_BYTES   = Value(3.U(Axi4Constants.SIZE_WIDTH.W))
   
-  /** 16 bytes. */
-  val S_16_BYTES  = Value(4.U(3.W))
+  /** transfer 16 bytes per beat. */
+  val S_16_BYTES  = Value(4.U(Axi4Constants.SIZE_WIDTH.W))
   
-  /** 32 bytes. */
-  val S_32_BYTES  = Value(5.U(3.W))
+  /** transfer 32 bytes per beat. */
+  val S_32_BYTES  = Value(5.U(Axi4Constants.SIZE_WIDTH.W))
   
-  /** 64 bytes. */
-  val S_64_BYTES  = Value(6.U(3.W))
+  /** transfer 64 bytes per beat. */
+  val S_64_BYTES  = Value(6.U(Axi4Constants.SIZE_WIDTH.W))
   
-  /** 128 bytes. */
-  val S_128_BYTES = Value(7.U(3.W))
+  /** transfer 128 bytes per beat. */
+  val S_128_BYTES = Value(7.U(Axi4Constants.SIZE_WIDTH.W))
 }
 
 /**
@@ -61,16 +82,16 @@ object AxSize extends ChiselEnum {
   */
 object AxResponse extends ChiselEnum {
   /** Normal access success or exclusive access failure. */
-  val OKAY      = Value(0.U(2.W))
+  val OKAY      = Value(0.U(Axi4Constants.RESP_WIDTH.W))
 
   /** Exclusive access okay. */
-  val EXOKAY    = Value(1.U(2.W))
+  val EXOKAY    = Value(1.U(Axi4Constants.RESP_WIDTH.W))
 
   /** Subordinate error. */
-  val SLVERR    = Value(2.U(2.W))
+  val SLVERR    = Value(2.U(Axi4Constants.RESP_WIDTH.W))
 
   /** Decode error. */
-  val DECERR    = Value(3.U(2.W))
+  val DECERR    = Value(3.U(Axi4Constants.RESP_WIDTH.W))
 }
 
 /**
@@ -85,7 +106,7 @@ class ChannelAxLite(params: Axi4Params = Axi4Params()) extends Bundle {
   */
 class ChannelAx(params: Axi4Params = Axi4Params()) extends ChannelAxLite(params) {
   val id = Output(UInt(params.idWidth.W))
-  val len = Output(UInt(8.W))
+  val len = Output(UInt(Axi4Constants.LEN_WIDTH.W))
   val size = Output(AxSize())
   val burst = Output(AxBurst())
 }
@@ -135,6 +156,9 @@ class ChannelR(params: Axi4Params = Axi4Params()) extends ChannelRLite(params) {
   val last = Input(Bool())
 }
 
+
+/* ================================ Main Bundle Definitions ================================ */
+
 /**
   * AXI4-Lite bundle definition.
   */
@@ -149,13 +173,25 @@ class Axi4LiteBundle(params: Axi4Params = Axi4Params()) extends Bundle {
 /**
   * AXI4 bundle definition.
   */
-class Axi4Bundle(params: Axi4Params = Axi4Params()) extends Bundle {
-  val aw = Decoupled(new ChannelAx(params))
-  val w = Decoupled(new ChannelW(params))
-  val b = Flipped(Decoupled(new ChannelB(params)))
-  val ar = Decoupled(new ChannelAx(params))
-  val r = Flipped(Decoupled(new ChannelR(params)))
+class Axi4Bundle(params: Axi4Params = Axi4Params()) extends Axi4LiteBundle {
+  override val aw = Decoupled(new ChannelAx(params))
+  override val w = Decoupled(new ChannelW(params))
+  override val b = Flipped(Decoupled(new ChannelB(params)))
+  override val ar = Decoupled(new ChannelAx(params))
+  override val r = Flipped(Decoupled(new ChannelR(params)))
 }
+
+/**
+  * AXI4 Stream bundle definition.
+  */
+class Axi4StreamBundle(params: Axi4Params = Axi4Params()) extends Bundle {
+  val t = Decoupled(new Bundle {
+    val data = Output(UInt(params.dataWidth.W))
+    val last = Output(Bool())
+    val user = Output(Bool())
+  })
+}
+
 
 /**
   * AXI4 to AXI4-Lite converter.
@@ -169,15 +205,4 @@ object Axi4ToAxi4Lite {
     axi <> converter.io.s_axi
     converter.io.m_axi
   }
-}
-
-/**
-  * AXI4 Stream bundle definition.
-  */
-class Axi4StreamBundle(params: Axi4Params = Axi4Params()) extends Bundle {
-  val t = Decoupled(new Bundle {
-    val data = Output(UInt(params.dataWidth.W))
-    val last = Output(Bool())
-    val user = Output(Bool())
-  })
 }
