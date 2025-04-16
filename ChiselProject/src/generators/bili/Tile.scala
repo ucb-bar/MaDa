@@ -32,12 +32,8 @@ class Tile extends Module {
   val xbar = Module(new Axi4Crossbar(
     2, 3,
     Axi4Params(dataWidth = busWidth),
-    device0Size = 0x10000,
-    device0Address = 0x08000000,
-    device1Size = 0x10000000,
-    device1Address = 0x10000000,
-    device2Size = 0x10000000,
-    device2Address = 0x40000000
+    deviceSizes = Array(0x10000, 0x10000000, 0x10000000),
+    deviceAddresses = Array(0x08000000, 0x10000000, 0x40000000)
   ))
 
   val dmem_upsizer = Module(new Axi4WidthUpsizer(

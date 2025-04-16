@@ -37,7 +37,7 @@ class Axi4LiteBlackboxBundle(params: Axi4Params = Axi4Params()) extends Bundle {
 
     axi.b.valid := this.bvalid
     this.bready := axi.b.ready
-    axi.b.bits.resp := this.bresp
+    axi.b.bits.resp := this.bresp.asTypeOf(AxResponse())
 
     this.arvalid := axi.ar.valid
     axi.ar.ready := this.arready
@@ -46,7 +46,7 @@ class Axi4LiteBlackboxBundle(params: Axi4Params = Axi4Params()) extends Bundle {
     axi.r.valid := this.rvalid
     this.rready := axi.r.ready
     axi.r.bits.data := this.rdata
-    axi.r.bits.resp := this.rresp
+    axi.r.bits.resp := this.rresp.asTypeOf(AxResponse())
   }
 
   def flipConnect(axi: Axi4LiteBundle): Unit = {
@@ -61,7 +61,7 @@ class Axi4LiteBlackboxBundle(params: Axi4Params = Axi4Params()) extends Bundle {
 
     this.bvalid := axi.b.valid
     axi.b.ready := this.bready
-    this.bresp := axi.b.bits.resp
+    this.bresp := axi.b.bits.resp.asUInt
 
     axi.ar.valid := this.arvalid
     this.arready := axi.ar.ready
@@ -70,6 +70,6 @@ class Axi4LiteBlackboxBundle(params: Axi4Params = Axi4Params()) extends Bundle {
     this.rvalid := axi.r.valid
     axi.r.ready := this.rready
     this.rdata := axi.r.bits.data
-    this.rresp := axi.r.bits.resp
+    this.rresp := axi.r.bits.resp.asUInt
   }
 }

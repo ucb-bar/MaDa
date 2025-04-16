@@ -1,8 +1,15 @@
 import chisel3._
 import chisel3.util._
 
+
+/**
+  * AXI4 protocol type definition.
+  */
 object Axi4Protocol {
+  /** AXI4 protocol. */
   val AXI4 = "AXI4"
+
+  /** AXI4-Lite protocol. */
   val AXI4LITE = "AXI4LITE"
 }
 

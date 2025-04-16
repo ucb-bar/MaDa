@@ -37,7 +37,7 @@ class Axi4LiteMemory(
   io.s_axi.aw.ready := true.B
   io.s_axi.w.ready := true.B
   io.s_axi.b.valid := write_requested
-  io.s_axi.b.bits.resp := 0.U
+  io.s_axi.b.bits.resp := AxResponse.OKAY
 
   when (io.s_axi.aw.fire && io.s_axi.w.fire) {
     write_requested := true.B
@@ -48,7 +48,7 @@ class Axi4LiteMemory(
 
   io.s_axi.ar.ready := true.B
   io.s_axi.r.valid := read_requested
-  io.s_axi.r.bits.resp := 0.U
+  io.s_axi.r.bits.resp := AxResponse.OKAY
 
   when (io.s_axi.ar.fire) {
     read_requested := true.B
