@@ -205,7 +205,7 @@ int main(void) {
 
   while (1) {
 
-    uint32_t SPI_MEM_ADDR = 0x10000000;
+    uint32_t SPI_MEM_ADDR = 0x40000000;
 
     volatile uint32_t data = *((uint32_t *)SPI_MEM_ADDR);
     

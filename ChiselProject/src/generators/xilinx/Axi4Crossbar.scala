@@ -224,6 +224,8 @@ set_property -dict [list \\
   CONFIG.M00_A00_BASE_ADDR {0x${device0Address.toString(16).reverse.padTo(16, '0').reverse}} \\
   CONFIG.M01_A00_ADDR_WIDTH {${log2Ceil(device1Size)}} \\
   CONFIG.M01_A00_BASE_ADDR {0x${device1Address.toString(16).reverse.padTo(16, '0').reverse}} \\
+  CONFIG.M02_A00_ADDR_WIDTH {${log2Ceil(device2Size)}} \\
+  CONFIG.M02_A00_BASE_ADDR {0x${device2Address.toString(16).reverse.padTo(16, '0').reverse}} \\
 ] [get_ips ${ip_name}]
 """)
 

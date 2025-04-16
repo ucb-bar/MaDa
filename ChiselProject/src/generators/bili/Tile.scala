@@ -8,6 +8,7 @@ class Tile extends Module {
     val debug = Output(new DebugIO())
 
     val sbus = new Axi4Bundle()
+    val pbus = new Axi4Bundle()
   })
 
   val busWidth = 64
@@ -28,13 +29,26 @@ class Tile extends Module {
   // val dtim = Module(new SimAxi4LiteMemory(readDelay = 10, writeDelay = 10))
   // val dtim = Module(new Axi4BlockMemory())
   
-  val xbar = Module(new Axi4Crossbar(2, 2, Axi4Params(dataWidth = busWidth), device1Size = 0x10000))
+  val xbar = Module(new Axi4Crossbar(
+    2, 3,
+    Axi4Params(dataWidth = busWidth),
+    device0Size = 0x10000,
+    device0Address = 0x08000000,
+    device1Size = 0x10000000,
+    device1Address = 0x10000000,
+    device2Size = 0x10000000,
+    device2Address = 0x40000000
+  ))
 
   val dmem_upsizer = Module(new Axi4WidthUpsizer(
     s_params = Axi4Params(dataWidth = 32),
     m_params = Axi4Params(dataWidth = busWidth)
   ))
   val sbus_downsizer = Module(new Axi4WidthDownsizer(
+    s_params = Axi4Params(dataWidth = busWidth),
+    m_params = Axi4Params(dataWidth = 32)
+  ))
+  val pbus_downsizer = Module(new Axi4WidthDownsizer(
     s_params = Axi4Params(dataWidth = busWidth),
     m_params = Axi4Params(dataWidth = 32)
   ))
@@ -46,16 +60,20 @@ class Tile extends Module {
   // ibus connection
   core.io.imem <> itim.io.s_axi
 
-  
-  // sbus crossbar connections
-  // core.io.dmem <> xbar.io.s_axi(0)
+  // tile crossbar connections
   dmem_upsizer.io.m_axi <> xbar.io.s_axi(0)
   core.io.vdmem <> xbar.io.s_axi(1)
+  
+  // dtim connection
   xbar.io.m_axi(0) <> dtim.io.s_axi
-  xbar.io.m_axi(1) <> sbus_downsizer.io.s_axi
-  sbus_downsizer.io.m_axi <> io.sbus
 
-  // core.io.dmem <> dtim.io.s_axi
+  // pbus connection
+  xbar.io.m_axi(1) <> pbus_downsizer.io.s_axi
+  pbus_downsizer.io.m_axi <> io.pbus
+  
+  // sbus connection
+  xbar.io.m_axi(2) <> sbus_downsizer.io.s_axi
+  sbus_downsizer.io.m_axi <> io.sbus
 
   // debug connection
   io.debug := core.io.debug

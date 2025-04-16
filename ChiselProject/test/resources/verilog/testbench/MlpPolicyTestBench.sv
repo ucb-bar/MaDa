@@ -2,6 +2,7 @@
 
 import SimUart::*;
 
+
 module MlpPolicyTestBench();
   parameter CLOCK_FREQ = 100_000_000;
   parameter CLOCK_PERIOD = 1_000_000_000 / CLOCK_FREQ;
@@ -19,6 +20,28 @@ module MlpPolicyTestBench();
   logic uart_txd;
   logic uart_rxd;
 
+  wire qspi_mosi;
+  wire qspi_miso;
+  wire qspi_sclk;
+  wire qspi_cs;
+
+  
+  SimSpiFlashModel #(
+    .PLUSARG("firmware.8.hex"),
+    .READONLY(0),
+    .CAPACITY_BYTES(1024)
+  ) sim_spi (
+    .sck(qspi_sclk),
+    .cs_0(qspi_cs),
+    .reset(reset),
+    .dq_0(qspi_mosi),
+    .dq_1(qspi_miso),
+    .dq_2(),
+    .dq_3()
+  );
+
+
+
   wire [7:0] tohost;
 
   BiliArty100T dut(
@@ -33,14 +56,6 @@ module MlpPolicyTestBench();
     .io_ja_5(tohost[5]),
     .io_ja_6(tohost[6]),
     .io_ja_7(tohost[7]),
-//    .io_jd_0(),
-//    .io_jd_1(),
-//    .io_jd_2(),
-//    .io_jd_3(),
-//    .io_jd_4(),
-//    .io_jd_5(),
-//    .io_jd_6(),
-//    .io_jd_7(),
     .io_uart_txd_in(uart_rxd),
     .io_uart_rxd_out(uart_txd),
     .io_ck_ioa(1'b0),
@@ -52,6 +67,12 @@ module MlpPolicyTestBench();
     .io_eth_rxd(4'b0),
     .io_eth_rxerr(1'b0),
     .io_eth_tx_clk(1'b0),
+    .io_qspi_cs(qspi_cs),
+    .io_qspi_sck(qspi_sclk),
+    .io_qspi_dq_0(qspi_mosi),
+    .io_qspi_dq_1(qspi_miso),
+    .io_qspi_dq_2(),
+    .io_qspi_dq_3(),
     .io_led(led)
   );
 
