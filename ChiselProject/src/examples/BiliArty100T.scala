@@ -76,9 +76,10 @@ class BiliArty100T extends RawModule {
     spi.io.s_axi4.ar.bits.addr := tile.io.sbus.ar.bits.addr
     spi.io.s_axi4.ar.valid := tile.io.sbus.ar.valid
     tile.io.sbus.ar.ready := spi.io.s_axi4.ar.ready
-    tile.io.pbus.r.bits.data := spi.io.s_axi4.r.bits.data
-    tile.io.pbus.r.valid := spi.io.s_axi4.r.valid
-    spi.io.s_axi4.r.ready := tile.io.pbus.r.ready
+    tile.io.sbus.r.bits.data := spi.io.s_axi4.r.bits.data
+    tile.io.sbus.r.valid := spi.io.s_axi4.r.valid
+    tile.io.sbus.r.bits.last := 1.B
+    spi.io.s_axi4.r.ready := tile.io.sbus.r.ready
 
     spi.io.s_axi4.ar.bits.size := 2.U.asTypeOf(spi.io.s_axi4.ar.bits.size)
     spi.io.s_axi4.ar.bits.burst := 1.U.asTypeOf(spi.io.s_axi4.ar.bits.burst)
