@@ -160,14 +160,13 @@ object GenerateProject extends App {
       run_tcl.println(s"source ${file}")
     })
 
-    // update_compile_order -fileset sources_1
-    // set_property -name {xsim.simulate.runtime} -value {1000us} -objects [get_filesets sim_1]
-    // set_property -name {xsim.simulate.log_all_signals} -value {true} -objects [get_filesets sim_1]
-    // set_property top EECS151TestBench [get_filesets sim_1]
-    // set_property top_lib xil_defaultlib [get_filesets sim_1]
-    // set_property top GenericTestBench [get_filesets sim_1]
-    // set_property top_lib xil_defaultlib [get_filesets sim_1]
-    // launch_simulation
+
+    // configure simulation settings    
+    run_tcl.println(s"update_compile_order -fileset sources_1")
+    run_tcl.println(s"set_property -name {xsim.simulate.runtime} -value {1000us} -objects [get_filesets sim_1]")
+    run_tcl.println(s"set_property -name {xsim.simulate.log_all_signals} -value {true} -objects [get_filesets sim_1]")
+    run_tcl.println(s"set_property top MlpPolicyTestBench [get_filesets sim_1]")
+    // run_tcl.println(s"set_property top_lib xil_defaultlib [get_filesets sim_1]")
 
 
     run_tcl.close()
