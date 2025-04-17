@@ -23,49 +23,69 @@ def bin_to_hex(input_file: str, output_file: str, data_width: int = 32, endianne
         sys.exit(1)
 
 def process_binary_file(bin_file: BinaryIO, hex_file: TextIO, data_width: int, endianness: str, padding_lines: int) -> None:
-    """Process the binary file and write hex output."""
-    word_size = data_width // 8  # Convert bits to bytes
-    words_per_line = word_size // 4  # Number of 32-bit words per line
+    """Process the binary file and write hex output.
     
-    # Read the entire file
-    buffer = []
+    Args:
+        bin_file: Binary file object to read from
+        hex_file: Text file object to write hex output to
+        data_width: Width of data bus in bits
+        endianness: Byte order ('little' or 'big')
+        padding_lines: Number of padding lines to add at the end
+    """
+    bytes_per_word = data_width // 8
+    format_char = "<" if endianness == "little" else ">"
+    
+    # Calculate hex format string based on data width
+    hex_format = f"{{:0{data_width // 4}x}}"
 
-    if data_width == 8:
-        while True:
-            word = bin_file.read(1)
-            if not word:
-                break
-            byte = int.from_bytes(word, "little")
-            hex_line = f"{byte:02x}"
-            hex_file.write(hex_line + "\n")
-        return
-    
+    def read_large_word(num_bytes: int) -> int:
+        """Helper function to read and combine large words."""
+        if num_bytes <= 8:  # Up to 64 bits
+            if num_bytes <= 1:
+                struct_format = f"{format_char}B"
+            elif num_bytes <= 2:
+                struct_format = f"{format_char}H"
+            elif num_bytes <= 4:
+                struct_format = f"{format_char}I"
+            else:
+                struct_format = f"{format_char}Q"
+            
+            word_bytes = bin_file.read(num_bytes)
+            if not word_bytes:
+                return None
+            if len(word_bytes) < num_bytes:
+                word_bytes = word_bytes + b'\x00' * (num_bytes - len(word_bytes))
+            return struct.unpack(struct_format, word_bytes)[0]
+        
+        # For larger widths, read in 64-bit chunks and combine
+        result = 0
+        bytes_read = 0
+        while bytes_read < num_bytes:
+            chunk_size = min(8, num_bytes - bytes_read)
+            chunk = read_large_word(chunk_size)
+            if chunk is None:
+                return None
+            
+            if endianness == "little":
+                result |= chunk << (bytes_read * 8)
+            else:
+                result = (result << (chunk_size * 8)) | chunk
+            
+            bytes_read += chunk_size
+        
+        return result
+
     while True:
-        # Read 4 bytes (32 bits) at a time
-        word = bin_file.read(4)
-        if not word:
+        value = read_large_word(bytes_per_word)
+        if value is None:
             break
-        
-        # Pad with zeros if less than 4 bytes
-        if len(word) < 4:
-            word = word + b'\x00' * (4 - len(word))
-        
-        # Convert to 32-bit integer and format as hex
-        format_char = "<I" if endianness == "little" else ">I"
-        value = struct.unpack(format_char, word)[0]
-        hex_line = f"{value:08x}"  # 8 characters, no '0x' prefix
-        buffer.append(hex_line)
-    
-    # Process the buffer in chunks of words_per_line
-    for i in range(0, len(buffer), words_per_line):
-        chunk = buffer[i:i+words_per_line]
-        if endianness == "little":
-            chunk.reverse()  # Reverse only if little-endian
-        hex_file.write("".join(chunk) + "\n")
+            
+        # Write the hex value
+        hex_file.write(hex_format.format(value) + "\n")
     
     # Add padding lines at the end
     for _ in range(padding_lines):
-        hex_file.write("00\n")  # Use consistent 8-digit format
+        hex_file.write("0" * (data_width // 4) + "\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert binary file to hexadecimal format")
