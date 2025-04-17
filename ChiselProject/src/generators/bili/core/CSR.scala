@@ -21,6 +21,7 @@ class CSR extends Module {
 
   val reg_csr_tohost = RegInit(0.U(32.W))
   val reg_csr_retire = RegInit(0.U(32.W))
+  val reg_csr_mcycle = RegInit(0.U(32.W))
 
   when (io.command === CSR_S) {
     reg_csr_tohost := reg_csr_tohost | io.in_data
@@ -32,8 +33,15 @@ class CSR extends Module {
     reg_csr_tohost := io.in_data
   }
 
+  reg_csr_mcycle := reg_csr_mcycle + 1.U
+
 
   io.out_data := MuxCase(0.U, Seq(
+    // mhartid
+    (io.addr === 0xF12.U) -> 0.U,
+    // cycle
+    (io.addr === 0xB00.U) -> reg_csr_mcycle,
+    // tohost
     (io.addr === 0x51E.U) -> reg_csr_tohost,
   ))
 
