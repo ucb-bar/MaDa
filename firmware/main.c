@@ -9,6 +9,16 @@
 #include "gpio.h"
 
 
+#define SCRATCH_BASE          0x08000000
+#define GPIOA_BASE            0x10010000
+#define UART0_BASE            0x10020000
+#define SPI_MEM_BASE          0x20000000
+
+
+#define GPIOA                           ((XilinxGpio *) GPIOA_BASE)
+#define UART0                           ((XilinxUart *) UART0_BASE)
+
+
 // #define DELAY_CYCLES 2000000
 #define DELAY_CYCLES 2
 
@@ -191,12 +201,6 @@ void linear(uint32_t out_features, uint32_t in_features, uint32_t *y, uint32_t *
     w += tile_size;
     b += tile_size;
   }
-  
-
-  // asm volatile("vfadd.vv v3, v2, v1");
-  // asm volatile("vfmul.vv v4, v2, v1");
-  // asm volatile("vfmacc.vv v5, v1, v2");
-  // asm volatile("vse32.v v2, 0(x1)");
 }
 
 
@@ -205,73 +209,75 @@ int main(void) {
 
   while (1) {
 
-    uint32_t SPI_MEM_ADDR = 0x40000000;
-
-    volatile uint32_t data = *((uint32_t *)SPI_MEM_ADDR);
+    volatile uint32_t data = *((uint32_t *)SPI_MEM_BASE);
     
-
-    // vec_t val;
-
-    // zero[0] = 0;
-
-    // val.f32 = 0.11f;  // 3de147ae
-    // x[0] = val.u32;
-    // val.f32 = 0.22f;  // 3e6147ae
-    // x[1] = val.u32;
-    // val.f32 = 0.33f;  // 3ea8f5c3
-    // x[2] = val.u32;
     
-    // val.f32 = 0.12f;  // 3ea8f5c3
-    // w[0] = val.u32;
-    // val.f32 = 0.34f;  // 3ee147ae
-    // w[1] = val.u32;
-    // val.f32 = 0.07f;  // 3ea8f5c3
-    // w[2] = val.u32;
-    // val.f32 = -0.11f;  // 3ee147ae
-    // w[3] = val.u32;
-    // val.f32 = 0.56f;  // 3ea8f5c3
-    // w[4] = val.u32;
-    // val.f32 = -0.78f;  // 3ee147ae
-    // w[5] = val.u32;
-    // val.f32 = 0.08f;  // 3ea8f5c3
-    // w[6] = val.u32;
-    // val.f32 = 0.22f;  // 3ee147ae
-    // w[7] = val.u32;
-    // val.f32 = 0.90f;  // 3ea8f5c3
-    // w[8] = val.u32;
-    // val.f32 = 1.12f;  // 3ee147ae
-    // w[9] = val.u32;
-    // val.f32 = 0.09f;  // 3ea8f5c3
-    // w[10] = val.u32;
-    // val.f32 = -0.33f;  // 3ee147ae
-    // w[11] = val.u32;
+    vec_t val;
 
-    // val.f32 = -0.55f;  // 3f0ccccd
-    // b[0] = val.u32;
-    // val.f32 = -0.66f;  // 3f28f5c3
-    // b[1] = val.u32;
-    // val.f32 = -0.77f;  // 3ea8f5c3
-    // b[2] = val.u32;
-    // val.f32 = -0.88f;  // 3ee147ae
-    // b[3] = val.u32;
+    zero[0] = 0;
 
-    // WRITE_CSR("0x51F", 0);
+    val.f32 = 0.11f;  // 3de147ae
+    x[0] = val.u32;
+    val.f32 = 0.22f;  // 3e6147ae
+    x[1] = val.u32;
+    val.f32 = 0.33f;  // 3ea8f5c3
+    x[2] = val.u32;
     
-    // linear(4, 3, y, x, w, b);
+    val.f32 = 0.12f;  // 3ea8f5c3
+    w[0] = val.u32;
+    val.f32 = 0.34f;  // 3ee147ae
+    w[1] = val.u32;
+    val.f32 = 0.07f;  // 3ea8f5c3
+    w[2] = val.u32;
+    val.f32 = -0.11f;  // 3ee147ae
+    w[3] = val.u32;
+    val.f32 = 0.56f;  // 3ea8f5c3
+    w[4] = val.u32;
+    val.f32 = -0.78f;  // 3ee147ae
+    w[5] = val.u32;
+    val.f32 = 0.08f;  // 3ea8f5c3
+    w[6] = val.u32;
+    val.f32 = 0.22f;  // 3ee147ae
+    w[7] = val.u32;
+    val.f32 = 0.90f;  // 3ea8f5c3
+    w[8] = val.u32;
+    val.f32 = 1.12f;  // 3ee147ae
+    w[9] = val.u32;
+    val.f32 = 0.09f;  // 3ea8f5c3
+    w[10] = val.u32;
+    val.f32 = -0.33f;  // 3ee147ae
+    w[11] = val.u32;
+
+    val.f32 = -0.55f;  // 3f0ccccd
+    b[0] = val.u32;
+    val.f32 = -0.66f;  // 3f28f5c3
+    b[1] = val.u32;
+    val.f32 = -0.77f;  // 3ea8f5c3
+    b[2] = val.u32;
+    val.f32 = -0.88f;  // 3ee147ae
+    b[3] = val.u32;
+
+    WRITE_CSR("0x51F", 0);
+
+    GPIOA->OUTPUT = 0x01;
+    
+    linear(4, 3, y, x, w, b);
+
+    GPIOA->OUTPUT = 0x00;
   
-    // // load C into tohost CSR
-    // // WRITE_CSR("0x51E", y[0]);
-    // // WRITE_CSR("0x51F", y[1]);
-    // WRITE_CSR("0x51F", 2);
+    // load C into tohost CSR
+    // WRITE_CSR("0x51E", y[0]);
+    // WRITE_CSR("0x51F", y[1]);
+    WRITE_CSR("0x51F", 2);
 
-    // prints("finish loop.\n");
+    prints("finish loop.\n");
 
 
     // wait FIFO to be empty
-    // while (!READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_EMPTY_MSK)) {
-    //   asm volatile("nop");
-    // }
+    while (!READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_EMPTY_MSK)) {
+      asm volatile("nop");
+    }
     
-    // exit(1);
+    exit(1);
   }
 }

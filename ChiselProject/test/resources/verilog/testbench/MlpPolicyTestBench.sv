@@ -15,7 +15,7 @@ module MlpPolicyTestBench();
   initial clock = 'b0;
   always #(CLOCK_PERIOD/2) clock = ~clock;
 
-  logic led;
+  logic [3:0] led;
 
   logic uart_txd;
   logic uart_rxd;

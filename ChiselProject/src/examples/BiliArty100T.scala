@@ -2,6 +2,20 @@ import chisel3._
 import chisel3.util._
 
 
+
+
+
+/**
+  * 
+  * 
+  * Memory Organization:
+  * 0x2000_0000 - 0x200F_FFFF: QSPI Memory (1 MB)
+  * 0x1003_0000 - 0x1003_0FFF: QSPI Control
+  * 0x1002_0000 - 0x1002_0FFF: UART
+  * 0x1001_0000 - 0x1001_0FFF: GPIO
+  * 0x0800_0000 - 0x0800_3FFF: scratchpad (16 kB)
+  * 
+  */
 class BiliArty100T extends RawModule {
   val io = IO(new Arty100TIO())
 
@@ -28,7 +42,7 @@ class BiliArty100T extends RawModule {
   reset := sync_reset.io.out
 
   withClockAndReset(clock, reset) {
-    val reset_vector = RegInit(0x08000000.U(32.W))
+    val reset_vector = RegInit(0x0800_0000.U(32.W))
 
     val tile = Module(new Tile())
 
@@ -37,8 +51,8 @@ class BiliArty100T extends RawModule {
     val pbus_crossbar = Module(new Axi4LiteCrossbar(
       numSlave = 1,
       numMaster = 2,
-      deviceSizes = Array(0x1000, 0x1000),
-      deviceAddresses = Array(0x10000000, 0x10001000),
+      deviceSizes = Array(0x0400, 0x0400),
+      deviceAddresses = Array(0x1001_0000, 0x1002_0000),
     ))
 
     val spi = Module(new Axi4QuadSpi())

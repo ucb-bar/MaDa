@@ -17,10 +17,6 @@ typedef struct {
 } XilinxUart;
 
 
-#define UART0_BASE                      0x10001000
-
-#define UART0                           ((XilinxUart *) UART0_BASE)
-
 
 #define UART_STAT_RX_FIFO_VALID_POS     0x0
 #define UART_STAT_RX_FIFO_VALID_MSK     (0x1 << UART_STAT_RX_FIFO_VALID_POS)
