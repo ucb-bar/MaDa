@@ -21,9 +21,9 @@ class Tile extends Module {
     memoryFileHex="firmware.hex"
   ))
 
-  // val dtim = Module(new Axi4LiteMemory(addressWidth=17))
+  // val dtim = Module(new Axi4LiteMemory(addressWidth=12))
   val dtim = Module(new Axi4Memory(
-    params=Axi4Params(addressWidth=14, dataWidth=busWidth),
+    params=Axi4Params(addressWidth=12, dataWidth=busWidth),
     memoryFileHex="firmware.64.hex"
   ))
   // val dtim = Module(new SimAxi4LiteMemory(readDelay = 10, writeDelay = 10))

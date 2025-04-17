@@ -153,7 +153,7 @@ object GenerateProject extends App {
     run_tcl.println("update_ip_catalog")
 
     val create_ip_files = new File(s"${vivado_project_dir}/scripts").listFiles(new FileFilter {
-      def accept(file: File): Boolean = file.isFile && file.getName.contains("create_ip")
+      def accept(file: File): Boolean = file.isFile && file.getName != "create_project.tcl"
     }).map(_.getAbsolutePath)
 
     create_ip_files.foreach(file => {

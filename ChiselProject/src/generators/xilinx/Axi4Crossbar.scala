@@ -161,10 +161,11 @@ class Axi4CrossbarBlackbox(
     val m_axi = new Axi4CrossbarBlackboxBundle(numMaster, params)
   })
 
+  override def desiredName: String = s"Axi4CrossbarBlackbox_${numSlave}_${numMaster}"
 
   def generate_tcl_script(): Unit = {
     val vivado_project_dir = "out/VivadoProject"
-    val ip_name = "Axi4CrossbarBlackbox"
+    val ip_name = desiredName
     val ip_name_lower = ip_name.toLowerCase()
 
     val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")

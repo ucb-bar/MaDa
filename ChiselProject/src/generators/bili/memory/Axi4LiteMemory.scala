@@ -61,12 +61,10 @@ class Axi4LiteMemory(
   def generate_tcl_script(): Unit = {
     if (memoryFileHex != "") {
       val vivado_project_dir = "out/VivadoProject"
-      val ip_name = "Axi4LiteMemory"
-      val ip_name_lower = ip_name.toLowerCase()
       
       // Get current working directory
       val file_path = System.getProperty("user.dir") + "/firmware/" + memoryFileHex
-      val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
+      val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/add_memory_${memoryFileHex}.tcl")
       
       // Use current directory to create paths
       tcl_script.println(s"add_files -norecurse ${file_path}")

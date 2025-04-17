@@ -19,8 +19,8 @@
 #define UART0                           ((XilinxUart *) UART0_BASE)
 
 
-// #define DELAY_CYCLES 2000000
-#define DELAY_CYCLES 2
+#define DELAY_CYCLES 2000000
+// #define DELAY_CYCLES 2
 
 
 // === function declarations === //
@@ -205,11 +205,13 @@ void linear(uint32_t out_features, uint32_t in_features, uint32_t *y, uint32_t *
 
 
 int main(void) {
-  // prints("start.\n");
+  prints("start.\n");
+
+  uint8_t counter = 0;
 
   while (1) {
 
-    volatile uint32_t data = *((uint32_t *)SPI_MEM_BASE);
+    // volatile uint32_t data = *((uint32_t *)SPI_MEM_BASE);
     
     
     vec_t val;
@@ -259,12 +261,16 @@ int main(void) {
 
     WRITE_CSR("0x51F", 0);
 
-    GPIOA->OUTPUT = 0x01;
-    
     linear(4, 3, y, x, w, b);
 
-    GPIOA->OUTPUT = 0x00;
+    counter += 1;
   
+    GPIOA->OUTPUT = counter & 0b1111;
+
+    for (size_t i=0; i<DELAY_CYCLES; i+=1) {
+      asm volatile("nop");
+    }
+
     // load C into tohost CSR
     // WRITE_CSR("0x51E", y[0]);
     // WRITE_CSR("0x51F", y[1]);
@@ -273,11 +279,11 @@ int main(void) {
     prints("finish loop.\n");
 
 
-    // wait FIFO to be empty
-    while (!READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_EMPTY_MSK)) {
-      asm volatile("nop");
-    }
+    // // wait FIFO to be empty
+    // while (!READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_EMPTY_MSK)) {
+    //   asm volatile("nop");
+    // }
     
-    exit(1);
+    // exit(1);
   }
 }

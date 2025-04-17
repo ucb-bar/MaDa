@@ -94,8 +94,8 @@ if __name__ == "__main__":
     parser.add_argument("--data_width", type=int, default=32, help="Data width in bits (default: 32)")
     parser.add_argument("--endianness", type=str, default="little", choices=["little", "big"], 
                         help="Byte order (little or big, default: little)")
-    parser.add_argument("--padding_lines", type=int, default=32, 
-                        help="Number of extra zero paddings to add at the end (default: 32)")
+    parser.add_argument("--padding_lines", type=int, default=10,
+                        help="Number of extra zero paddings to add at the end (default: 10)")
     
     args = parser.parse_args()
     bin_to_hex(args.input_file, args.output_file, args.data_width, args.endianness, args.padding_lines)

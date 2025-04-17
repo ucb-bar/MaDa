@@ -74,4 +74,21 @@ class Axi4Memory(
   .elsewhen (io.s_axi.r.fire) {
     reg_read_requested := false.B
   }
+  
+  def generate_tcl_script(): Unit = {
+    if (memoryFileHex != "") {
+      val vivado_project_dir = "out/VivadoProject"
+      
+      // Get current working directory
+      val file_path = System.getProperty("user.dir") + "/firmware/" + memoryFileHex
+      val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/add_memory_${memoryFileHex}.tcl")
+      
+      // Use current directory to create paths
+      tcl_script.println(s"add_files -norecurse ${file_path}")
+      tcl_script.println(s"set_property file_type {Memory Initialization Files} [get_files ${file_path}]")
+
+      tcl_script.close()
+    }
+  }
+  generate_tcl_script()
 }
