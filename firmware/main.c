@@ -8,6 +8,9 @@
 #include "uart.h"
 #include "gpio.h"
 
+#include "nn.h"
+#include "model.h"
+
 
 #define SCRATCH_BASE          0x08000000
 #define GPIOA_BASE            0x10010000
@@ -204,10 +207,29 @@ void linear(uint32_t out_features, uint32_t in_features, uint32_t *y, uint32_t *
 }
 
 
+
+Model model;
+
+
 int main(void) {
-  prints("start.\n");
+  WRITE_CSR("0x51F", 0);
+  // prints("start.\n");
 
   uint8_t counter = 0;
+
+  model_init(&model);
+
+  for (int i = 0; i < 8; i += 1) {
+    model.input_1.data[i] = 1.0;
+  }
+
+  model_forward(&model);
+
+  WRITE_CSR("0x51F", model.output.data[0]);
+
+  prints("finish inference!\n");
+
+
 
   while (1) {
 
@@ -267,9 +289,9 @@ int main(void) {
   
     GPIOA->OUTPUT = counter & 0b1111;
 
-    for (size_t i=0; i<DELAY_CYCLES; i+=1) {
-      asm volatile("nop");
-    }
+    // for (size_t i=0; i<DELAY_CYCLES; i+=1) {
+    //   asm volatile("nop");
+    // }
 
     // load C into tohost CSR
     // WRITE_CSR("0x51E", y[0]);
@@ -279,10 +301,10 @@ int main(void) {
     prints("finish loop.\n");
 
 
-    // // wait FIFO to be empty
-    // while (!READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_EMPTY_MSK)) {
-    //   asm volatile("nop");
-    // }
+    // wait FIFO to be empty
+    while (!READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_EMPTY_MSK)) {
+      asm volatile("nop");
+    }
     
     // exit(1);
   }
