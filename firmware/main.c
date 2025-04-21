@@ -32,6 +32,7 @@
 #define CSR_SYSRESP3                 "0xCC3"
 
 #define SYSCALL_EXIT                0x01
+#define SYSCALL_PRINT_CHAR          0x03
 #define SYSCALL_PRINT_F32           0x04
 
 
@@ -62,6 +63,12 @@ void prints(const char *str) {
 void exit(int code) {
   WRITE_CSR(CSR_SYSCALL1, code);
   WRITE_CSR(CSR_SYSCALL0, SYSCALL_EXIT);
+}
+
+void print_char(char c) {
+  WRITE_CSR(CSR_SYSCALL1, c);
+  WRITE_CSR(CSR_SYSCALL0, SYSCALL_PRINT_CHAR);
+  WRITE_CSR(CSR_SYSCALL0, 0);
 }
 
 void print_float(uint32_t f) {
@@ -171,12 +178,9 @@ extern uint8_t weights_data[];
 extern size_t weights_start[];
 extern size_t weights_end[];
 
-static uint32_t zero[1] __attribute__((aligned(16))) = { 0 };
-static uint32_t y_data[4] __attribute__((aligned(16))) = { 0 };
-static uint32_t b_data[4] __attribute__((aligned(16))) = { 0 };
-static uint32_t x_data[3] __attribute__((aligned(16))) = { 0 };
 
 Model model;
+
 
 Tensor2D_F32 w = {
   .shape = { 4, 3 },
@@ -198,19 +202,28 @@ Tensor1D_F32 y = {
 const size_t SIMD_LEN = 2;
 
 
-void linear(uint32_t out_features, uint32_t in_features, uint32_t *y, uint32_t *x, uint32_t *w, uint32_t *b) {
+void linear(Tensor1D_F32 *y, const Tensor1D_F32 *x, const Tensor2D_F32 *w, const Tensor1D_F32 *b) {
   // vy = vw * vx (broadcast x) + vb
   const size_t batch_size = 1;
 
+  uint32_t out_features = w->shape[0];
+  uint32_t in_features = w->shape[1];
+
   size_t tile_size = 2;
+
+  uint32_t *y_data = y->data;
+  uint32_t *x_data = x->data;
+  uint32_t *w_data = w->data;
+  uint32_t *b_data = b->data;
 
   uint32_t *w_ptr;
   uint32_t *x_ptr;
 
+
   // tiling, when out_features is greater than SIMD length
   for (size_t tile = 0; tile < 4; tile += tile_size) {
-    w_ptr = w;
-    x_ptr = x;
+    w_ptr = w_data;
+    x_ptr = x_data;
 
     // broadcast zero
     asm volatile("vlse32.v v0, (%0), zero" : : "r"(zero) : "v0");
@@ -232,18 +245,21 @@ void linear(uint32_t out_features, uint32_t in_features, uint32_t *y, uint32_t *
     }
 
     // load b
-    asm volatile("vle32.v v3, (%0)" : : "r"(b) : "v3");
+    asm volatile("vle32.v v3, (%0)" : : "r"(b_data) : "v3");
     
     // y += b
     asm volatile("vfadd.vv v0, v0, v3");
-    
+
+    // // relu
+    // asm volatile("vmax.vv v0, v0, zero");
+
     // store y
-    asm volatile("vse32.v v0, (%0)" : : "r"(y) : "memory");
+    asm volatile("vse32.v v0, (%0)" : : "r"(y_data) : "memory");
 
     // increment pointers
-    y += tile_size;
-    w += tile_size;
-    b += tile_size;
+    y_data += tile_size;
+    w_data += tile_size;
+    b_data += tile_size;
   }
 }
 
@@ -269,24 +285,20 @@ int main(void) {
   write_data((uint32_t *)x.data, 0.11f);  // 3de147ae
   write_data((uint32_t *)x.data + 1, 0.22f);  // 3e6147ae
   write_data((uint32_t *)x.data + 2, 0.33f);  // 3ea8f5c3
+  
+  // write_data((uint32_t *)w.data, 0.12f);  // 3ea8f5c3
 
-  // write_data(w, 0.12f);  // 3ea8f5c3
-
-  print_float(*((uint32_t *)w.data + 0));
-  print_float(*((uint32_t *)w.data + 1));
-  print_float(*((uint32_t *)w.data + 2));
-  print_float(*((uint32_t *)w.data + 3));
-  // write_data(w + 1, 0.34f);  // 3ee147ae
-  // write_data(w + 2, 0.07f);  // 3ea8f5c3
-  // write_data(w + 3, -0.11f);  // 3ee147ae
-  // write_data(w + 4, 0.56f);  // 3ea8f5c3
-  // write_data(w + 5, -0.78f);  // 3ee147ae
-  // write_data(w + 6, 0.08f);  // 3ea8f5c3
-  // write_data(w + 7, 0.22f);  // 3ee147ae
-  // write_data(w + 8, 0.90f);  // 3ea8f5c3
-  // write_data(w + 9, 1.12f);  // 3ee147ae
-  // write_data(w + 10, 0.09f);  // 3ea8f5c3
-  // write_data(w + 11, -0.33f);  // 3ee147ae
+  // write_data((uint32_t *)w.data + 1, 0.34f);  // 3ee147ae
+  // write_data((uint32_t *)w.data + 2, 0.07f);  // 3ea8f5c3
+  // write_data((uint32_t *)w.data + 3, -0.11f);  // 3ee147ae
+  // write_data((uint32_t *)w.data + 4, 0.56f);  // 3ea8f5c3
+  // write_data((uint32_t *)w.data + 5, -0.78f);  // 3ee147ae
+  // write_data((uint32_t *)w.data + 6, 0.08f);  // 3ea8f5c3
+  // write_data((uint32_t *)w.data + 7, 0.22f);  // 3ee147ae
+  // write_data((uint32_t *)w.data + 8, 0.90f);  // 3ea8f5c3
+  // write_data((uint32_t *)w.data + 9, 1.12f);  // 3ee147ae
+  // write_data((uint32_t *)w.data + 10, 0.09f);  // 3ea8f5c3
+  // write_data((uint32_t *)w.data + 11, -0.33f);  // 3ee147ae
 
   write_data((uint32_t *)b.data, -0.55f);  // 3f0ccccd
   write_data((uint32_t *)b.data + 1, -0.66f);  // 3f28f5c3
@@ -295,7 +307,23 @@ int main(void) {
 
   WRITE_CSR(CSR_SYSCALL2, 2);
   // linear(4, 3, y, x, w, b);
-  linear(4, 3, y.data, x.data, w.data, b.data);
+
+  model_init(&model);
+
+
+  print_char('x');
+  print_float(*((uint32_t *)x.data + 0));
+  print_float(*((uint32_t *)x.data + 1));
+  print_float(*((uint32_t *)x.data + 2));
+
+  print_char('w');
+  print_float(*((uint32_t *)w.data + 0));
+  print_float(*((uint32_t *)w.data + 1));
+  print_float(*((uint32_t *)w.data + 2));
+  print_float(*((uint32_t *)w.data + 3));
+
+  // model_forward(&model);
+  linear(&y, &x, &w, &b);
 
   // load C into debug CSR
   WRITE_CSR(CSR_SYSCALL2, y.data[0]);

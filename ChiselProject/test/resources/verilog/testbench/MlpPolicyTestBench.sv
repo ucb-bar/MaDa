@@ -118,6 +118,12 @@ module MlpPolicyTestBench();
             $display("exit() called from DUT at %t.", $time);
             $display("error code: %d", dut.tile.core.io_debug_syscall1);
             $finish;
+          end 
+          if (tohost == 8'h03) begin  // print char
+            $display("print: %c (0x%x)",
+              dut.tile.core.io_debug_syscall1,
+              dut.tile.core.io_debug_syscall1
+            );
           end
           if (tohost == 8'h04) begin  // print float
             $display("print: %.4f (0x%x)",

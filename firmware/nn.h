@@ -104,77 +104,77 @@ typedef struct {
 
 
 
-/**
- * nn_relu2d_f32
- *
- * @brief Applies the ReLU activation function to a 2D floating-point tensor.
- *
- * y[i][j] = max(x[i][j], 0)
- *
- * @param y The result tensor.
- * @param x The input tensor.
- */
-void nn_relu2d_f32(Tensor2D_F32 *y, const Tensor2D_F32 *x) {
-  // nn_assert(x->shape[0] == y->shape[0] && x->shape[1] == y->shape[1], "Cannot perform ReLU on tensors of different shapes");
+// /**
+//  * nn_relu2d_f32
+//  *
+//  * @brief Applies the ReLU activation function to a 2D floating-point tensor.
+//  *
+//  * y[i][j] = max(x[i][j], 0)
+//  *
+//  * @param y The result tensor.
+//  * @param x The input tensor.
+//  */
+// void nn_relu2d_f32(Tensor2D_F32 *y, const Tensor2D_F32 *x) {
+//   // nn_assert(x->shape[0] == y->shape[0] && x->shape[1] == y->shape[1], "Cannot perform ReLU on tensors of different shapes");
 
-  size_t n = y->shape[1];
-  float *x_data = x->data;
-  float *y_data = y->data;
+//   size_t n = y->shape[1];
+//   float *x_data = x->data;
+//   float *y_data = y->data;
 
-  /* scalar implementation */
-  for (size_t i = 0; i < n; i += 1) {
-    float x_val = x_data[i];
-    y_data[i] = x_val > 0 ? x_val : 0;
-  }
-}
+//   /* scalar implementation */
+//   for (size_t i = 0; i < n; i += 1) {
+//     float x_val = x_data[i];
+//     y_data[i] = x_val > 0 ? x_val : 0;
+//   }
+// }
 
 
-/**
- * nn_linear_f32
- *
- * @brief Linear neural network layer.
- *
- * y[i][j] = x[i][k] * weight[j][k] + bias[j]
- *
- * @param y The result tensor.
- * @param x The input tensor.
- * @param weight The weight tensor.
- * @param bias The bias tensor.
- */
-void nn_linear_f32(Tensor2D_F32 *y, const Tensor2D_F32 *x, const Tensor2D_F32 *weight, const Tensor1D_F32 *bias) {
-  // nn_assert(x->shape[1] == weight->shape[1], "Cannot perform Linear on tensors of different shapes");
-  // nn_assert(!bias || bias->shape[0] == weight->shape[0], "Cannot perform Linear on tensors of different shapes");
-  // nn_assert(y->shape[0] == x->shape[0] && y->shape[1] == weight->shape[0], "Cannot perform Linear on tensors of different shapes");
+// /**
+//  * nn_linear_f32
+//  *
+//  * @brief Linear neural network layer.
+//  *
+//  * y[i][j] = x[i][k] * weight[j][k] + bias[j]
+//  *
+//  * @param y The result tensor.
+//  * @param x The input tensor.
+//  * @param weight The weight tensor.
+//  * @param bias The bias tensor.
+//  */
+// void nn_linear_f32(Tensor2D_F32 *y, const Tensor2D_F32 *x, const Tensor2D_F32 *weight, const Tensor1D_F32 *bias) {
+//   // nn_assert(x->shape[1] == weight->shape[1], "Cannot perform Linear on tensors of different shapes");
+//   // nn_assert(!bias || bias->shape[0] == weight->shape[0], "Cannot perform Linear on tensors of different shapes");
+//   // nn_assert(y->shape[0] == x->shape[0] && y->shape[1] == weight->shape[0], "Cannot perform Linear on tensors of different shapes");
 
-  const size_t batch_size = x->shape[0];
-  const size_t in_features = x->shape[1];
-  const size_t out_features = weight->shape[0];
+//   const size_t batch_size = x->shape[0];
+//   const size_t in_features = x->shape[1];
+//   const size_t out_features = weight->shape[0];
 
-  float *x_batch_data = x->data;
-  float *y_batch_data = y->data;
+//   float *x_batch_data = x->data;
+//   float *y_batch_data = y->data;
 
-  for (size_t i = 0; i < batch_size; i += 1) {
-    float *x_data = x_batch_data;
-    float *y_data = y_batch_data;
+//   for (size_t i = 0; i < batch_size; i += 1) {
+//     float *x_data = x_batch_data;
+//     float *y_data = y_batch_data;
 
-    /* scalar implementation */
-    for (size_t j = 0; j < out_features; j += 1) {
-      float *weight_row = weight->data + j * in_features;
+//     /* scalar implementation */
+//     for (size_t j = 0; j < out_features; j += 1) {
+//       float *weight_row = weight->data + j * in_features;
 
-      float sum = 0.f;
-      for (size_t k = 0; k < in_features; k += 1) {
-        sum += x_data[k] * weight_row[k];
-      }
-      if (bias) {
-        sum += bias->data[j];
-      }
-      y_data[j] = sum;
-    }
+//       float sum = 0.f;
+//       for (size_t k = 0; k < in_features; k += 1) {
+//         sum += x_data[k] * weight_row[k];
+//       }
+//       if (bias) {
+//         sum += bias->data[j];
+//       }
+//       y_data[j] = sum;
+//     }
 
-    x_batch_data += in_features;
-    y_batch_data += out_features;
-  }
-}
+//     x_batch_data += in_features;
+//     y_batch_data += out_features;
+//   }
+// }
 
 
 #endif // __NN_H
