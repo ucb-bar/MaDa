@@ -98,15 +98,7 @@ module EECS151TestBench();
     .io_sbus_ar_ready('b0),
     .io_sbus_r_valid('b0),
     .io_sbus_r_bits_resp('h0),
-    .io_debug_x1(),
-    .io_debug_x2(),
-    .io_debug_x3(),
-    .io_debug_x4(),
-    .io_debug_x5(),
-    .io_debug_x6(),
-    .io_debug_x7(),
-    .io_debug_x8(),
-    .io_debug_tohost(csr_tohost)
+    .io_debug_syscall0(csr_tohost)
   );
 
   // Reset IMem, DMem, and RegFile before running new test

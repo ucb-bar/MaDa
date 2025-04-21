@@ -1,9 +1,10 @@
-// Single-port RAM with synchronous read with write byte-enable
-// read data will be available after one cycle
+/**
+ * Single-port RAM with synchronous read with write byte-enable
+ */
 module SyncRam #(
   parameter ADDR_WIDTH = 12,
+  parameter DEPTH = (1 << ADDR_WIDTH),
   parameter DATA_WIDTH = 32,
-  parameter DEPTH = (1 << (ADDR_WIDTH - $clog2(DATA_WIDTH/8))),
   parameter MEM_HEX = "",
   parameter MEM_BIN = ""
 ) (
@@ -18,13 +19,7 @@ module SyncRam #(
 
   (* ram_style="block" *) reg [DATA_WIDTH-1:0] mem [0:DEPTH-1];
   
-  wire [$clog2(DEPTH)-1:0] raddr_idx;
-  wire [$clog2(DEPTH)-1:0] waddr_idx;
-
   reg [DATA_WIDTH-1:0] reg_rdata;
-  
-  assign raddr_idx = raddr >> $clog2(DATA_WIDTH/8);
-  assign waddr_idx = waddr >> $clog2(DATA_WIDTH/8);
 
   integer i;
   initial begin
@@ -48,9 +43,9 @@ module SyncRam #(
     else begin
       for (i = 0; i < DATA_WIDTH/8; i = i+1) begin
         if (wstrb[i])
-          mem[waddr_idx][i*8 +: 8] <= wdata[i*8 +: 8];
+          mem[waddr][i*8 +: 8] <= wdata[i*8 +: 8];
       end
-      reg_rdata <= mem[raddr_idx];
+      reg_rdata <= mem[raddr];
     end
   end
 
