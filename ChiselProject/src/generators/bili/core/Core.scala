@@ -18,7 +18,14 @@ class DebugIO extends Bundle() {
   val x7 = Output(UInt(32.W))
   val x8 = Output(UInt(32.W))
 
-  val tohost = Output(UInt(32.W))
+  val syscall0 = Output(UInt(32.W))
+  val syscall1 = Output(UInt(32.W))
+  val syscall2 = Output(UInt(32.W))
+  val syscall3 = Output(UInt(32.W))
+  val sysresp0 = Input(UInt(32.W))
+  val sysresp1 = Input(UInt(32.W))
+  val sysresp2 = Input(UInt(32.W))
+  val sysresp3 = Input(UInt(32.W))
 }
 
 
@@ -235,14 +242,19 @@ class Core(
 
 
   // Control Status Registers
-  csr.io.command := Mux(retire && rs1_addr =/= 0.U, ctrl.csr_cmd, CSR_N)
+  csr.io.command := Mux(retire, ctrl.csr_cmd, CSR_N)
   csr.io.in_data := alu.io.out
   csr.io.addr := inst(CSR_ADDR_MSB, CSR_ADDR_LSB)
   csr.io.retire := retire
 
-  io.debug.tohost := csr.io.tohost
-
-
+  io.debug.syscall0 := csr.io.debug.syscall0
+  io.debug.syscall1 := csr.io.debug.syscall1
+  io.debug.syscall2 := csr.io.debug.syscall2
+  io.debug.syscall3 := csr.io.debug.syscall3
+  csr.io.debug.sysresp0 := io.debug.sysresp0
+  csr.io.debug.sysresp1 := io.debug.sysresp1
+  csr.io.debug.sysresp2 := io.debug.sysresp2
+  csr.io.debug.sysresp3 := io.debug.sysresp3
 
 
 

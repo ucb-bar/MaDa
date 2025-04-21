@@ -22,6 +22,20 @@
 #define UART0                           ((XilinxUart *) UART0_BASE)
 
 
+#define CSR_SYSCALL0                 "0x8C0"
+#define CSR_SYSCALL1                 "0x8C1"
+#define CSR_SYSCALL2                 "0x8C2"
+#define CSR_SYSCALL3                 "0x8C3"
+#define CSR_SYSRESP0                 "0xCC0"
+#define CSR_SYSRESP1                 "0xCC1"
+#define CSR_SYSRESP2                 "0xCC2"
+#define CSR_SYSRESP3                 "0xCC3"
+
+#define SYSCALL_EXIT                0x01
+#define SYSCALL_PRINT_F32           0x04
+
+
+
 #define DELAY_CYCLES 2000000
 // #define DELAY_CYCLES 2
 
@@ -46,9 +60,15 @@ void prints(const char *str) {
 }
 
 void exit(int code) {
-  WRITE_CSR("0x51E", 0x01);
+  WRITE_CSR(CSR_SYSCALL1, code);
+  WRITE_CSR(CSR_SYSCALL0, SYSCALL_EXIT);
 }
 
+void print_float(uint32_t f) {
+  WRITE_CSR(CSR_SYSCALL1, f);
+  WRITE_CSR(CSR_SYSCALL0, SYSCALL_PRINT_F32);
+  WRITE_CSR(CSR_SYSCALL0, 0);
+}
 
 
 // === startup code === //
@@ -145,12 +165,35 @@ typedef union {
   uint32_t u32;
 } vec_t;
 
-static uint32_t zero[1] __attribute__((aligned(16))) = { 0 };
-static uint32_t y[4] __attribute__((aligned(16))) = { 0 };
-static uint32_t x[4] __attribute__((aligned(16))) = { 0 };
-static uint32_t w[16] __attribute__((aligned(16))) = { 0 };
-static uint32_t b[4] __attribute__((aligned(16))) = { 0 };
+// load the weight data block from the model.bin file
+INCLUDE_FILE(".rodata", "./weights.bin", weights);
+extern uint8_t weights_data[];
+extern size_t weights_start[];
+extern size_t weights_end[];
 
+static uint32_t zero[1] __attribute__((aligned(16))) = { 0 };
+static uint32_t y_data[4] __attribute__((aligned(16))) = { 0 };
+static uint32_t b_data[4] __attribute__((aligned(16))) = { 0 };
+static uint32_t x_data[3] __attribute__((aligned(16))) = { 0 };
+
+Model model;
+
+Tensor2D_F32 w = {
+  .shape = { 4, 3 },
+  .data = (uint32_t *)weights_data,
+};
+Tensor1D_F32 b = {
+  .shape = { 4 },
+  .data = (uint32_t *)b_data,
+};
+Tensor1D_F32 x = {
+  .shape = { 3 },
+  .data = (uint32_t *)x_data,
+};
+Tensor1D_F32 y = {
+  .shape = { 4 },
+  .data = (uint32_t *)y_data,
+};
 
 const size_t SIMD_LEN = 2;
 
@@ -172,7 +215,6 @@ void linear(uint32_t out_features, uint32_t in_features, uint32_t *y, uint32_t *
     // broadcast zero
     asm volatile("vlse32.v v0, (%0), zero" : : "r"(zero) : "v0");
 
-    WRITE_CSR("0x51F", 4);
     // loop over x and column vector of w    
     for (size_t i = 0; i < in_features; i += 1) {
       // broadcast x
@@ -188,7 +230,6 @@ void linear(uint32_t out_features, uint32_t in_features, uint32_t *y, uint32_t *
       x_ptr += 1;
       w_ptr += out_features;
     }
-    WRITE_CSR("0x51F", 0);
 
     // load b
     asm volatile("vle32.v v3, (%0)" : : "r"(b) : "v3");
@@ -206,106 +247,109 @@ void linear(uint32_t out_features, uint32_t in_features, uint32_t *y, uint32_t *
   }
 }
 
+static inline void write_data(uint32_t *ptr, float data) {
+  vec_t val;
+  val.f32 = data;
+  ptr[0] = val.u32;
+}
 
 
-Model model;
-
+// Tensor1D_F32 b = {
+//   .shape = { 4 },
+//   .data = (uint32_t *)b,
+// };
 
 int main(void) {
-  WRITE_CSR("0x51F", 0);
-  // prints("start.\n");
-
-  uint8_t counter = 0;
-
-  model_init(&model);
-
-  for (int i = 0; i < 8; i += 1) {
-    model.input_1.data[i] = 1.0;
-  }
-
-  model_forward(&model);
-
-  WRITE_CSR("0x51F", model.output.data[0]);
-
-  prints("finish inference!\n");
+  vec_t val;
 
 
+  WRITE_CSR(CSR_SYSCALL2, 1);
+  zero[0] = 0;
 
-  while (1) {
+  write_data((uint32_t *)x.data, 0.11f);  // 3de147ae
+  write_data((uint32_t *)x.data + 1, 0.22f);  // 3e6147ae
+  write_data((uint32_t *)x.data + 2, 0.33f);  // 3ea8f5c3
 
-    // volatile uint32_t data = *((uint32_t *)SPI_MEM_BASE);
+  // write_data(w, 0.12f);  // 3ea8f5c3
+
+  print_float(*((uint32_t *)w.data + 0));
+  print_float(*((uint32_t *)w.data + 1));
+  print_float(*((uint32_t *)w.data + 2));
+  print_float(*((uint32_t *)w.data + 3));
+  // write_data(w + 1, 0.34f);  // 3ee147ae
+  // write_data(w + 2, 0.07f);  // 3ea8f5c3
+  // write_data(w + 3, -0.11f);  // 3ee147ae
+  // write_data(w + 4, 0.56f);  // 3ea8f5c3
+  // write_data(w + 5, -0.78f);  // 3ee147ae
+  // write_data(w + 6, 0.08f);  // 3ea8f5c3
+  // write_data(w + 7, 0.22f);  // 3ee147ae
+  // write_data(w + 8, 0.90f);  // 3ea8f5c3
+  // write_data(w + 9, 1.12f);  // 3ee147ae
+  // write_data(w + 10, 0.09f);  // 3ea8f5c3
+  // write_data(w + 11, -0.33f);  // 3ee147ae
+
+  write_data((uint32_t *)b.data, -0.55f);  // 3f0ccccd
+  write_data((uint32_t *)b.data + 1, -0.66f);  // 3f28f5c3
+  write_data((uint32_t *)b.data + 2, -0.77f);  // 3ea8f5c3
+  write_data((uint32_t *)b.data + 3, -0.88f);  // 3ee147ae
+
+  WRITE_CSR(CSR_SYSCALL2, 2);
+  // linear(4, 3, y, x, w, b);
+  linear(4, 3, y.data, x.data, w.data, b.data);
+
+  // load C into debug CSR
+  WRITE_CSR(CSR_SYSCALL2, y.data[0]);
+  WRITE_CSR(CSR_SYSCALL3, y.data[1]);
+  print_float(*((uint32_t *)y.data + 0));
+  print_float(*((uint32_t *)y.data + 1));
+  print_float(*((uint32_t *)y.data + 2));
+  print_float(*((uint32_t *)y.data + 3));
+
+  exit(0);
+
+
+  // // prints("start.\n");
+
+  // uint8_t counter = 0;
+
+  // model_init(&model);
+
+  // for (int i = 0; i < 8; i += 1) {
+  //   model.input_1.data[i] = 1.0;
+  // }
+
+  // model_forward(&model);
+
+
+  // prints("fi in!\n");
+
+  // while (1) {
+
+  //   // volatile uint32_t data = *((uint32_t *)SPI_MEM_BASE);
     
     
-    vec_t val;
 
-    zero[0] = 0;
 
-    val.f32 = 0.11f;  // 3de147ae
-    x[0] = val.u32;
-    val.f32 = 0.22f;  // 3e6147ae
-    x[1] = val.u32;
-    val.f32 = 0.33f;  // 3ea8f5c3
-    x[2] = val.u32;
-    
-    val.f32 = 0.12f;  // 3ea8f5c3
-    w[0] = val.u32;
-    val.f32 = 0.34f;  // 3ee147ae
-    w[1] = val.u32;
-    val.f32 = 0.07f;  // 3ea8f5c3
-    w[2] = val.u32;
-    val.f32 = -0.11f;  // 3ee147ae
-    w[3] = val.u32;
-    val.f32 = 0.56f;  // 3ea8f5c3
-    w[4] = val.u32;
-    val.f32 = -0.78f;  // 3ee147ae
-    w[5] = val.u32;
-    val.f32 = 0.08f;  // 3ea8f5c3
-    w[6] = val.u32;
-    val.f32 = 0.22f;  // 3ee147ae
-    w[7] = val.u32;
-    val.f32 = 0.90f;  // 3ea8f5c3
-    w[8] = val.u32;
-    val.f32 = 1.12f;  // 3ee147ae
-    w[9] = val.u32;
-    val.f32 = 0.09f;  // 3ea8f5c3
-    w[10] = val.u32;
-    val.f32 = -0.33f;  // 3ee147ae
-    w[11] = val.u32;
-
-    val.f32 = -0.55f;  // 3f0ccccd
-    b[0] = val.u32;
-    val.f32 = -0.66f;  // 3f28f5c3
-    b[1] = val.u32;
-    val.f32 = -0.77f;  // 3ea8f5c3
-    b[2] = val.u32;
-    val.f32 = -0.88f;  // 3ee147ae
-    b[3] = val.u32;
-
-    WRITE_CSR("0x51F", 0);
-
-    linear(4, 3, y, x, w, b);
-
-    counter += 1;
+  //   counter += 1;
   
-    GPIOA->OUTPUT = counter & 0b1111;
+  //   GPIOA->OUTPUT = counter & 0b1111;
 
-    // for (size_t i=0; i<DELAY_CYCLES; i+=1) {
-    //   asm volatile("nop");
-    // }
+  //   // for (size_t i=0; i<DELAY_CYCLES; i+=1) {
+  //   //   asm volatile("nop");
+  //   // }
 
-    // load C into tohost CSR
-    // WRITE_CSR("0x51E", y[0]);
-    // WRITE_CSR("0x51F", y[1]);
-    WRITE_CSR("0x51F", 2);
+  //   // load C into tohost CSR
+  //   // WRITE_CSR("0x51E", y[0]);
+  //   // WRITE_CSR("0x51F", y[1]);
 
-    prints("finish loop.\n");
+  //   prints("finish loop.\n");
 
 
-    // wait FIFO to be empty
-    while (!READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_EMPTY_MSK)) {
-      asm volatile("nop");
-    }
+  //   // wait FIFO to be empty
+  //   while (!READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_EMPTY_MSK)) {
+  //     asm volatile("nop");
+  //   }
     
-    // exit(1);
-  }
+  //   // exit(1);
+  // }
 }

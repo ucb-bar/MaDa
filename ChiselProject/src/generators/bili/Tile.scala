@@ -5,7 +5,7 @@ import chisel3.util._
 class Tile extends Module {
   val io = IO(new Bundle {
     val reset_vector = Input(UInt(32.W))
-    val debug = Output(new DebugIO())
+    val debug = new DebugIO()
 
     val sbus = new Axi4Bundle()
     val pbus = new Axi4Bundle()
@@ -80,5 +80,7 @@ class Tile extends Module {
   sbus_downsizer.io.m_axi <> io.sbus
 
   // debug connection
-  io.debug := core.io.debug
+  io.debug <> core.io.debug
+  dontTouch(core.io.debug)
+
 }

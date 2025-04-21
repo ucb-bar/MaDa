@@ -41,6 +41,7 @@ class BiliArty100T extends RawModule {
   sync_reset.io.reset := ~pll_locked
   reset := sync_reset.io.out
 
+
   withClockAndReset(clock, reset) {
     val reset_vector = RegInit(0x0800_0000.U(32.W))
 
@@ -128,10 +129,15 @@ class BiliArty100T extends RawModule {
 
     for (i <- 0 until 8) {
       val iobuf = Module(new IOBUF())
-      iobuf.io.I := tile.io.debug.tohost(i)
+      iobuf.io.I := tile.io.debug.syscall0(i)
       iobuf.io.T := false.B
       iobuf.io.IO <> io.ja(i)
     }
+
+    tile.io.debug.sysresp0 := 0.U(32.W)
+    tile.io.debug.sysresp1 := 0.U(32.W)
+    tile.io.debug.sysresp2 := 0.U(32.W)
+    tile.io.debug.sysresp3 := 0.U(32.W)
 
   }
 }
