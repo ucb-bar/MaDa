@@ -613,8 +613,8 @@ module EECS151TestBench();
     IMM       = 5'd16;
     INST_ADDR = 14'h0000;
 
-    `IMEM_PATH[INST_ADDR + 0] = {12'h51e, 5'd1,     3'b001, 5'd0, `OPC_CSR};
-    `IMEM_PATH[INST_ADDR + 1] = {12'h51e, IMM[4:0], 3'b101, 5'd0, `OPC_CSR};
+    `IMEM_PATH[INST_ADDR + 0] = {12'h8C0, 5'd1,     3'b001, 5'd0, `OPC_CSR};
+    `IMEM_PATH[INST_ADDR + 1] = {12'h8C0, IMM[4:0], 3'b101, 5'd0, `OPC_CSR};
 
     current_test_id = current_test_id + 1;
     current_test_type = "CSRRW Test";
