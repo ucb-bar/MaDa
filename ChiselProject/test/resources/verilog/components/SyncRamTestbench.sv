@@ -13,14 +13,11 @@ module SyncRamTestbench();
   reg  [31:0] raddr;
   wire [31:0] rdata;
 
-  SyncRam #(
-    .ADDR_WIDTH(8),
-    .DATA_WIDTH(32)
-  ) dut (
+  SimRamForTest dut (
     .clock(clock),
     .reset(reset),
-    .raddr(raddr[9:2]),
-    .waddr(waddr[9:2]),
+    .raddr(raddr[14:2]),
+    .waddr(waddr[14:2]),
     .wstrb(wstrb),
     .wdata(wdata),
     .rdata(rdata)

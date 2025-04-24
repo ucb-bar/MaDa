@@ -9,8 +9,8 @@ import chisel3.util._
  * **IMPORTANT**: this design is not synthesizable.
  */
 class SimAxi4LiteMemory(
-  val readDelay: Int = 2,
-  val writeDelay: Int = 2,
+  val readLatency: Int = 2,
+  val writeLatency: Int = 2,
   val awToWDelay: Int = 2
 ) extends Module {
   val io = IO(new Bundle {
@@ -18,8 +18,8 @@ class SimAxi4LiteMemory(
   })
 
   val mem = Module(new SimRam(
-    readDelay = readDelay,
-    writeDelay = writeDelay
+    readLatency = readLatency,
+    writeLatency = writeLatency
   ))
 
   val reg_write_addr_requested = RegInit(false.B)
@@ -29,15 +29,12 @@ class SimAxi4LiteMemory(
 
   val reg_write_requested = RegInit(false.B)
   val write_requested = reg_write_requested || io.s_axi.aw.fire
-  val (write_wait_counter, write_wait_done) = Counter(write_requested, writeDelay)
+  val (write_wait_counter, write_wait_done) = Counter(write_requested, writeLatency)
 
   val reg_read_requested = RegInit(false.B)
   val read_requested = reg_read_requested || io.s_axi.ar.fire
-  val (read_wait_counter, read_wait_done) = Counter(read_requested, readDelay)
+  val (read_wait_counter, read_wait_done) = Counter(read_requested, readLatency)
   
-  mem.io.clock := clock
-  mem.io.reset := reset
-
   // data line connections
   mem.io.raddr := io.s_axi.ar.bits.addr(io.s_axi.ar.bits.addr.getWidth - 1, 2)
   mem.io.waddr := io.s_axi.aw.bits.addr(io.s_axi.aw.bits.addr.getWidth - 1, 2)
