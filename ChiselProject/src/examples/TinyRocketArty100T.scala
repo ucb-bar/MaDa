@@ -32,8 +32,14 @@ class TinyRocketArty100T extends RawModule {
 
 
   val debug_sync_reset = Module(new SyncReset())
+
+  val jtag_clock_iobuf = Module(new IOBUF())
+  jtag_clock_iobuf.io.I := io.jd(2)
+  jtag_clock_iobuf.io.T := false.B
+  jtag_clock_iobuf.io.IO <> io.jd(2)
+
   // jtag reset connection
-  debug_sync_reset.io.clock := io.jd_2.asClock
+  debug_sync_reset.io.clock := jtag_clock_iobuf.io.O.asBool.asClock
   debug_sync_reset.io.reset := cbus_reset
   jtag_reset := debug_sync_reset.io.out
 

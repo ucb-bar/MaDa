@@ -1,3 +1,0 @@
-[submodule "chipyard"]
-	path = chipyard
-	url = https://github.com/ucb-bar/chipyard.git
