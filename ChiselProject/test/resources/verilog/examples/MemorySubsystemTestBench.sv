@@ -101,7 +101,7 @@ interface axi_interface #(
 endinterface
 
 module MemorySubsystemTestbench();
-  parameter DATA_WIDTH = 64;
+  parameter DATA_WIDTH = 32;
   parameter ADDR_WIDTH = 32;
   parameter MEM_ALIGNMENT = $clog2(DATA_WIDTH / 8);
   parameter SCRATCH_BASE = 32'h00000000;
@@ -148,6 +148,11 @@ module MemorySubsystemTestbench();
   );
 
   logic [DATA_WIDTH-1:0] read_data;
+
+  initial begin
+    $dumpfile("wave.fst");  // or "wave.vcd" if using --trace
+    $dumpvars(0, MemorySubsystemTestbench);
+  end
 
   initial begin
     axi.awvalid = 1'b0;

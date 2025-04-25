@@ -30,9 +30,12 @@ class Axi4Memory(
   
   val reg_w_pending = RegInit(false.B)
   val reg_w_data = RegInit(0.U(params.dataWidth.W))
+  val reg_w_strb = RegInit(0.U((params.dataWidth/8).W))
 
   val reg_ar_pending = RegInit(false.B)
+  val reg_r_data_received = RegInit(false.B)
   val reg_ar_id = RegInit(0.U(params.idWidth.W))
+  val reg_r_data = RegInit(0.U(params.dataWidth.W))
 
   // val write_valid = (reg_aw_pending || io.s_axi.aw.fire) && (reg_w_pending || io.s_axi.w.fire)
   val write_valid = reg_aw_pending && reg_w_pending
@@ -42,10 +45,10 @@ class Axi4Memory(
 
   // data line connections
   mem.io.raddr := io.s_axi.ar.bits.addr(memAddressWidth-1, memAlignment)
-  mem.io.waddr := Mux(io.s_axi.aw.fire && io.s_axi.w.fire, io.s_axi.aw.bits.addr(memAddressWidth-1, memAlignment), reg_aw_addr)
+  mem.io.waddr := reg_aw_addr
   mem.io.wdata := reg_w_data
-  mem.io.wstrb := Mux(write_valid, io.s_axi.w.bits.strb, 0.U((params.dataWidth/8).W))
-  io.s_axi.r.bits.data := mem.io.rdata
+  mem.io.wstrb := Mux(write_valid, reg_w_strb, 0.U((params.dataWidth/8).W))
+  io.s_axi.r.bits.data := Mux(reg_r_data_received, mem.io.rdata, reg_r_data)
 
   // control line connections
   io.s_axi.aw.ready := !reg_aw_pending
@@ -56,13 +59,14 @@ class Axi4Memory(
 
   when (io.s_axi.aw.fire) {
     reg_aw_pending := true.B
-    reg_aw_addr := io.s_axi.aw.bits.addr
+    reg_aw_addr := io.s_axi.aw.bits.addr(memAddressWidth-1, memAlignment)
     reg_aw_id := io.s_axi.aw.bits.id
   }
 
   when (io.s_axi.w.fire) {
     reg_w_pending := true.B
     reg_w_data := io.s_axi.w.bits.data
+    reg_w_strb := io.s_axi.w.bits.strb
   }
 
   when (io.s_axi.b.fire) {
@@ -79,10 +83,16 @@ class Axi4Memory(
   when (io.s_axi.ar.fire) {
     reg_ar_pending := true.B
     reg_ar_id := io.s_axi.ar.bits.id
+    reg_r_data_received := true.B
   }
 
   when (io.s_axi.r.fire) {
     reg_ar_pending := false.B
+  }
+
+  when (reg_r_data_received) {
+    reg_r_data := mem.io.rdata
+    reg_r_data_received := false.B
   }
   
   def generate_tcl_script(): Unit = {
