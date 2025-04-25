@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 
-module SyncRamTestbench();
+
+module RamTestbench();
   logic clock, reset;  
   initial clock = 'b0;
   initial reset = 'b1;

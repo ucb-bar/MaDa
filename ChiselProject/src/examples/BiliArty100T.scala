@@ -59,7 +59,7 @@ class BiliArty100T extends RawModule {
     val gpio = Module(new Axi4LiteGpio())
     val uart = Module(new Axi4LiteUartLite())
 
-    pbus_crossbar.io.s_axi(0) <> Axi4ToAxi4Lite(tile.io.pbus)
+    pbus_crossbar.io.s_axi(0).connectToAxi4(tile.io.pbus)
 
     gpio.attach(pbus_crossbar.io.m_axi(0))
     uart.attach(pbus_crossbar.io.m_axi(1))

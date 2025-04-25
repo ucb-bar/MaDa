@@ -16,7 +16,7 @@ class Axi4LiteGpio extends Module {
 
   blackbox.io.s_axi_aclk := clock
   blackbox.io.s_axi_aresetn := ~reset.asBool
-  blackbox.io.s_axi.connect(io.s_axi)
+  blackbox.io.s_axi.connectFrom(io.s_axi)
 
   blackbox.io.gpio_io_i := io.gpio_io_i
   io.gpio_io_o := blackbox.io.gpio_io_o
@@ -27,7 +27,7 @@ class Axi4LiteGpio extends Module {
   }
 
   def attach(axi: Axi4Bundle): Unit = {
-    io.s_axi <> Axi4ToAxi4Lite(axi)
+    io.s_axi.connectFromAxi4(axi)
   }
 }
 

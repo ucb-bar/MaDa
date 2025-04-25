@@ -1,7 +1,7 @@
 /**
  * Single-port RAM with synchronous read with write byte-enable
  */
-module SyncRam #(
+module Ram #(
   parameter ADDR_WIDTH = 12,
   parameter DEPTH = (1 << ADDR_WIDTH),
   parameter DATA_WIDTH = 32,

@@ -8,7 +8,7 @@ import chisel3.util._
  * 
  * **IMPORTANT**: this design is not synthesizable.
  */
-class SimAxi4LiteMemory(
+class Axi4LiteMemoryWithLatency(
   val readLatency: Int = 2,
   val writeLatency: Int = 2,
   val awToWDelay: Int = 2
@@ -17,7 +17,7 @@ class SimAxi4LiteMemory(
     val s_axi = Flipped(new Axi4LiteBundle())
   })
 
-  val mem = Module(new SimRam(
+  val mem = Module(new RamWithLatency(
     readLatency = readLatency,
     writeLatency = writeLatency
   ))

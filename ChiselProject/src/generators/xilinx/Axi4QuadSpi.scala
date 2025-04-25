@@ -28,10 +28,10 @@ class Axi4QuadSpi extends Module {
   blackbox.io.ext_spi_clk := io.ext_spi_clk
   blackbox.io.s_axi_aclk := clock
   blackbox.io.s_axi_aresetn := ~reset.asBool
-  blackbox.io.s_axi.connect(io.s_axi)
+  blackbox.io.s_axi.connectFrom(io.s_axi)
   blackbox.io.s_axi4_aclk := clock
   blackbox.io.s_axi4_aresetn := ~reset.asBool
-  blackbox.io.s_axi4.connect(io.s_axi4)
+  blackbox.io.s_axi4.connectFrom(io.s_axi4)
   blackbox.io.s_axi4_awlock := 0.B
   blackbox.io.s_axi4_awcache := 0.U
   blackbox.io.s_axi4_awprot := 0.U
@@ -53,12 +53,12 @@ class Axi4QuadSpi extends Module {
   io.ss_t := blackbox.io.ss_t
   io.ip2intc_irpt := blackbox.io.ip2intc_irpt
 
-  def attach(axi: Axi4LiteBundle): Unit = {
+  def connectFrom(axi: Axi4LiteBundle): Unit = {
     io.s_axi <> axi
   }
 
-  def attach(axi: Axi4Bundle): Unit = {
-    io.s_axi <> Axi4ToAxi4Lite(axi)
+  def connectFrom(axi: Axi4Bundle): Unit = {
+    io.s_axi.connectFromAxi4(axi)
   }
 }
 

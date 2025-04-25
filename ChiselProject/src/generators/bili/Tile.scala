@@ -17,7 +17,7 @@ class Tile extends Module {
 
   // instruction memory must be a synchronous 1 cycle read delay memory
   val itim = Module(new Axi4LiteMemory(
-    addressWidth=14,
+    params=Axi4Params(addressWidth=14, dataWidth=busWidth),
     memoryFileHex="firmware.hex"
   ))
 

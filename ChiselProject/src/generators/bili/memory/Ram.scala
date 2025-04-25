@@ -2,7 +2,7 @@ import chisel3._
 import chisel3.util._
 
 
-class SyncRam(
+class Ram(
   val addressWidth: Int = 12,
   val dataWidth: Int = 32,
   val memoryFileHex: String = "",
@@ -26,5 +26,5 @@ class SyncRam(
     val rdata = Output(UInt(dataWidth.W))
   })
 
-  addResource("verilog/SyncRam.v")
+  addResource("verilog/Ram.v")
 }

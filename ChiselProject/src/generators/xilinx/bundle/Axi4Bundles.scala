@@ -168,17 +168,100 @@ class Axi4LiteBundle(params: Axi4Params = Axi4Params()) extends Bundle {
   val b = Flipped(Decoupled(new ChannelBLite(params)))
   val ar = Decoupled(new ChannelAxLite(params))
   val r = Flipped(Decoupled(new ChannelRLite(params)))
+
+  /**
+   * Connect the AXI4-Lite bundle (S) from a driver AXI4 bundle (M).
+   */
+  def connectFromAxi4(axi4: Axi4Bundle): Unit = {
+    // val converter = Module(new Axi4ProtocolConverter(
+    //   s_params = Axi4Params(),
+    //   m_params = Axi4Params()
+    // ))
+    // converter.io.s_axi <> axi4
+    // this <> converter.io.m_axi
+
+    // AXI4 to AXI4-Lite does not support bursts
+    assert(axi4.ar.bits.len === 0.U(Axi4Constants.LEN_WIDTH.W))
+    assert(axi4.ar.bits.burst === AxBurst.FIXED)
+    assert(axi4.aw.bits.len === 0.U(Axi4Constants.LEN_WIDTH.W))
+    assert(axi4.aw.bits.burst === AxBurst.FIXED)
+
+    val reg_aw_id = RegInit(0.U(params.idWidth.W))
+    val reg_ar_id = RegInit(0.U(params.idWidth.W))
+
+    when (axi4.aw.fire) {
+      reg_aw_id := axi4.aw.bits.id
+    }
+    when (axi4.ar.fire) {
+      reg_ar_id := axi4.ar.bits.id
+    }
+
+    this.aw.valid := axi4.aw.valid
+    axi4.aw.ready := this.aw.ready
+    this.aw.bits.addr := axi4.aw.bits.addr
+    this.w.valid := axi4.w.valid
+    axi4.w.ready := this.w.ready
+    this.w.bits.data := axi4.w.bits.data
+    this.w.bits.strb := axi4.w.bits.strb
+    axi4.b.valid := this.b.valid
+    this.b.ready := axi4.b.ready
+    axi4.b.bits.resp := this.b.bits.resp
+    axi4.b.bits.id := reg_aw_id
+
+    this.ar.valid := axi4.ar.valid
+    axi4.ar.ready := this.ar.ready
+    this.ar.bits.addr := axi4.ar.bits.addr
+    axi4.r.valid := this.r.valid
+    this.r.ready := axi4.r.ready
+    axi4.r.bits.data := this.r.bits.data
+    axi4.r.bits.resp := this.r.bits.resp
+    axi4.r.bits.id := reg_ar_id
+    axi4.r.bits.last := true.B
+  }
+  
+  /**
+   * Connect the driver AXI4-Lite bundle (M) to an AXI4 bundle (S).
+   */
+  def connectToAxi4(axi4: Axi4Bundle): Unit = {
+    axi4.aw.valid := this.aw.valid
+    this.aw.ready := axi4.aw.ready
+    axi4.aw.bits.id := 0.U(params.idWidth.W)
+    axi4.aw.bits.addr := this.aw.bits.addr
+    axi4.aw.bits.len := 0.U(Axi4Constants.LEN_WIDTH.W)
+    axi4.aw.bits.size := AxSize.S_4_BYTES
+    axi4.aw.bits.burst := AxBurst.FIXED
+    axi4.w.valid := this.w.valid
+    this.w.ready := axi4.w.ready
+    axi4.w.bits.data := this.w.bits.data
+    axi4.w.bits.strb := this.w.bits.strb
+    axi4.w.bits.last := true.B
+    this.b.valid := axi4.b.valid
+    axi4.b.ready := this.b.ready
+    this.b.bits.resp := axi4.b.bits.resp
+
+    axi4.ar.valid := this.ar.valid
+    this.ar.ready := axi4.ar.ready
+    axi4.ar.bits.id := 0.U(params.idWidth.W)
+    axi4.ar.bits.addr := this.ar.bits.addr
+    axi4.ar.bits.len := 0.U(Axi4Constants.LEN_WIDTH.W)
+    axi4.ar.bits.size := AxSize.S_4_BYTES
+    axi4.ar.bits.burst := AxBurst.FIXED
+    this.r.valid := axi4.r.valid
+    axi4.r.ready := this.r.ready
+    this.r.bits.data := axi4.r.bits.data
+    this.r.bits.resp := axi4.r.bits.resp
+  }
 }
 
 /**
   * AXI4 bundle definition.
   */
-class Axi4Bundle(params: Axi4Params = Axi4Params()) extends Axi4LiteBundle {
-  override val aw = Decoupled(new ChannelAx(params))
-  override val w = Decoupled(new ChannelW(params))
-  override val b = Flipped(Decoupled(new ChannelB(params)))
-  override val ar = Decoupled(new ChannelAx(params))
-  override val r = Flipped(Decoupled(new ChannelR(params)))
+class Axi4Bundle(params: Axi4Params = Axi4Params()) extends Bundle {
+  val aw = Decoupled(new ChannelAx(params))
+  val w = Decoupled(new ChannelW(params))
+  val b = Flipped(Decoupled(new ChannelB(params)))
+  val ar = Decoupled(new ChannelAx(params))
+  val r = Flipped(Decoupled(new ChannelR(params)))
 }
 
 /**
@@ -190,19 +273,4 @@ class Axi4StreamBundle(params: Axi4Params = Axi4Params()) extends Bundle {
     val last = Output(Bool())
     val user = Output(Bool())
   })
-}
-
-
-/**
-  * AXI4 to AXI4-Lite converter.
-  */
-object Axi4ToAxi4Lite {
-  def apply(axi: Axi4Bundle): Axi4LiteBundle = {
-    val converter = Module(new Axi4ProtocolConverter(
-      s_params = Axi4Params(),
-      m_params = Axi4Params()
-    ))
-    axi <> converter.io.s_axi
-    converter.io.m_axi
-  }
 }

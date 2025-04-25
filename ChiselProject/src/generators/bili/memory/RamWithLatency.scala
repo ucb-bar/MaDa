@@ -8,7 +8,7 @@ import chisel3.util._
  * 
  * **IMPORTANT**: this design is not synthesizable.
  */
-class SimRam(
+class RamWithLatency(
   val addressWidth: Int = 12,
   val dataWidth: Int = 32,
   val memoryFileHex: String = "",
@@ -24,7 +24,7 @@ class SimRam(
     val rdata = Output(UInt(dataWidth.W))
   })
 
-  val mem = Module(new SyncRam(
+  val mem = Module(new Ram(
     addressWidth = addressWidth,
     dataWidth = dataWidth,
     memoryFileHex = memoryFileHex,

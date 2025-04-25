@@ -26,7 +26,7 @@ class Axi4LiteBlackboxBundle(params: Axi4Params = Axi4Params()) extends Bundle {
   val rdata = Input(UInt(params.dataWidth.W))
   val rresp = Input(UInt(Axi4Constants.RESP_WIDTH.W))
 
-  def connect(axi: Axi4LiteBundle): Unit = {
+  def connectFrom(axi: Axi4LiteBundle): Unit = {
     this.awvalid := axi.aw.valid
     axi.aw.ready := this.awready
     this.awaddr := axi.aw.bits.addr
@@ -50,7 +50,7 @@ class Axi4LiteBlackboxBundle(params: Axi4Params = Axi4Params()) extends Bundle {
     axi.r.bits.resp := this.rresp.asTypeOf(AxResponse())
   }
 
-  def flipConnect(axi: Axi4LiteBundle): Unit = {
+  def connectTo(axi: Axi4LiteBundle): Unit = {
     axi.aw.valid := this.awvalid
     this.awready := axi.aw.ready
     axi.aw.bits.addr := this.awaddr
@@ -111,7 +111,7 @@ class Axi4BlackboxBundle(params: Axi4Params = Axi4Params()) extends Bundle {
   val rresp = Input(AxResponse())
   val rlast = Input(Bool())
 
-  def connect(axi: Axi4Bundle): Unit = {
+  def connectFrom(axi: Axi4Bundle): Unit = {
     this.awvalid := axi.aw.valid
     axi.aw.ready := this.awready
     this.awid := axi.aw.bits.id
@@ -147,7 +147,7 @@ class Axi4BlackboxBundle(params: Axi4Params = Axi4Params()) extends Bundle {
     axi.r.bits.last := this.rlast
   }
 
-  def flipConnect(axi: Axi4Bundle): Unit = {
+  def connectTo(axi: Axi4Bundle): Unit = {
     axi.aw.valid := this.awvalid
     this.awready := axi.aw.ready
     axi.aw.bits.id := this.awid
