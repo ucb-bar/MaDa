@@ -67,14 +67,14 @@ class MemorySubsystem extends Module {
       idWidth=4,
     ),
   ))
-  val flash_downsizer = Module(new Axi4WidthDownsizer(
+  val flash_downsizer = Module(new Axi4DataWidthConverter(
     s_params=Axi4Params(
       dataWidth=64,
       idWidth=4,
     ),
     m_params=Axi4Params(
       dataWidth=32,
-      idWidth=4,
+      idWidth=0,
     ),
   ))
   

@@ -318,6 +318,7 @@ module MemorySubsystemTestbench();
     // read word from Flash
     tb_addr = FLASH_BASE + 'h00;
     axi32.arvalid = 1;
+    axi32.arsize = 3'h2;
     axi32.araddr = tb_addr;
     wait (axi32.arvalid && axi32.arready); #0;
     @(posedge clock); #0;
@@ -331,6 +332,7 @@ module MemorySubsystemTestbench();
     // read word from Flash
     tb_addr = FLASH_BASE + 'h04;
     axi32.arvalid = 1;
+    axi32.arsize = 3'h2;
     axi32.araddr = tb_addr;
     wait (axi32.arvalid && axi32.arready); #0;
     @(posedge clock); #0;
@@ -344,6 +346,7 @@ module MemorySubsystemTestbench();
     // read word from Flash
     tb_addr = FLASH_BASE + 'h00;
     axi64.arvalid = 1;
+    axi64.arsize = 3'h3;
     axi64.araddr = tb_addr;
     wait (axi64.arvalid && axi64.arready); #0;
     @(posedge clock); #0;
