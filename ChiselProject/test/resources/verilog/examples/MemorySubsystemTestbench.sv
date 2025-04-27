@@ -38,7 +38,11 @@ module MemorySubsystemTestbench();
   parameter DATA_WIDTH = 32;
   parameter ADDR_WIDTH = 32;
   parameter MEM_ALIGNMENT = $clog2(DATA_WIDTH / 8);
-  parameter SCRATCH_BASE = 32'h00000000;
+  
+  parameter FLASH_BASE    = 32'h2000_0000;
+  parameter UART_BASE     = 32'h1002_0000;
+  parameter GPIO_BASE     = 32'h1001_0000;
+  parameter SCRATCH_BASE  = 32'h0800_0000;
 
   logic clock, reset;
   initial clock = 'b0;
@@ -96,12 +100,12 @@ module MemorySubsystemTestbench();
     axi.arvalid = 1;
     axi.araddr = SCRATCH_BASE + 'h4 + 0*(1<<MEM_ALIGNMENT);
 
-    @(posedge clock); #0;
     wait (axi.arvalid && axi.arready); #0;
+    @(posedge clock); #0;
     axi.arvalid = 0;
     
-    @(posedge clock); #0;
     wait (axi.rvalid && axi.rready); #0;
+    @(posedge clock); #0;
     
     
     // write word
@@ -113,33 +117,51 @@ module MemorySubsystemTestbench();
 
     fork
       begin
-        @(posedge clock); #0;
         wait (axi.awvalid && axi.awready); #0;
+        @(posedge clock); #0;
         axi.awvalid = 0;
         axi.awaddr = 'h0;
       end
       begin
-        @(posedge clock); #0;
         wait (axi.wvalid && axi.wready); #0;
+        @(posedge clock); #0;
         axi.wvalid = 0;
         axi.wdata = 'h0;
         axi.wstrb = 'h0;
       end
     join
 
-    @(posedge clock); #0;
     wait (axi.bvalid && axi.bready); #0;
+    @(posedge clock); #0;
 
     // read word
     axi.arvalid = 1;
     axi.araddr = SCRATCH_BASE + 'h4 + 0*(1<<MEM_ALIGNMENT);
 
-    @(posedge clock); #0;
     wait (axi.arvalid && axi.arready); #0;
+    @(posedge clock); #0;
     axi.arvalid = 0;
     
-    @(posedge clock); #0;
     wait (axi.rvalid && axi.rready); #0;
+    @(posedge clock); #0;
+
+
+
+
+
+    // read word
+    axi.arvalid = 1;
+    axi.araddr = FLASH_BASE;
+
+    wait (axi.arvalid && axi.arready); #0;
+    @(posedge clock); #0;
+    axi.arvalid = 0;
+    
+    wait (axi.rvalid && axi.rready); #0;
+    @(posedge clock); #0;
+  
+
+
     
     repeat (100) @(posedge clock);
     $finish;

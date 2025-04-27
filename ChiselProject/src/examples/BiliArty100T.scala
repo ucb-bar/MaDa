@@ -9,10 +9,13 @@ import chisel3.util._
   * 
   * 
   * Memory Organization:
+  * SBUS
   * 0x2000_0000 - 0x200F_FFFF: QSPI Memory (1 MB)
+  * PBUS
   * 0x1003_0000 - 0x1003_0FFF: QSPI Control
   * 0x1002_0000 - 0x1002_0FFF: UART
   * 0x1001_0000 - 0x1001_0FFF: GPIO
+  * MBUS
   * 0x0800_0000 - 0x0800_3FFF: scratchpad (16 kB)
   * 
   */

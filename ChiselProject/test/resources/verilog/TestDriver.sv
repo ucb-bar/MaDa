@@ -1,7 +1,10 @@
 `timescale 1ns / 1ps
 
 
-module TestDriver();
+module TestDriver(
+  output logic clock,
+  output logic reset
+);
   parameter CLOCK_FREQ = 100_000_000;
   parameter CLOCK_PERIOD = 1_000_000_000 / CLOCK_FREQ;
   
@@ -9,14 +12,6 @@ module TestDriver();
   reg clock, reset;
   initial clock = 'b0;
   always #(CLOCK_PERIOD/2) clock = ~clock;
-
-  logic success;
-
-  SimRamTestbench dut(
-    .clock(clock),
-    .reset(reset),
-    .success(success)
-  );
 
   initial begin
     reset = 1'b1;

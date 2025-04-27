@@ -32,9 +32,19 @@ class Axi4QuadSpi extends Module {
   blackbox.io.s_axi4_aclk := clock
   blackbox.io.s_axi4_aresetn := ~reset.asBool
   blackbox.io.s_axi4.connectFrom(io.s_axi4)
+  io.s_axi4.aw.ready := false.B
+  io.s_axi4.w.ready := false.B
+  io.s_axi4.b.valid := false.B
+  blackbox.io.s_axi4.awaddr := 0x00000000.U
+  blackbox.io.s_axi4.awvalid := false.B
   blackbox.io.s_axi4_awlock := 0.B
   blackbox.io.s_axi4_awcache := 0.U
   blackbox.io.s_axi4_awprot := 0.U
+  blackbox.io.s_axi4.wdata := 0x00000000.U
+  blackbox.io.s_axi4.wstrb := 0x00.U
+  blackbox.io.s_axi4.wlast := false.B
+  blackbox.io.s_axi4.wvalid := false.B
+  blackbox.io.s_axi4.bready := false.B
   blackbox.io.s_axi4_arlock := 0.B
   blackbox.io.s_axi4_arcache := 0.U
   blackbox.io.s_axi4_arprot := 0.U
