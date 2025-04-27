@@ -52,7 +52,7 @@ module SimSpiFlashModel #(
   //   .mem_resp_data(mem_resp_data)
   // );
 
-  SimRamV2 #(
+  Ram #(
     .ADDR_WIDTH($clog2(CAPACITY_BYTES)),
     .DATA_WIDTH(8),
     .DEPTH(CAPACITY_BYTES),

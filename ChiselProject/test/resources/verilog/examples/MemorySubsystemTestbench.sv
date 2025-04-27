@@ -51,6 +51,27 @@ module MemorySubsystemTestbench();
 
   axi_interface #(DATA_WIDTH, ADDR_WIDTH) axi();
 
+
+  wire SPI_MOSI;
+  wire SPI_MISO;
+  wire SPI_SCLK;
+  wire SPI_CS;
+
+  SimSpiFlashModel #(
+    .PLUSARG("firmware.8.hex"),
+    .READONLY(0),
+    .CAPACITY_BYTES(1024)
+  ) sim_spi (
+    .sck(SPI_SCLK),
+    .cs_0(SPI_CS),
+    .reset(reset),
+    .dq_0(SPI_MOSI),
+    .dq_1(SPI_MISO),
+    .dq_2(),
+    .dq_3()
+  );
+
+
   MemorySubsystem sys(
     .clock(clock),
     .reset(reset),
@@ -70,10 +91,14 @@ module MemorySubsystemTestbench();
     .io_m_axi_r_ready(axi.rready),
     .io_m_axi_r_valid(axi.rvalid),
     .io_m_axi_r_bits_data(axi.rdata),
-    .io_m_axi_r_bits_resp(axi.rresp)
+    .io_m_axi_r_bits_resp(axi.rresp),
+    .io_qspi_cs(SPI_CS),
+    .io_qspi_sck(SPI_SCLK),
+    .io_qspi_dq_0(SPI_MOSI),
+    .io_qspi_dq_1(SPI_MISO),
+    .io_qspi_dq_2(),
+    .io_qspi_dq_3()
   );
-
-  logic [DATA_WIDTH-1:0] read_data;
 
   initial begin
     $dumpfile("wave.fst");  // or "wave.vcd" if using --trace

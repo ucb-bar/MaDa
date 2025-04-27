@@ -1,5 +1,6 @@
 import chisel3._
 import chisel3.util._
+import chisel3.experimental.Analog
 
 
 /**
@@ -19,6 +20,9 @@ import chisel3.util._
 class MemorySubsystem extends Module {
   val io = IO(new Bundle {
     val m_axi = Flipped(new Axi4LiteBundle())
+    val qspi_cs = Output(Bool())
+    val qspi_sck = Output(Clock())
+    val qspi_dq = Vec(4, Analog(1.W))
   })
 
   val tile_xbar = Module(new Axi4Crossbar(
@@ -81,4 +85,22 @@ class MemorySubsystem extends Module {
   flash.io.io1_i := true.B
   flash.io.sck_i := false.B
   flash.io.ss_i := false.B
+
+  io.qspi_sck := flash.io.sck_o.asClock
+  io.qspi_cs := flash.io.ss_o
+  flash.io.sck_i := 0.B
+  flash.io.ss_i := 0.B
+
+  val qspi_io0_buf = Module(new IOBUF())
+  flash.io.io0_i := qspi_io0_buf.io.O
+  qspi_io0_buf.io.IO <> io.qspi_dq(0)
+  qspi_io0_buf.io.I := flash.io.io0_o
+  qspi_io0_buf.io.T := flash.io.io0_t
+
+  val qspi_io1_buf = Module(new IOBUF())
+  flash.io.io1_i := qspi_io1_buf.io.O
+  qspi_io1_buf.io.IO <> io.qspi_dq(1)
+  qspi_io1_buf.io.I := flash.io.io1_o
+  qspi_io1_buf.io.T := flash.io.io1_t
+
 }
