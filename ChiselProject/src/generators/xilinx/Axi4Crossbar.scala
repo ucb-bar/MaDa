@@ -84,7 +84,7 @@ class Axi4Crossbar(
   (io.s_axi zip blackbox.io.s_axi.bvalid.asBools).foreach { case (s_axi, bvalid) => s_axi.b.valid := bvalid }
   blackbox.io.s_axi.bready := Cat(io.s_axi.reverse.map(_.b.ready))
   for (i <- 0 until numSlave) {
-    io.s_axi(i).b.bits.id := blackbox.io.s_axi.bid(4*i + 3, 4*i)
+    io.s_axi(i).b.bits.id := blackbox.io.s_axi.bid(params.idWidth*i + params.idWidth-1, params.idWidth*i)
     io.s_axi(i).b.bits.resp := AxResponse(blackbox.io.s_axi.bresp(2*i + 1, 2*i))
   }
 
@@ -99,7 +99,7 @@ class Axi4Crossbar(
   (io.s_axi zip blackbox.io.s_axi.rvalid.asBools).foreach { case (s_axi, rvalid) => s_axi.r.valid := rvalid }
   blackbox.io.s_axi.rready := Cat(io.s_axi.reverse.map(_.r.ready))
   for (i <- 0 until numSlave) {
-    io.s_axi(i).r.bits.id := blackbox.io.s_axi.rid(4*i + 3, 4*i)
+    io.s_axi(i).r.bits.id := blackbox.io.s_axi.rid(params.idWidth*i + params.idWidth-1, params.idWidth*i)
     io.s_axi(i).r.bits.data := blackbox.io.s_axi.rdata(params.dataWidth*i + params.dataWidth-1, params.dataWidth*i)
     io.s_axi(i).r.bits.resp := AxResponse(blackbox.io.s_axi.rresp(2*i + 1, 2*i))
     io.s_axi(i).r.bits.last := blackbox.io.s_axi.rlast(i)
@@ -161,7 +161,7 @@ class Axi4CrossbarBlackbox(
     val m_axi = new Axi4CrossbarBlackboxBundle(numMaster, params)
   })
 
-  override def desiredName: String = s"Axi4CrossbarBlackbox_${numSlave}_${numMaster}"
+  override def desiredName: String = s"Axi4CrossbarBlackbox_s${numSlave}_m${numMaster}_w${params.dataWidth}_id${params.idWidth}"
 
   def generate_tcl_script(): Unit = {
     val vivado_project_dir = "out/VivadoProject"

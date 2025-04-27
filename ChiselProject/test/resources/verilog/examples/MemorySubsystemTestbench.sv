@@ -3,40 +3,50 @@
 
 interface axi_interface #(
   parameter DATA_WIDTH = 64,
-  parameter ADDR_WIDTH = 12
+  parameter ADDR_WIDTH = 12,
+  parameter ID_WIDTH = 4
 ) ();
     // Write Address Channel
   logic                     awvalid;
   logic                     awready;
+  logic [ID_WIDTH-1:0]      awid;
   logic [ADDR_WIDTH-1:0]    awaddr;
-
+  logic [7:0]               awlen;
+  logic [2:0]               awsize;
+  logic [1:0]               awburst;
   // Write Data Channel
   logic                     wvalid;
   logic                     wready;
   logic [DATA_WIDTH-1:0]    wdata;
   logic [DATA_WIDTH/8-1:0]  wstrb;
-
+  logic                     wlast;
   // Write Response Channel
   logic                     bvalid;
   logic                     bready;
+  logic [ID_WIDTH-1:0]      bid;
   logic [1:0]               bresp;
-
   // Read Address Channel
   logic                     arvalid;
   logic                     arready;
+  logic [ID_WIDTH-1:0]      arid;
   logic [ADDR_WIDTH-1:0]    araddr;
-
+  logic [7:0]               arlen;
+  logic [2:0]               arsize;
+  logic [1:0]               arburst;
   // Read Data Channel
   logic                     rvalid;
   logic                     rready;
+  logic [ID_WIDTH-1:0]      rid;
   logic [DATA_WIDTH-1:0]    rdata;
   logic [1:0]               rresp;
+  logic                     rlast;
 
 endinterface
 
 module MemorySubsystemTestbench();
   parameter DATA_WIDTH = 32;
   parameter ADDR_WIDTH = 32;
+  parameter ID_WIDTH = 4;
   parameter MEM_ALIGNMENT = $clog2(DATA_WIDTH / 8);
   
   parameter FLASH_BASE    = 32'h2000_0000;
@@ -49,8 +59,8 @@ module MemorySubsystemTestbench();
   initial reset = 'b1;
   always #5 clock = ~clock;
 
-  axi_interface #(DATA_WIDTH, ADDR_WIDTH) axi();
-
+  axi_interface #(32, ADDR_WIDTH, ID_WIDTH) axi32();
+  axi_interface #(64, ADDR_WIDTH, ID_WIDTH) axi64();
 
   wire SPI_MOSI;
   wire SPI_MISO;
@@ -75,23 +85,66 @@ module MemorySubsystemTestbench();
   MemorySubsystem sys(
     .clock(clock),
     .reset(reset),
-    .io_m_axi_aw_valid(axi.awvalid),
-    .io_m_axi_aw_ready(axi.awready),
-    .io_m_axi_aw_bits_addr(axi.awaddr),
-    .io_m_axi_w_valid(axi.wvalid),
-    .io_m_axi_w_ready(axi.wready),
-    .io_m_axi_w_bits_data(axi.wdata),
-    .io_m_axi_w_bits_strb(axi.wstrb),
-    .io_m_axi_b_valid(axi.bvalid),
-    .io_m_axi_b_ready(axi.bready),
-    .io_m_axi_b_bits_resp(axi.bresp),
-    .io_m_axi_ar_valid(axi.arvalid),
-    .io_m_axi_ar_ready(axi.arready),
-    .io_m_axi_ar_bits_addr(axi.araddr),
-    .io_m_axi_r_ready(axi.rready),
-    .io_m_axi_r_valid(axi.rvalid),
-    .io_m_axi_r_bits_data(axi.rdata),
-    .io_m_axi_r_bits_resp(axi.rresp),
+    .io_m_axi_32_aw_valid(axi32.awvalid),
+    .io_m_axi_32_aw_ready(axi32.awready),
+    .io_m_axi_32_aw_bits_id(axi32.awid),
+    .io_m_axi_32_aw_bits_addr(axi32.awaddr),
+    .io_m_axi_32_aw_bits_len(axi32.awlen),
+    .io_m_axi_32_aw_bits_size(axi32.awsize),
+    .io_m_axi_32_aw_bits_burst(axi32.awburst),
+    .io_m_axi_32_w_valid(axi32.wvalid),
+    .io_m_axi_32_w_ready(axi32.wready),
+    .io_m_axi_32_w_bits_data(axi32.wdata),
+    .io_m_axi_32_w_bits_strb(axi32.wstrb),
+    .io_m_axi_32_w_bits_last(axi32.wlast),
+    .io_m_axi_32_b_valid(axi32.bvalid),
+    .io_m_axi_32_b_ready(axi32.bready),
+    .io_m_axi_32_b_bits_id(axi32.bid),
+    .io_m_axi_32_b_bits_resp(axi32.bresp),
+    .io_m_axi_32_ar_valid(axi32.arvalid),
+    .io_m_axi_32_ar_ready(axi32.arready),
+    .io_m_axi_32_ar_bits_id(axi32.arid),
+    .io_m_axi_32_ar_bits_addr(axi32.araddr),
+    .io_m_axi_32_ar_bits_len(axi32.arlen),
+    .io_m_axi_32_ar_bits_size(axi32.arsize),
+    .io_m_axi_32_ar_bits_burst(axi32.arburst),
+    .io_m_axi_32_r_ready(axi32.rready),
+    .io_m_axi_32_r_valid(axi32.rvalid),
+    .io_m_axi_32_r_bits_id(axi32.rid),
+    .io_m_axi_32_r_bits_data(axi32.rdata),
+    .io_m_axi_32_r_bits_resp(axi32.rresp),
+    .io_m_axi_32_r_bits_last(axi32.rlast),
+
+    .io_m_axi_64_aw_valid(axi64.awvalid),
+    .io_m_axi_64_aw_ready(axi64.awready),
+    .io_m_axi_64_aw_bits_id(axi64.awid),
+    .io_m_axi_64_aw_bits_addr(axi64.awaddr),
+    .io_m_axi_64_aw_bits_len(axi64.awlen),
+    .io_m_axi_64_aw_bits_size(axi64.awsize),
+    .io_m_axi_64_aw_bits_burst(axi64.awburst),
+    .io_m_axi_64_w_valid(axi64.wvalid),
+    .io_m_axi_64_w_ready(axi64.wready),
+    .io_m_axi_64_w_bits_data(axi64.wdata),
+    .io_m_axi_64_w_bits_strb(axi64.wstrb),
+    .io_m_axi_64_w_bits_last(axi64.wlast),
+    .io_m_axi_64_b_valid(axi64.bvalid),
+    .io_m_axi_64_b_ready(axi64.bready),
+    .io_m_axi_64_b_bits_id(axi64.bid),
+    .io_m_axi_64_b_bits_resp(axi64.bresp),
+    .io_m_axi_64_ar_valid(axi64.arvalid),
+    .io_m_axi_64_ar_ready(axi64.arready),
+    .io_m_axi_64_ar_bits_id(axi64.arid),
+    .io_m_axi_64_ar_bits_addr(axi64.araddr),
+    .io_m_axi_64_ar_bits_len(axi64.arlen),
+    .io_m_axi_64_ar_bits_size(axi64.arsize),
+    .io_m_axi_64_ar_bits_burst(axi64.arburst),
+    .io_m_axi_64_r_ready(axi64.rready),
+    .io_m_axi_64_r_valid(axi64.rvalid),
+    .io_m_axi_64_r_bits_id(axi64.rid),
+    .io_m_axi_64_r_bits_data(axi64.rdata),
+    .io_m_axi_64_r_bits_resp(axi64.rresp),
+    .io_m_axi_64_r_bits_last(axi64.rlast),
+
     .io_qspi_cs(SPI_CS),
     .io_qspi_sck(SPI_SCLK),
     .io_qspi_dq_0(SPI_MOSI),
@@ -100,18 +153,60 @@ module MemorySubsystemTestbench();
     .io_qspi_dq_3()
   );
 
-  initial begin
-    $dumpfile("wave.fst");  // or "wave.vcd" if using --trace
-    $dumpvars(0, MemorySubsystemTestbench);
-  end
+
+  logic [31:0] tb_addr;
+  logic [63:0] tb_data;
+  
 
   initial begin
-    axi.awvalid = 1'b0;
-    axi.wvalid = 1'b0;
-    axi.bready = 1'b1;
+    tb_addr = 32'h0;
+    tb_data = 64'h0;
 
-    axi.arvalid = 1'b0;
-    axi.rready = 1'b1;
+    axi32.awvalid = 1'b0;
+    axi32.awid = 4'h0;
+    axi32.awlen = 8'h0;
+    axi32.awsize = 3'h0;
+    axi32.awburst = 2'h0;
+    axi32.awaddr = 32'h0;
+
+    axi32.wvalid = 1'b0;
+    axi32.wdata = 32'h0;
+    axi32.wstrb = 4'h0;
+    axi32.wlast = 1'b1;
+
+    axi32.bready = 1'b1;
+
+    axi32.arvalid = 1'b0;
+    axi32.arid = 4'h0;
+    axi32.arlen = 8'h0;
+    axi32.arsize = 3'h0;
+    axi32.arburst = 2'h0;
+    axi32.araddr = 32'h0;
+
+    axi32.rready = 1'b1;
+
+    axi64.awvalid = 1'b0;
+    axi64.awid = 4'h1;
+    axi64.awlen = 8'h0;
+    axi64.awsize = 3'h0;
+    axi64.awburst = 2'h0;
+    axi64.awaddr = 32'h0;
+
+    axi64.wvalid = 1'b0;
+    axi64.wdata = 64'h0;
+    axi64.wstrb = 8'h0;
+    axi64.wlast = 1'b1;
+
+    axi64.bready = 1'b1;
+
+    axi64.arvalid = 1'b0;
+    axi64.arid = 4'h1;
+    axi64.arlen = 8'h0;
+    axi64.arsize = 3'h0;
+    axi64.arburst = 2'h0;
+    axi64.araddr = 32'h0;
+
+    axi64.rready = 1'b1;
 
     reset = 1;
     repeat (10) @(posedge clock);
@@ -121,70 +216,143 @@ module MemorySubsystemTestbench();
 
     @(posedge clock); #0;
 
-    // read word
-    axi.arvalid = 1;
-    axi.araddr = SCRATCH_BASE + 'h4 + 0*(1<<MEM_ALIGNMENT);
 
-    wait (axi.arvalid && axi.arready); #0;
-    @(posedge clock); #0;
-    axi.arvalid = 0;
-    
-    wait (axi.rvalid && axi.rready); #0;
-    @(posedge clock); #0;
-    
-    
+
     // write word
-    axi.awvalid = 1;
-    axi.wvalid = 1;
-    axi.awaddr = SCRATCH_BASE + 'h4 + 0*(1<<MEM_ALIGNMENT);
-    axi.wdata = 'hDEADBEEF;
-    axi.wstrb = 'hFF;
-
+    tb_addr = SCRATCH_BASE + 'h00;
+    tb_data = 64'hDEADBEEF;
+    axi32.awvalid = 1;
+    axi32.wvalid = 1;
+    axi32.awaddr = tb_addr;
+    axi32.wdata = tb_data[31:0];
+    axi32.wstrb = 'hFF;
     fork
       begin
-        wait (axi.awvalid && axi.awready); #0;
+        wait (axi32.awvalid && axi32.awready); #0;
         @(posedge clock); #0;
-        axi.awvalid = 0;
-        axi.awaddr = 'h0;
+        axi32.awvalid = 0;
+        axi32.awaddr = 'h0;
       end
       begin
-        wait (axi.wvalid && axi.wready); #0;
+        wait (axi32.wvalid && axi32.wready); #0;
         @(posedge clock); #0;
-        axi.wvalid = 0;
-        axi.wdata = 'h0;
-        axi.wstrb = 'h0;
+        axi32.wvalid = 0;
+        axi32.wdata = 'h0;
+        axi32.wstrb = 'h0;
       end
     join
-
-    wait (axi.bvalid && axi.bready); #0;
+    wait (axi32.bvalid && axi32.bready); #0;
     @(posedge clock); #0;
+    $display("sw (0x%08x): 0x%016lx ", tb_addr, tb_data);
+
+
+    // write word
+    tb_addr = SCRATCH_BASE + 'h04;
+    tb_data = 64'h01020304;
+    axi32.awvalid = 1;
+    axi32.wvalid = 1;
+    axi32.awaddr = tb_addr;
+    axi32.wdata = tb_data[31:0];
+    axi32.wstrb = 'h0F;
+    fork
+      begin
+        wait (axi32.awvalid && axi32.awready); #0;
+        @(posedge clock); #0;
+        axi32.awvalid = 0;
+        axi32.awaddr = 'h0;
+      end
+      begin
+        wait (axi32.wvalid && axi32.wready); #0;
+        @(posedge clock); #0;
+        axi32.wvalid = 0;
+        axi32.wdata = 'h0;
+        axi32.wstrb = 'h0;
+      end
+    join
+    wait (axi32.bvalid && axi32.bready); #0;
+    @(posedge clock); #0;
+    $display("sw (0x%08x): 0x%016lx ", tb_addr, tb_data);
+
 
     // read word
-    axi.arvalid = 1;
-    axi.araddr = SCRATCH_BASE + 'h4 + 0*(1<<MEM_ALIGNMENT);
-
-    wait (axi.arvalid && axi.arready); #0;
+    tb_addr = SCRATCH_BASE + 'h00;
+    axi32.arvalid = 1;
+    axi32.araddr = tb_addr;
+    wait (axi32.arvalid && axi32.arready); #0;
     @(posedge clock); #0;
-    axi.arvalid = 0;
-    
-    wait (axi.rvalid && axi.rready); #0;
+    axi32.arvalid = 0;
+    wait (axi32.rvalid && axi32.rready); #0;
     @(posedge clock); #0;
-
-
-
+    tb_data = axi32.rdata;
+    $display("lw (0x%08x): 0x%016lx ", tb_addr, tb_data);
 
 
     // read word
-    axi.arvalid = 1;
-    axi.araddr = FLASH_BASE;
+    tb_addr = SCRATCH_BASE + 'h04;
+    axi32.arvalid = 1;
+    axi32.araddr = tb_addr;
+    wait (axi32.arvalid && axi32.arready); #0;
+    @(posedge clock); #0;
+    axi32.arvalid = 0;
+    wait (axi32.rvalid && axi32.rready); #0;
+    @(posedge clock); #0;
+    tb_data = axi32.rdata;
+    $display("lw (0x%08x): 0x%016lx ", tb_addr, tb_data);
 
-    wait (axi.arvalid && axi.arready); #0;
+
+    // read word
+    tb_addr = SCRATCH_BASE + 'h00;
+    axi64.arvalid = 1;
+    axi64.araddr = tb_addr;
+    wait (axi64.arvalid && axi64.arready); #0;
     @(posedge clock); #0;
-    axi.arvalid = 0;
-    
-    wait (axi.rvalid && axi.rready); #0;
+    axi64.arvalid = 0;
+    wait (axi64.rvalid && axi64.rready); #0;
     @(posedge clock); #0;
-  
+    tb_data = axi64.rdata;
+    $display("ld (0x%08x): 0x%016lx ", tb_addr, tb_data);
+
+
+
+
+    // read word from Flash
+    tb_addr = FLASH_BASE + 'h00;
+    axi32.arvalid = 1;
+    axi32.araddr = tb_addr;
+    wait (axi32.arvalid && axi32.arready); #0;
+    @(posedge clock); #0;
+    axi32.arvalid = 0;
+    wait (axi32.rvalid && axi32.rready); #0;
+    @(posedge clock); #0;
+    tb_data = axi32.rdata;
+    $display("lw (0x%08x): 0x%016lx ", tb_addr, tb_data);
+
+
+    // read word from Flash
+    tb_addr = FLASH_BASE + 'h04;
+    axi32.arvalid = 1;
+    axi32.araddr = tb_addr;
+    wait (axi32.arvalid && axi32.arready); #0;
+    @(posedge clock); #0;
+    axi32.arvalid = 0;
+    wait (axi32.rvalid && axi32.rready); #0;
+    @(posedge clock); #0;
+    tb_data = axi32.rdata;
+    $display("lw (0x%08x): 0x%016lx ", tb_addr, tb_data);
+
+
+    // read word from Flash
+    tb_addr = FLASH_BASE + 'h00;
+    axi64.arvalid = 1;
+    axi64.araddr = tb_addr;
+    wait (axi64.arvalid && axi64.arready); #0;
+    @(posedge clock); #0;
+    axi64.arvalid = 0;
+    wait (axi64.rvalid && axi64.rready); #0;
+    @(posedge clock); #0;
+    tb_data = axi64.rdata;
+    $display("ld (0x%08x): 0x%016lx ", tb_addr, tb_data);
+
 
 
     

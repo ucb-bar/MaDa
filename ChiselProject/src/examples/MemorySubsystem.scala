@@ -19,43 +19,87 @@ import chisel3.experimental.Analog
   */
 class MemorySubsystem extends Module {
   val io = IO(new Bundle {
-    val m_axi = Flipped(new Axi4LiteBundle())
+    val m_axi_32 = Flipped(new Axi4Bundle(Axi4Params(dataWidth=32)))
+    val m_axi_64 = Flipped(new Axi4Bundle(Axi4Params(dataWidth=64)))
     val qspi_cs = Output(Bool())
     val qspi_sck = Output(Clock())
     val qspi_dq = Vec(4, Analog(1.W))
   })
 
+
+  // === Tile ===
   val tile_xbar = Module(new Axi4Crossbar(
-    numSlave = 1,
-    numMaster = 3,
-    deviceSizes = Array(
+    numSlave=2,
+    numMaster=3,
+    params=Axi4Params(
+      dataWidth=64,
+      idWidth=4,
+    ),
+    deviceSizes=Array(
       0x1000_0000,
       0x1000_0000,
       0x0100_0000
     ),
-    deviceAddresses = Array(
+    deviceAddresses=Array(
       0x2000_0000,
       0x1000_0000,
       0x0800_0000
     ),
   ))
+
+  val tile_upsizer = Module(new Axi4WidthUpsizer(
+    s_params=Axi4Params(
+      dataWidth=32,
+      idWidth=4,
+    ),
+    m_params=Axi4Params(
+      dataWidth=64,
+      idWidth=4,
+    ),
+  ))
+  val tile_downsizer = Module(new Axi4WidthDownsizer(
+    s_params=Axi4Params(
+      dataWidth=64,
+      idWidth=4,
+    ),
+    m_params=Axi4Params(
+      dataWidth=32,
+      idWidth=4,
+    ),
+  ))
+  val flash_downsizer = Module(new Axi4WidthDownsizer(
+    s_params=Axi4Params(
+      dataWidth=64,
+      idWidth=4,
+    ),
+    m_params=Axi4Params(
+      dataWidth=32,
+      idWidth=4,
+    ),
+  ))
+  
   
   val mem = Module(new Axi4Memory(
     params=Axi4Params(
       addressWidth=10,
-      dataWidth=32,
+      dataWidth=64,
       idWidth=4,
     )
   ))
 
+  // === Peripherals ===
   val periph_xbar = Module(new Axi4Crossbar(
-    numSlave = 1,
-    numMaster = 2,
-    deviceSizes = Array(
+    numSlave=1,
+    numMaster=2,
+    params=Axi4Params(
+      dataWidth=64,
+      idWidth=4,
+    ),
+    deviceSizes=Array(
       0x0001_0000,
       0x0001_0000
     ),
-    deviceAddresses = Array(
+    deviceAddresses=Array(
       0x0002_0000,
       0x0001_0000
     ),
@@ -65,13 +109,16 @@ class MemorySubsystem extends Module {
   val uart = Module(new Axi4LiteUartLite())
   val gpio = Module(new Axi4LiteGpio())
 
-  io.m_axi.connectToAxi4(tile_xbar.io.s_axi(0))
-  tile_xbar.io.m_axi(0) <> flash.io.s_axi4
-  tile_xbar.io.m_axi(1) <> periph_xbar.io.s_axi(0)
-  tile_xbar.io.m_axi(2) <> mem.io.s_axi
+  tile_upsizer.io.s_axi <> io.m_axi_32
+  tile_xbar.io.s_axi(0) <> tile_upsizer.io.m_axi
+  tile_xbar.io.s_axi(1) <> io.m_axi_64
+  flash_downsizer.io.s_axi <> tile_xbar.io.m_axi(0)
+  tile_downsizer.io.s_axi <> tile_xbar.io.m_axi(1)
+  mem.io.s_axi <> tile_xbar.io.m_axi(2)
   uart.io.s_axi.connectFromAxi4(periph_xbar.io.m_axi(0))
   gpio.io.s_axi.connectFromAxi4(periph_xbar.io.m_axi(1))
-
+  periph_xbar.io.s_axi(0) <> tile_downsizer.io.m_axi
+  flash.io.s_axi4 <> flash_downsizer.io.m_axi
 
   flash.io.s_axi4.ar.bits.size := 2.U.asTypeOf(flash.io.s_axi4.ar.bits.size)
   flash.io.s_axi4.ar.bits.burst := 1.U.asTypeOf(flash.io.s_axi4.ar.bits.burst)
