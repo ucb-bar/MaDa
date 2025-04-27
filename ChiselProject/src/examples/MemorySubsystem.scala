@@ -18,9 +18,11 @@ import chisel3.experimental.Analog
   * 
   */
 class MemorySubsystem extends Module {
+  val widerDataWidth = 128
+
   val io = IO(new Bundle {
     val m_axi_32 = Flipped(new Axi4Bundle(Axi4Params(dataWidth=32)))
-    val m_axi_64 = Flipped(new Axi4Bundle(Axi4Params(dataWidth=64)))
+    val m_axi_64 = Flipped(new Axi4Bundle(Axi4Params(dataWidth=widerDataWidth)))
     val qspi_cs = Output(Bool())
     val qspi_sck = Output(Clock())
     val qspi_dq = Vec(4, Analog(1.W))
@@ -32,7 +34,7 @@ class MemorySubsystem extends Module {
     numSlave=2,
     numMaster=3,
     params=Axi4Params(
-      dataWidth=64,
+      dataWidth=widerDataWidth,
       idWidth=4,
     ),
     deviceSizes=Array(
@@ -53,13 +55,13 @@ class MemorySubsystem extends Module {
       idWidth=4,
     ),
     m_params=Axi4Params(
-      dataWidth=64,
+      dataWidth=widerDataWidth,
       idWidth=4,
     ),
   ))
   val tile_downsizer = Module(new Axi4WidthDownsizer(
     s_params=Axi4Params(
-      dataWidth=64,
+      dataWidth=widerDataWidth,
       idWidth=4,
     ),
     m_params=Axi4Params(
@@ -69,7 +71,7 @@ class MemorySubsystem extends Module {
   ))
   val flash_downsizer = Module(new Axi4DataWidthConverter(
     s_params=Axi4Params(
-      dataWidth=64,
+      dataWidth=widerDataWidth,
       idWidth=4,
     ),
     m_params=Axi4Params(
@@ -82,7 +84,7 @@ class MemorySubsystem extends Module {
   val mem = Module(new Axi4Memory(
     params=Axi4Params(
       addressWidth=10,
-      dataWidth=64,
+      dataWidth=widerDataWidth,
       idWidth=4,
     )
   ))
@@ -92,7 +94,7 @@ class MemorySubsystem extends Module {
     numSlave=1,
     numMaster=2,
     params=Axi4Params(
-      dataWidth=64,
+      dataWidth=widerDataWidth,
       idWidth=4,
     ),
     deviceSizes=Array(

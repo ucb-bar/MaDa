@@ -44,10 +44,9 @@ interface axi_interface #(
 endinterface
 
 module MemorySubsystemTestbench();
-  parameter DATA_WIDTH = 32;
+  parameter WIDER_DATA_WIDTH = 128;
   parameter ADDR_WIDTH = 32;
   parameter ID_WIDTH = 4;
-  parameter MEM_ALIGNMENT = $clog2(DATA_WIDTH / 8);
   
   parameter FLASH_BASE    = 32'h2000_0000;
   parameter UART_BASE     = 32'h1002_0000;
@@ -60,7 +59,7 @@ module MemorySubsystemTestbench();
   always #5 clock = ~clock;
 
   axi_interface #(32, ADDR_WIDTH, ID_WIDTH) axi32();
-  axi_interface #(64, ADDR_WIDTH, ID_WIDTH) axi64();
+  axi_interface #(WIDER_DATA_WIDTH, ADDR_WIDTH, ID_WIDTH) axi64();
 
   wire SPI_MOSI;
   wire SPI_MISO;
@@ -155,58 +154,58 @@ module MemorySubsystemTestbench();
 
 
   logic [31:0] tb_addr;
-  logic [63:0] tb_data;
+  logic [WIDER_DATA_WIDTH-1:0] tb_data;
   
 
   initial begin
-    tb_addr = 32'h0;
-    tb_data = 64'h0;
+    tb_addr = 'h0;
+    tb_data = 'h0;
 
-    axi32.awvalid = 1'b0;
-    axi32.awid = 4'h0;
-    axi32.awlen = 8'h0;
-    axi32.awsize = 3'h0;
-    axi32.awburst = 2'h0;
-    axi32.awaddr = 32'h0;
+    axi32.awvalid = 'b0;
+    axi32.awid = 'h0;
+    axi32.awlen = 'h0;
+    axi32.awsize = 'h0;
+    axi32.awburst = 'h0;
+    axi32.awaddr = 'h0;
 
-    axi32.wvalid = 1'b0;
-    axi32.wdata = 32'h0;
-    axi32.wstrb = 4'h0;
-    axi32.wlast = 1'b1;
+    axi32.wvalid = 'b0;
+    axi32.wdata = 'h0;
+    axi32.wstrb = 'h0;
+    axi32.wlast = 'b1;
 
-    axi32.bready = 1'b1;
+    axi32.bready = 'b1;
 
-    axi32.arvalid = 1'b0;
-    axi32.arid = 4'h0;
-    axi32.arlen = 8'h0;
-    axi32.arsize = 3'h0;
-    axi32.arburst = 2'h0;
-    axi32.araddr = 32'h0;
+    axi32.arvalid = 'b0;
+    axi32.arid = 'h0;
+    axi32.arlen = 'h0;
+    axi32.arsize = 'h0;
+    axi32.arburst = 'h0;
+    axi32.araddr = 'h0;
 
-    axi32.rready = 1'b1;
+    axi32.rready = 'b1;
 
-    axi64.awvalid = 1'b0;
-    axi64.awid = 4'h1;
-    axi64.awlen = 8'h0;
-    axi64.awsize = 3'h0;
-    axi64.awburst = 2'h0;
-    axi64.awaddr = 32'h0;
+    axi64.awvalid = 'b0;
+    axi64.awid = 'h1;
+    axi64.awlen = 'h0;
+    axi64.awsize = 'h0;
+    axi64.awburst = 'h0;
+    axi64.awaddr = 'h0;
 
-    axi64.wvalid = 1'b0;
-    axi64.wdata = 64'h0;
-    axi64.wstrb = 8'h0;
-    axi64.wlast = 1'b1;
+    axi64.wvalid = 'b0;
+    axi64.wdata = 'h0;
+    axi64.wstrb = 'h0;
+    axi64.wlast = 'b1;
 
-    axi64.bready = 1'b1;
+    axi64.bready = 'b1;
 
-    axi64.arvalid = 1'b0;
-    axi64.arid = 4'h1;
-    axi64.arlen = 8'h0;
-    axi64.arsize = 3'h0;
-    axi64.arburst = 2'h0;
-    axi64.araddr = 32'h0;
+    axi64.arvalid = 'b0;
+    axi64.arid = 'h1;
+    axi64.arlen = 'h0;
+    axi64.arsize = 'h0;
+    axi64.arburst = 'h0;
+    axi64.araddr = 'h0;
 
-    axi64.rready = 1'b1;
+    axi64.rready = 'b1;
 
     reset = 1;
     repeat (10) @(posedge clock);
@@ -220,7 +219,7 @@ module MemorySubsystemTestbench();
 
     // write word
     tb_addr = SCRATCH_BASE + 'h00;
-    tb_data = 64'hDEADBEEF;
+    tb_data = 'hDEADBEEF;
     axi32.awvalid = 1;
     axi32.wvalid = 1;
     axi32.awaddr = tb_addr;
@@ -248,7 +247,7 @@ module MemorySubsystemTestbench();
 
     // write word
     tb_addr = SCRATCH_BASE + 'h04;
-    tb_data = 64'h01020304;
+    tb_data = 'h01020304;
     axi32.awvalid = 1;
     axi32.wvalid = 1;
     axi32.awaddr = tb_addr;
@@ -346,7 +345,7 @@ module MemorySubsystemTestbench();
     // read word from Flash
     tb_addr = FLASH_BASE + 'h00;
     axi64.arvalid = 1;
-    axi64.arsize = 3'h3;
+    axi64.arsize = 3'h4;
     axi64.araddr = tb_addr;
     wait (axi64.arvalid && axi64.arready); #0;
     @(posedge clock); #0;
