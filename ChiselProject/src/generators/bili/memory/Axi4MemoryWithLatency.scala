@@ -18,7 +18,7 @@ class Axi4MemoryWithLatency(
   // delay the signals by the specified latency
   val aw_delay = Module(new Pipe(new ChannelAx(params), writeLatency))
   val w_delay = Module(new Pipe(new ChannelW(params), writeLatency))
-  val ar_delay = Module(new Pipe(new ChannelAx(params), readLatency))
+  val r_delay = Module(new Pipe(new ChannelR(params), readLatency))
 
   // gate off the ready signal when the memory is busy
   val reg_aw_pending = RegInit(false.B)
@@ -27,16 +27,20 @@ class Axi4MemoryWithLatency(
   when (io.s_axi.aw.fire) {
     reg_aw_pending := true.B
   }
-  when (io.s_axi.b.fire) {
+  .elsewhen (io.s_axi.b.fire) {
     reg_aw_pending := false.B
   }
 
   when (io.s_axi.ar.fire) {
     reg_ar_pending := true.B
   }
-  when (io.s_axi.r.fire) {
+  .elsewhen (io.s_axi.r.fire) {
     reg_ar_pending := false.B
   }
+
+  dontTouch(reg_aw_pending)
+  dontTouch(reg_ar_pending)
+  dontTouch(io.s_axi.ar.ready)
     
 
   val mem = Module(new Axi4Memory(
@@ -59,13 +63,15 @@ class Axi4MemoryWithLatency(
 
   io.s_axi.b <> mem.io.s_axi.b
 
-  ar_delay.io.enq.bits <> io.s_axi.ar.bits
-  ar_delay.io.enq.valid := io.s_axi.ar.valid
-  mem.io.s_axi.ar.bits <> ar_delay.io.deq.bits
-  mem.io.s_axi.ar.valid := ar_delay.io.deq.valid
+  io.s_axi.ar <> mem.io.s_axi.ar
   io.s_axi.ar.ready := mem.io.s_axi.ar.ready && !reg_ar_pending
+  mem.io.s_axi.ar.valid := io.s_axi.ar.valid && !reg_ar_pending
 
-  io.s_axi.r <> mem.io.s_axi.r
+  r_delay.io.enq.bits <> mem.io.s_axi.r.bits
+  r_delay.io.enq.valid := mem.io.s_axi.r.valid
+  io.s_axi.r.bits <> r_delay.io.deq.bits
+  io.s_axi.r.valid := r_delay.io.deq.valid
+  mem.io.s_axi.r.ready := io.s_axi.r.ready
 }
 
 // class Axi4MemoryForTest extends Axi4MemoryWithLatency(
