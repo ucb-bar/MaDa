@@ -3,6 +3,7 @@ import chisel3.util._
 
 import java.io.PrintWriter
 
+
 class Axi4Memory(
   params: Axi4Params = Axi4Params(),
   memoryFileHex: String = "",
@@ -24,82 +25,111 @@ class Axi4Memory(
     memoryFileBin = memoryFileBin
   ))
   
-  val reg_aw_active = RegInit(false.B)
+  // implementing AXI4 state machine from https://zipcpu.com/blog/2019/05/29/demoaxi.html
+
+  val sWRITE_IDLE :: sWRITE_MID :: sWRITE_LAST :: sWRITE_END :: Nil = Enum(4)
+  val reg_w_state = RegInit(sWRITE_IDLE)
   val reg_aw_id = RegInit(0.U(params.idWidth.W))
   val reg_aw_addr = RegInit(0.U(memAddressWidth.W))
-  
-  val reg_w_active = RegInit(false.B)
   val reg_w_data = RegInit(0.U(params.dataWidth.W))
   val reg_w_strb = RegInit(0.U((params.dataWidth/8).W))
 
-  val reg_ar_active = RegInit(false.B)
-  val reg_ar_id = RegInit(0.U(params.idWidth.W))
-  val reg_ar_addr = RegInit(0.U(memAddressWidth.W))
+  switch (reg_w_state) {
+    is (sWRITE_IDLE) {  // IDLE state
+      when (io.s_axi.aw.fire) {
+        when (io.s_axi.w.fire) {
+          // transition to END state
+          reg_w_state := sWRITE_END
+          reg_w_data := io.s_axi.w.bits.data
+          reg_w_strb := io.s_axi.w.bits.strb
+        }
+        .otherwise {
+          // transition to LAST state
+          reg_w_state := sWRITE_LAST
+        }
+        reg_aw_id := io.s_axi.aw.bits.id
+        reg_aw_addr := io.s_axi.aw.bits.addr(memAddressWidth-1, memAlignment)
+      }
+    }
+    is (sWRITE_MID) {  // MID state
+    }
+    is (sWRITE_LAST) {  // LAST state
+      when (io.s_axi.w.fire) {
+        // transition to END state
+        reg_w_state := sWRITE_END
+        reg_w_data := io.s_axi.w.bits.data
+        reg_w_strb := io.s_axi.w.bits.strb
+      }
+    }
+    is (sWRITE_END) {  // ENDB state
+      when (io.s_axi.b.fire) {
+        // transition to IDLE state
+        reg_w_state := sWRITE_IDLE
+        reg_w_strb := 0.U((params.dataWidth/8).W)
+      }
+    }
+  }
 
-  val write_valid = reg_aw_active && reg_w_active
-
-  mem.io.clock := clock
-  mem.io.reset := reset
-
-  // data line connections
-  mem.io.raddr := Mux(io.s_axi.ar.fire, io.s_axi.ar.bits.addr(memAddressWidth-1, memAlignment), reg_ar_addr)
-  mem.io.waddr := reg_aw_addr
-  mem.io.wdata := reg_w_data
-  mem.io.wstrb := Mux(write_valid, reg_w_strb, 0.U((params.dataWidth/8).W))
-  io.s_axi.r.bits.data := mem.io.rdata
-
-  // control line connections
-  io.s_axi.aw.ready := ~reg_aw_active
-  io.s_axi.w.ready := ~reg_w_active
-  io.s_axi.b.valid := write_valid
+  io.s_axi.aw.ready := (reg_w_state === sWRITE_IDLE || reg_w_state === sWRITE_END)
+  io.s_axi.w.ready := (reg_w_state === sWRITE_IDLE || reg_w_state === sWRITE_MID || reg_w_state === sWRITE_LAST || reg_w_state === sWRITE_END)
+  io.s_axi.b.valid := (reg_w_state === sWRITE_END)
   io.s_axi.b.bits.id := reg_aw_id
   io.s_axi.b.bits.resp := AxResponse.OKAY
 
-  when (io.s_axi.aw.fire) {
-    reg_aw_active := true.B
-    reg_aw_id := io.s_axi.aw.bits.id
-    reg_aw_addr := io.s_axi.aw.bits.addr(memAddressWidth-1, memAlignment)
+
+  val sREAD_IDLE :: sREAD_MID :: sREAD_HOLD :: sREAD_END :: Nil = Enum(4)
+  val reg_r_state = RegInit(sREAD_IDLE)
+  val reg_ar_id = RegInit(0.U(params.idWidth.W))
+
+  switch (reg_r_state) {
+    is (sREAD_IDLE) {  // IDLE state
+      when (io.s_axi.ar.fire) {
+        // transition to END state
+        reg_r_state := sREAD_END
+        reg_ar_id := io.s_axi.ar.bits.id
+      }
+    }
+    is (sREAD_MID) {  // MID state
+      
+    }
+    is (sREAD_HOLD) {  // HOLD state
+      when (io.s_axi.r.fire) {
+        // transition to END state
+        reg_r_state := sREAD_END
+      }
+    }
+    is (sREAD_END) {  // END state
+      when (io.s_axi.r.fire && ~io.s_axi.ar.fire) {
+        // transition to IDLE state
+        reg_r_state := sREAD_IDLE
+      }
+      when (io.s_axi.r.fire && io.s_axi.ar.fire) {
+        // stay in END state
+        reg_r_state := sREAD_END
+      }
+    }
   }
 
-  when (io.s_axi.w.fire) {
-    reg_w_active := true.B
-    reg_w_data := io.s_axi.w.bits.data
-    reg_w_strb := io.s_axi.w.bits.strb
-  }
-
-  when (io.s_axi.b.fire) {
-    reg_aw_active := false.B
-    reg_w_active := false.B
-  }
-
-  // get around Vivado sim bug
-  dontTouch(io.s_axi.aw.fire)
-  dontTouch(io.s_axi.w.fire)
-  dontTouch(io.s_axi.b.fire)
-  dontTouch(write_valid)
-
-  io.s_axi.ar.ready := ~(reg_ar_active && ~io.s_axi.r.fire)
-  io.s_axi.r.valid := reg_ar_active
+  io.s_axi.ar.ready := (reg_r_state === sREAD_IDLE || reg_r_state === sREAD_END)
+  io.s_axi.r.valid := (reg_r_state === sREAD_MID || reg_r_state === sREAD_HOLD || reg_r_state === sREAD_END)
   io.s_axi.r.bits.id := reg_ar_id
   io.s_axi.r.bits.data := mem.io.rdata
   io.s_axi.r.bits.resp := AxResponse.OKAY
-  io.s_axi.r.bits.last := true.B
+  io.s_axi.r.bits.last := (reg_r_state === sREAD_HOLD || reg_r_state === sREAD_END)
 
-  when (io.s_axi.ar.fire) {
-    reg_ar_active := true.B
-    reg_ar_id := io.s_axi.ar.bits.id
-    reg_ar_addr := io.s_axi.ar.bits.addr(memAddressWidth-1, memAlignment)
-  }
-
-  when (io.s_axi.r.fire && ~io.s_axi.ar.fire) {
-    reg_ar_active := false.B
-  }
-
-  // get around Vivado sim bug
-  dontTouch(io.s_axi.ar.fire)
-  dontTouch(io.s_axi.r.fire)
 
   
+  // memory connections
+  mem.io.clock := clock
+  mem.io.reset := reset
+
+  mem.io.raddr := io.s_axi.ar.bits.addr(memAddressWidth-1, memAlignment)
+  mem.io.waddr := reg_aw_addr
+  mem.io.wdata := reg_w_data
+  mem.io.wstrb := reg_w_strb
+  io.s_axi.r.bits.data := mem.io.rdata
+
+
   def generate_tcl_script(): Unit = {
     if (memoryFileHex != "") {
       val vivado_project_dir = "out/VivadoProject"
