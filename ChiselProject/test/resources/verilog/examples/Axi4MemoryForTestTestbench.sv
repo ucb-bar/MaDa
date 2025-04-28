@@ -115,22 +115,120 @@ module Axi4MemoryForTestTestbench();
     
     axi.arvalid = 1;
     axi.araddr = 'h00000000;
+    wait (axi.arvalid && axi.arready); #0;
     @(posedge clock); #0;
     axi.araddr = 'h00000004;
+    wait (axi.arvalid && axi.arready); #0;
     @(posedge clock); #0;
     axi.araddr = 'h00000008;
+    wait (axi.arvalid && axi.arready); #0;
     @(posedge clock); #0;
     axi.araddr = 'h0000000C;
+    wait (axi.arvalid && axi.arready); #0;
     @(posedge clock); #0;
     axi.araddr = 'h00000010;
+    wait (axi.arvalid && axi.arready); #0;
     @(posedge clock); #0;
     axi.araddr = 'h00000014;
+    wait (axi.arvalid && axi.arready); #0;
     @(posedge clock); #0;
     axi.araddr = 'h00000018;
+    wait (axi.arvalid && axi.arready); #0;
     @(posedge clock); #0;
     axi.araddr = 'h0000001C;
+    wait (axi.arvalid && axi.arready); #0;
     @(posedge clock); #0;
     axi.arvalid = 0;
+
+    wait (axi.rvalid && axi.rready); #0;
+    @(posedge clock); #0;
+
+
+
+    // write word
+    axi.awvalid = 1;
+    axi.wvalid = 1;
+    axi.awaddr = 'h00000010;
+    axi.wdata = 'hDEADBEEF;
+    axi.wstrb = 'h0F;
+    fork
+      begin
+        wait (axi.awvalid && axi.awready); #0;
+        @(posedge clock); #0;
+        axi.awvalid = 0;
+        axi.awaddr = 'h0;
+      end
+      begin
+        wait (axi.wvalid && axi.wready); #0;
+        @(posedge clock); #0;
+        axi.wvalid = 0;
+        axi.wdata = 'h0;
+        axi.wstrb = 'h0;
+      end
+    join
+    wait (axi.bvalid && axi.bready); #0;
+    @(posedge clock); #0;
+    $display("sw (0x%08x): 0x%016lx ", axi.awaddr, axi.wdata);
+
+    // write word
+    axi.awvalid = 1;
+    axi.wvalid = 1;
+    axi.awaddr = 'h00000014;
+    axi.wdata = 'hBAADCAFE;
+    axi.wstrb = 'h0F;
+    fork
+      begin
+        wait (axi.awvalid && axi.awready); #0;
+        @(posedge clock); #0;
+        axi.awvalid = 0;
+        axi.awaddr = 'h0;
+      end
+      begin
+        wait (axi.wvalid && axi.wready); #0;
+        @(posedge clock); #0;
+        axi.wvalid = 0;
+        axi.wdata = 'h0;
+        axi.wstrb = 'h0;
+      end
+    join
+    wait (axi.bvalid && axi.bready); #0;
+    @(posedge clock); #0;
+    $display("sw (0x%08x): 0x%016lx ", axi.awaddr, axi.wdata);
+
+
+    // read word
+    axi.arvalid = 1;
+    axi.araddr = 'h00000010;
+    wait (axi.arvalid && axi.arready); #0;
+    @(posedge clock); #0;
+    axi.arvalid = 0;
+    wait (axi.rvalid && axi.rready); #0;
+    @(posedge clock); #0;
+    $display("lw (0x%08x): 0x%016lx ", axi.araddr, axi.rdata);
+
+
+    // read word
+    axi.arvalid = 1;
+    axi.araddr = 'h00000014;
+    wait (axi.arvalid && axi.arready); #0;
+    @(posedge clock); #0;
+    axi.arvalid = 0;
+    wait (axi.rvalid && axi.rready); #0;
+    @(posedge clock); #0;
+    $display("lw (0x%08x): 0x%016lx ", axi.araddr, axi.rdata);
+
+
+    // read word
+    axi.arvalid = 1;
+    axi.araddr = 'h00000018;
+    wait (axi.arvalid && axi.arready); #0;
+    @(posedge clock); #0;
+    axi.arvalid = 0;
+    wait (axi.rvalid && axi.rready); #0;
+    @(posedge clock); #0;
+    $display("lw (0x%08x): 0x%016lx ", axi.araddr, axi.rdata);
+
+
     
 
     repeat (10) @(posedge clock);

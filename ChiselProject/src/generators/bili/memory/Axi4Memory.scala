@@ -5,9 +5,9 @@ import java.io.PrintWriter
 
 
 class Axi4Memory(
-  params: Axi4Params = Axi4Params(),
-  memoryFileHex: String = "",
-  memoryFileBin: String = ""
+  val params: Axi4Params = Axi4Params(),
+  val memoryFileHex: String = "",
+  val memoryFileBin: String = ""
 ) extends Module {
   val io = IO(new Bundle {
     val s_axi = Flipped(new Axi4Bundle(params))
@@ -149,10 +149,10 @@ class Axi4Memory(
 }
 
 
-class Axi4MemoryForTest extends Axi4Memory(
-  params = Axi4Params(
-    addressWidth = 8,
-    dataWidth = 32,
-    idWidth = 0
-  )
-)
+// class Axi4MemoryForTest extends Axi4Memory(
+//   params = Axi4Params(
+//     addressWidth = 8,
+//     dataWidth = 32,
+//     idWidth = 0
+//   )
+// )
