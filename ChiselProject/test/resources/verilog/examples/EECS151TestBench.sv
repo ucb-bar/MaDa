@@ -4,7 +4,7 @@
 `define RF_PATH dut.core.regfile_ext.Memory
 `define RF_DEPTH 32
 
-`define IMEM_PATH dut.itim.mem.mem
+`define IMEM_PATH dut.itim.mem.mem.mem
 
 `define DMEM_PATH dut.dtim.mem.mem
 `define DMEM_DEPTH 4096
@@ -87,17 +87,10 @@ module EECS151TestBench();
   wire [31:0] reset_vector = 32'h1000_0000;
   wire [31:0] csr_tohost;
 
-  Tile dut (
+  SimpleTile dut (
     .clock(clock),
     .reset(reset),
     .io_reset_vector(reset_vector),
-    .io_sbus_aw_ready('b0),
-    .io_sbus_w_ready('b0),
-    .io_sbus_b_valid('b0),
-    .io_sbus_b_bits_resp('h0),
-    .io_sbus_ar_ready('b0),
-    .io_sbus_r_valid('b0),
-    .io_sbus_r_bits_resp('h0),
     .io_debug_syscall0(csr_tohost)
   );
 

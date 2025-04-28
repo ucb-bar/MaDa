@@ -11,7 +11,7 @@ class Tile extends Module {
     val pbus = new Axi4Bundle()
   })
 
-  val busWidth = 64
+  val busWidth = 32
 
   val core = Module(new Core(nVectors = busWidth / 32))
 

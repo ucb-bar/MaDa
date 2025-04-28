@@ -357,6 +357,30 @@ module MemorySubsystemTestbench();
 
 
 
+
+    // === read many consecutive words ===
+    
+    axi32.arvalid = 1;
+    axi32.araddr = SCRATCH_BASE + 'h00;
+    @(posedge clock); #0;
+    axi32.araddr = SCRATCH_BASE + 'h04;
+    @(posedge clock); #0;
+    axi32.araddr = SCRATCH_BASE + 'h08;
+    @(posedge clock); #0;
+    axi32.araddr = SCRATCH_BASE + 'h0C;
+    @(posedge clock); #0;
+    axi32.araddr = SCRATCH_BASE + 'h10;
+    @(posedge clock); #0;
+    axi32.araddr = SCRATCH_BASE + 'h14;
+    @(posedge clock); #0;
+    axi32.araddr = SCRATCH_BASE + 'h18;
+    @(posedge clock); #0;
+    axi32.araddr = SCRATCH_BASE + 'h1C;
+    @(posedge clock); #0;
+    axi32.arvalid = 0;
+    
+
+
     
     repeat (100) @(posedge clock);
     $finish;
