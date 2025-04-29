@@ -9,6 +9,7 @@
 `define DMEM_PATH dut.dtim.mem.mem
 `define DMEM_DEPTH 4096
 
+`define TIMEOUT_CYCLES 100
 
 
 
@@ -72,7 +73,7 @@
 
 
 
-module EECS151Testbench();
+module EECS151TileTestbench();
   parameter CLOCK_FREQ = 100_000_000;
   parameter CLOCK_PERIOD = 1_000_000_000 / CLOCK_FREQ;
 
@@ -81,13 +82,11 @@ module EECS151Testbench();
   initial clock = 0;
   always #(CLOCK_PERIOD/2) clock = ~clock;
 
-  int timeout_cycle = 100;
-
   // Init PC with 32'h1000_0000 -- address space of IMem
   wire [31:0] reset_vector = 32'h1000_0000;
   wire [31:0] csr_tohost;
 
-  SimpleTile dut (
+  EECS151Tile dut (
     .clock(clock),
     .reset(reset),
     .io_reset_vector(reset_vector),
@@ -136,7 +135,7 @@ module EECS151Testbench();
   initial begin
     while (!all_tests_passed) begin
       @(posedge clock);
-      if (cycle === timeout_cycle) begin
+      if (cycle === `TIMEOUT_CYCLES) begin
         $display("[Failed] Timeout at [%d] test %s, expected_result = %h, got = %h",
                 current_test_id, current_test_type, current_result, current_output);
         $finish();
@@ -167,7 +166,7 @@ module EECS151Testbench();
       
       fork
         begin : timeout_block
-          repeat(timeout_cycle) @(posedge clock);
+          repeat(`TIMEOUT_CYCLES) @(posedge clock);
           $display("[Failed] Timeout at [%d] test %s, expected_result = %h, got = %h",
                   current_test_id, test_type, result, `RF_PATH[rf_wa]);
           $finish();
@@ -203,7 +202,7 @@ module EECS151Testbench();
       
       fork
         begin : timeout_block
-          repeat(timeout_cycle) @(posedge clock);
+          repeat(`TIMEOUT_CYCLES) @(posedge clock);
           $display("[Failed] Timeout at [%d] test %s, expected_result = %h, got = %h",
                   current_test_id, test_type, result, `DMEM_PATH[addr]);
           $finish();

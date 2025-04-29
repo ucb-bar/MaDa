@@ -25,3 +25,5 @@ vivado*.str
 .srcs/
 .ip_user_files/
 
+# RISCV Tests
+isa-tests/

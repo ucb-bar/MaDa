@@ -7,13 +7,18 @@
 `define VRF_PATH dut.core.vregfile_ext.Memory
 `define VRF_DEPTH 32
 
-`define IMEM_PATH dut.itim.mem.mem
+`define IMEM_PATH dut.itim.mem.mem.mem
 
 `define DMEM_PATH dut.dtim.mem.mem
 `define DMEM_DEPTH 4096
 
-`define VLEN       8
+`define VLEN       2
 
+`define DATA_WIDTH (32 * `VLEN)
+`define DATA_ADDR_OFFSET $clog2(`DATA_WIDTH / 8)
+
+
+`define TIMEOUT_CYCLES 100
 
 
 
@@ -93,7 +98,7 @@
 
 
 
-module EECS252Testbench();
+module EECS252TileTestbench();
   parameter CLOCK_FREQ = 100_000_000;
   parameter CLOCK_PERIOD = 1_000_000_000 / CLOCK_FREQ;
 
@@ -102,32 +107,15 @@ module EECS252Testbench();
   initial clock = 0;
   always #(CLOCK_PERIOD/2) clock = ~clock;
 
-  int timeout_cycle = 20;
-
   // Init PC with 32'h1000_0000 -- address space of IMem
   wire [31:0] reset_vector = 32'h1000_0000;
   wire [31:0] csr_tohost;
 
-  Tile dut (
+  EECS252Tile dut (
     .clock(clock),
     .reset(reset),
     .io_reset_vector(reset_vector),
-    .io_sbus_aw_ready('b0),
-    .io_sbus_w_ready('b0),
-    .io_sbus_b_valid('b0),
-    .io_sbus_b_bits_resp('h0),
-    .io_sbus_ar_ready('b0),
-    .io_sbus_r_valid('b0),
-    .io_sbus_r_bits_resp('h0),
-    .io_debug_x1(),
-    .io_debug_x2(),
-    .io_debug_x3(),
-    .io_debug_x4(),
-    .io_debug_x5(),
-    .io_debug_x6(),
-    .io_debug_x7(),
-    .io_debug_x8(),
-    .io_debug_tohost(csr_tohost)
+    .io_debug_syscall0(csr_tohost)
   );
 
 
@@ -208,7 +196,7 @@ module EECS252Testbench();
   initial begin
     while (all_tests_passed === 0) begin
       @(posedge clock);
-      if (cycle === timeout_cycle) begin
+      if (cycle === `TIMEOUT_CYCLES) begin
         $display("[Failed] Timeout at [%d] test %s, expected_result = %h, got = %h",
                 current_test_id, current_test_type, current_result, current_output);
         $finish();
@@ -337,7 +325,7 @@ module EECS252Testbench();
     
     `RF_PATH[1] = 32'h0800_0100;
     INST_ADDR       = 14'h0000;
-    DATA_ADDR       = (`RF_PATH[1] + 32'h00000000) >> 2;
+    DATA_ADDR       = (`RF_PATH[1] + 32'h00000000) >> `DATA_ADDR_OFFSET;
 
     // nf = 0 (single value field), mew = 0 (no extended memory element width)
     // mop = 0 (unit stride), vm = 1 (mask disabled), lumop = 0 (unit-stride load), width = v32b
@@ -359,7 +347,7 @@ module EECS252Testbench();
 
     INST_ADDR = 14'h0000;
 
-    DATA_ADDR = (`RF_PATH[1] + 32'h00000000) >> 2;
+    DATA_ADDR = (`RF_PATH[1] + 32'h00000000) >> `DATA_ADDR_OFFSET;
 
     `IMEM_PATH[INST_ADDR + 0]  = {3'b000, 1'b0, 2'b00, 1'b1, 5'b0, 5'd1, `FNC3_V32, 5'd2,  `OPC_VEC_VS};
 

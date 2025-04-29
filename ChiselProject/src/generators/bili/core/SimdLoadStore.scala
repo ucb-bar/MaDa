@@ -103,10 +103,14 @@ class SimdLoadStore(
   val s_addr_index = log2Ceil(dataWidth / 8)
   val bus_addr_index = log2Ceil(nVectors*dataWidth / 8)
 
-  val addr_offset = io.dmem.ar.bits.addr(bus_addr_index-1, s_addr_index)
-
-  // Split the wide AXI read data into individual 32-bit vectors
-  for (i <- 0 until nVectors) {
-    io.rdata(i) := Mux(io.strided === STRIDE_0, io.dmem.r.bits.data >> (dataWidth.U * addr_offset), io.dmem.r.bits.data((i + 1) * 32 - 1, i * 32))
+  if (nVectors == 1) {
+    io.rdata(0) := io.dmem.r.bits.data
+  }
+  else {
+    val addr_offset = io.dmem.ar.bits.addr(bus_addr_index-1, s_addr_index)
+    // Split the wide AXI read data into individual 32-bit vectors
+    for (i <- 0 until nVectors) {
+      io.rdata(i) := Mux(io.strided === STRIDE_0, io.dmem.r.bits.data >> (dataWidth.U * addr_offset), io.dmem.r.bits.data((i + 1) * 32 - 1, i * 32))
+    }
   }
 }

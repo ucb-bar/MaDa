@@ -3,7 +3,7 @@
 import SimUart::*;
 
 
-module MlpPolicyTestBench();
+module MlpPolicyTestbench();
   parameter CLOCK_FREQ = 100_000_000;
   parameter CLOCK_PERIOD = 1_000_000_000 / CLOCK_FREQ;
 
