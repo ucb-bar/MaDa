@@ -74,12 +74,12 @@ class Axi4MemoryWithLatency(
   mem.io.s_axi.r.ready := io.s_axi.r.ready
 }
 
-// class Axi4MemoryForTest extends Axi4MemoryWithLatency(
-//   params = Axi4Params(
-//     addressWidth = 8,
-//     dataWidth = 32,
-//     idWidth = 0,
-//   ),
-//   readLatency = 4,
-//   writeLatency = 5,
-// )
+class Axi4MemoryForTest extends Axi4MemoryWithLatency(
+  params = Axi4Params(
+    addressWidth = 8,
+    dataWidth = 32,
+    idWidth = 0,
+  ),
+  readLatency = 1,
+  writeLatency = 1,
+)
