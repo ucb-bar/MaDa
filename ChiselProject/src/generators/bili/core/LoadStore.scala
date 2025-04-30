@@ -14,12 +14,11 @@ class LoadStore extends Module {
 
     val addr = Input(UInt(32.W))
     val wdata = Input(UInt(32.W))
-
-    val dmem = new Axi4Bundle()
+    val rdata = Output(UInt(32.W))
 
     val busy = Output(Bool())
-
-    val rdata = Output(UInt(32.W))
+    
+    val dmem = new Axi4Bundle()
   })
 
   
@@ -95,8 +94,8 @@ class LoadStore extends Module {
   io.dmem.aw.bits.id := 0.U
   io.dmem.aw.bits.addr := io.addr
   io.dmem.aw.bits.len := 0.U
-  io.dmem.aw.bits.size := AxSize.S_32_BYTES
-  io.dmem.aw.bits.burst := AxBurst.FIXED
+  io.dmem.aw.bits.size := AxSize.S_4_BYTES
+  io.dmem.aw.bits.burst := AxBurst.INCR
   
   io.dmem.w.valid := reg_w_pending
   io.dmem.w.bits.strb := dmem_strb
@@ -109,8 +108,8 @@ class LoadStore extends Module {
   io.dmem.ar.bits.id := 0.U
   io.dmem.ar.bits.addr := io.addr
   io.dmem.ar.bits.len := 0.U
-  io.dmem.ar.bits.size := AxSize.S_32_BYTES
-  io.dmem.ar.bits.burst := AxBurst.FIXED
+  io.dmem.ar.bits.size := AxSize.S_4_BYTES
+  io.dmem.ar.bits.burst := AxBurst.INCR
   
   io.dmem.r.ready := true.B
   

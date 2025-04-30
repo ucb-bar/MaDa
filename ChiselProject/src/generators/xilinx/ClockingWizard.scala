@@ -31,8 +31,8 @@ class ClockingWizardBlackbox(
   clk_freqs: Seq[Int]
 ) extends BlackBox {
 
-    def get_used(i: Int) = i < clk_freqs.length
-    def get_freq(i: Int) = if (get_used(i)) clk_freqs(i) else 0
+  def get_used(i: Int) = i < clk_freqs.length
+  def get_freq(i: Int) = if (get_used(i)) clk_freqs(i) else 0
 
   val io = IO(new Bundle {
     val clk_in1 = Input(Clock())
@@ -49,7 +49,7 @@ class ClockingWizardBlackbox(
 
   def generate_tcl_script(): Unit = {
     val vivado_project_dir = "out/VivadoProject"
-    val ip_name = "ClockingWizard"
+    val ip_name = "ClockingWizardBlackbox"
     val ip_name_lower = ip_name.toLowerCase()
 
     val num_out_clks = clk_freqs.length

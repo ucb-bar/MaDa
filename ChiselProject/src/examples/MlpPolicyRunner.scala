@@ -52,10 +52,20 @@ class MlpPolicyRunner extends RawModule {
     tile.io.reset_vector := reset_vector
 
     val pbus_crossbar = Module(new Axi4LiteCrossbar(
-      numSlave = 1,
-      numMaster = 2,
-      deviceSizes = Array(0x0400, 0x0400),
-      deviceAddresses = Array(0x1001_0000, 0x1002_0000),
+      numSlave=1,
+      numMaster=2,
+      // params=Axi4Params(
+      //   dataWidth=32,
+      //   idWidth=4,
+      // ),
+      deviceSizes=Array(
+        0x0000_0400,  // UART
+        0x0000_0400,  // GPIO
+      ),
+      deviceAddresses=Array(
+        0x1001_0000,   // GPIO
+        0x1002_0000,   // UART
+      ),
     ))
 
     val spi = Module(new Axi4QuadSpi())
@@ -64,42 +74,22 @@ class MlpPolicyRunner extends RawModule {
 
     pbus_crossbar.io.s_axi(0).connectFromAxi4(tile.io.pbus)
 
-    gpio.attach(pbus_crossbar.io.m_axi(0))
-    uart.attach(pbus_crossbar.io.m_axi(1))
+    gpio.io.s_axi <> pbus_crossbar.io.m_axi(0)
+    uart.io.s_axi <> pbus_crossbar.io.m_axi(1)
 
     spi.io.ext_spi_clk := clock
-    spi.io.s_axi.aw.bits.addr := 0x00000000.U
-    spi.io.s_axi.aw.valid := false.B
-    spi.io.s_axi.w.bits.data := 0x00000000.U
-    spi.io.s_axi.w.bits.strb := 0x00000000.U
-    spi.io.s_axi.w.valid := false.B
-    spi.io.s_axi.b.ready := false.B
-    spi.io.s_axi.ar.bits.addr := 0x00000000.U
-    spi.io.s_axi.ar.valid := false.B
-    spi.io.s_axi.r.ready := false.B
-    
-    spi.io.s_axi4 := DontCare
 
-    // make sure the write port is not used
-    spi.io.s_axi4.aw.bits.addr := 0x00000000.U
+    // tie off control ports    
+    spi.io.s_axi := DontCare
+    
+    spi.io.s_axi4 <> tile.io.sbus
+
+    // make sure the write port is disabled
     spi.io.s_axi4.aw.valid := false.B
-    spi.io.s_axi4.w.bits.data := 0x00000000.U
-    spi.io.s_axi4.w.bits.strb := 0x00000000.U
-    spi.io.s_axi4.w.bits.last := false.B
     spi.io.s_axi4.w.valid := false.B
     spi.io.s_axi4.b.ready := false.B
 
-    tile.io.sbus := DontCare
-    spi.io.s_axi4.ar.bits.addr := tile.io.sbus.ar.bits.addr
-    spi.io.s_axi4.ar.valid := tile.io.sbus.ar.valid
-    tile.io.sbus.ar.ready := spi.io.s_axi4.ar.ready
-    tile.io.sbus.r.bits.data := spi.io.s_axi4.r.bits.data
-    tile.io.sbus.r.valid := spi.io.s_axi4.r.valid
-    tile.io.sbus.r.bits.last := 1.B
-    spi.io.s_axi4.r.ready := tile.io.sbus.r.ready
-
-    spi.io.s_axi4.ar.bits.size := 2.U.asTypeOf(spi.io.s_axi4.ar.bits.size)
-    spi.io.s_axi4.ar.bits.burst := 1.U.asTypeOf(spi.io.s_axi4.ar.bits.burst)
+    dontTouch(tile.io.sbus.ar.bits.burst)
 
 
     io.qspi_sck := spi.io.sck_o.asClock

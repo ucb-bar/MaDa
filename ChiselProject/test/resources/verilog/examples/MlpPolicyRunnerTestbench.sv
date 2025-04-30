@@ -3,7 +3,7 @@
 import SimUart::*;
 
 
-module MlpPolicyTestbench();
+module MlpPolicyRunnerTestbench();
   parameter CLOCK_FREQ = 100_000_000;
   parameter CLOCK_PERIOD = 1_000_000_000 / CLOCK_FREQ;
 
@@ -27,7 +27,7 @@ module MlpPolicyTestbench();
 
   
   SimSpiFlashModel #(
-    .PLUSARG("firmware.8.hex"),
+    .PLUSARG("firmware.flash.8.hex"),
     .READONLY(0),
     .CAPACITY_BYTES(1024)
   ) sim_spi (
@@ -44,7 +44,7 @@ module MlpPolicyTestbench();
 
   wire [7:0] tohost;
 
-  BiliArty100T dut(
+  MlpPolicyRunner dut(
     .io_CLK100MHZ(clock),
     .io_sw(4'b0),
     .io_btn(4'b0),
@@ -85,7 +85,7 @@ module MlpPolicyTestbench();
 
   initial begin
     reset = 1'b1;
-    repeat (10) @(posedge clock);
+    repeat (10) @(posedge clock); #0;
     reset = 1'b0;
     
     fork
@@ -97,7 +97,7 @@ module MlpPolicyTestbench();
         sim_uart.write(8'hca);
       end
       begin
-        repeat (TIMEOUT_CYCLES) @(posedge clock);
+        repeat (TIMEOUT_CYCLES) @(posedge clock); #0;
         $display("Timeout! called at %t.", $time);
         $finish;
       end

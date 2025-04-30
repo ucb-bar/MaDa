@@ -17,14 +17,6 @@ class Axi4LiteUartLite extends Module {
   blackbox.io.s_axi.connectFrom(io.s_axi)
   blackbox.io.rx := io.rx
   io.tx := blackbox.io.tx
-
-  def attach(axi: Axi4LiteBundle): Unit = {
-    io.s_axi <> axi
-  }
-
-  def attach(axi: Axi4Bundle): Unit = {
-    io.s_axi.connectFromAxi4(axi)
-  }
 }
 
 class Axi4LiteUartLiteBlackbox extends BlackBox {

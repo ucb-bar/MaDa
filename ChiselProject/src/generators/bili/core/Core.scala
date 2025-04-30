@@ -134,6 +134,8 @@ class Core(
   io.debug.x6 := regfile(6)
   io.debug.x7 := regfile(7)
   io.debug.x8 := regfile(8)
+
+  dontTouch(io.debug)
   
 
   when(ex_wb_en && (rd_addr =/= 0.U)) {

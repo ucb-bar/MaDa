@@ -21,14 +21,6 @@ class Axi4LiteGpio extends Module {
   blackbox.io.gpio_io_i := io.gpio_io_i
   io.gpio_io_o := blackbox.io.gpio_io_o
   io.gpio_io_t := blackbox.io.gpio_io_t
-
-  def attach(axi: Axi4LiteBundle): Unit = {
-    io.s_axi <> axi
-  }
-
-  def attach(axi: Axi4Bundle): Unit = {
-    io.s_axi.connectFromAxi4(axi)
-  }
 }
 
 class Axi4LiteGpioBlackbox extends BlackBox {

@@ -2,20 +2,16 @@
 #include <stddef.h>
 #include <stdio.h>
 
-
 #include "metal.h"
 #include "riscv.h"
-#include "uart.h"
-#include "gpio.h"
 
-#include "nn.h"
-#include "model.h"
+#include "uart.h"
 
 
 #define SCRATCH_BASE          0x08000000
 #define GPIOA_BASE            0x10010000
 #define UART0_BASE            0x10020000
-#define SPI_MEM_BASE          0x20000000
+#define FLASH_BASE            0x20000000
 
 
 #define GPIOA                           ((XilinxGpio *) GPIOA_BASE)
@@ -39,6 +35,58 @@
 
 #define DELAY_CYCLES 2000000
 // #define DELAY_CYCLES 2
+
+
+
+
+// http://elm-chan.org/junk/32bit/binclude.html
+#if defined(__APPLE__)
+  #define INCLUDE_FILE(section, filename, symbol) asm (\
+    ".align 4\n"                             /* Word alignment */\
+    ".globl _"#symbol"_start\n"              /* Export the object start address */\
+    ".globl _"#symbol"_data\n"               /* Export the object address */\
+    "_"#symbol"_start:\n"                    /* Define the object start address label */\
+    "_"#symbol"_data:\n"                     /* Define the object label */\
+    ".incbin \""filename"\"\n"               /* Import the file */\
+    ".globl _"#symbol"_end\n"                /* Export the object end address */\
+    "_"#symbol"_end:\n"                      /* Define the object end address label */\
+    ".align 4\n")                            /* Word alignment */
+#elif defined(ARDUINO)
+  #define INCBIN_PREFIX 
+  #define INCBIN_STYLE INCBIN_STYLE_SNAKE
+  #include "incbin.h"
+  #define INCLUDE_FILE(section, filename, symbol) INCBIN(symbol, filename)
+#else
+  #define INCLUDE_FILE(section, filename, symbol) asm (\
+    ".section "#section"\n"                   /* Change section */\
+    ".balign 4\n"                             /* Word alignment */\
+    ".global "#symbol"_start\n"               /* Export the object start address */\
+    ".global "#symbol"_data\n"                /* Export the object address */\
+    #symbol"_start:\n"                        /* Define the object start address label */\
+    #symbol"_data:\n"                         /* Define the object label */\
+    ".incbin \""filename"\"\n"                /* Import the file */\
+    ".global "#symbol"_end\n"                 /* Export the object end address */\
+    #symbol"_end:\n"                          /* Define the object end address label */\
+    ".balign 4\n"                             /* Word alignment */\
+    ".section \".text\"\n")                   /* Restore section */
+#endif
+
+
+
+// load the weight data block from the model.bin file
+INCLUDE_FILE(".rodata", "./weights.bin", weights);
+extern uint32_t weights_data[];
+extern size_t weights_start[];
+extern size_t weights_end[];
+
+
+static uint32_t zero[1] __attribute__((aligned(16))) = {0, 0, 0, 0};
+static uint32_t y_data[4] __attribute__((aligned(16))) = {0, 0, 0, 0};
+static uint32_t w_data[4] __attribute__((aligned(16))) = {0, 0, 0, 0};
+static uint32_t b_data[4] __attribute__((aligned(16))) = {0, 0, 0, 0};
+static uint32_t x_data[4] __attribute__((aligned(16))) = {0, 0, 0, 0};
+
+
 
 
 // === function declarations === //
@@ -172,96 +220,89 @@ typedef union {
   uint32_t u32;
 } vec_t;
 
-// load the weight data block from the model.bin file
-INCLUDE_FILE(".rodata", "./weights.bin", weights);
-extern uint8_t weights_data[];
-extern size_t weights_start[];
-extern size_t weights_end[];
-
-
-Model model;
-
-
-Tensor2D_F32 w = {
-  .shape = { 4, 3 },
-  .data = (uint32_t *)weights_data,
-};
-Tensor1D_F32 b = {
-  .shape = { 4 },
-  .data = (uint32_t *)b_data,
-};
-Tensor1D_F32 x = {
-  .shape = { 3 },
-  .data = (uint32_t *)x_data,
-};
-Tensor1D_F32 y = {
-  .shape = { 4 },
-  .data = (uint32_t *)y_data,
-};
 
 const size_t SIMD_LEN = 2;
 
 
-void linear(Tensor1D_F32 *y, const Tensor1D_F32 *x, const Tensor2D_F32 *w, const Tensor1D_F32 *b) {
-  // vy = vw * vx (broadcast x) + vb
-  const size_t batch_size = 1;
+void vec_add(uint32_t *y, const uint32_t *x, const uint32_t *b) {
+  // load x
+  WRITE_CSR(CSR_SYSCALL3, 2);
+  asm volatile("vle32.v v0, (%0)" : : "r"(x) : "v0");
 
-  uint32_t out_features = w->shape[0];
-  uint32_t in_features = w->shape[1];
+  // load b
+  WRITE_CSR(CSR_SYSCALL3, 3);
+  asm volatile("vle32.v v1, (%0)" : : "r"(b) : "v1");
 
-  size_t tile_size = 2;
+  // y = x + b
+  WRITE_CSR(CSR_SYSCALL3, 4);
+  asm volatile("vfadd.vv v2, v0, v1");
 
-  uint32_t *y_data = y->data;
-  uint32_t *x_data = x->data;
-  uint32_t *w_data = w->data;
-  uint32_t *b_data = b->data;
-
-  uint32_t *w_ptr;
-  uint32_t *x_ptr;
-
-
-  // tiling, when out_features is greater than SIMD length
-  for (size_t tile = 0; tile < 4; tile += tile_size) {
-    w_ptr = w_data;
-    x_ptr = x_data;
-
-    // broadcast zero
-    asm volatile("vlse32.v v0, (%0), zero" : : "r"(zero) : "v0");
-
-    // loop over x and column vector of w    
-    for (size_t i = 0; i < in_features; i += 1) {
-      // broadcast x
-      asm volatile("vlse32.v v1, (%0), zero" : : "r"(x_ptr) : "v1");
-
-      // load w column
-      asm volatile("vle32.v v2, (%0)" : : "r"(w_ptr) : "v2");
-
-      // y += w.T * x
-      asm volatile("vfmacc.vv v0, v1, v2");
-
-      // increment pointers
-      x_ptr += 1;
-      w_ptr += out_features;
-    }
-
-    // load b
-    asm volatile("vle32.v v3, (%0)" : : "r"(b_data) : "v3");
-    
-    // y += b
-    asm volatile("vfadd.vv v0, v0, v3");
-
-    // // relu
-    // asm volatile("vmax.vv v0, v0, zero");
-
-    // store y
-    asm volatile("vse32.v v0, (%0)" : : "r"(y_data) : "memory");
-
-    // increment pointers
-    y_data += tile_size;
-    w_data += tile_size;
-    b_data += tile_size;
-  }
+  // store y
+  WRITE_CSR(CSR_SYSCALL3, 5);
+  asm volatile("vse32.v v2, (%0)" : : "r"(y) : "memory");
 }
+
+
+// void linear(Tensor1D_F32 *y, const Tensor1D_F32 *x, const Tensor2D_F32 *w, const Tensor1D_F32 *b) {
+//   // vy = vw * vx (broadcast x) + vb
+//   const size_t batch_size = 1;
+
+//   uint32_t out_features = w->shape[0];
+//   uint32_t in_features = w->shape[1];
+
+//   size_t tile_size = 2;
+
+//   uint32_t *y_data = y->data;
+//   uint32_t *x_data = x->data;
+//   uint32_t *w_data = w->data;
+//   uint32_t *b_data = b->data;
+
+//   uint32_t *w_ptr;
+//   uint32_t *x_ptr;
+
+
+//   // tiling, when out_features is greater than SIMD length
+//   for (size_t tile = 0; tile < 4; tile += tile_size) {
+//     w_ptr = w_data;
+//     x_ptr = x_data;
+
+//     // broadcast zero
+//     asm volatile("vlse32.v v0, (%0), zero" : : "r"(zero) : "v0");
+
+//     // loop over x and column vector of w    
+//     for (size_t i = 0; i < in_features; i += 1) {
+//       // broadcast x
+//       asm volatile("vlse32.v v1, (%0), zero" : : "r"(x_ptr) : "v1");
+
+//       // load w column
+//       asm volatile("vle32.v v2, (%0)" : : "r"(w_ptr) : "v2");
+
+//       // y += w.T * x
+//       asm volatile("vfmacc.vv v0, v1, v2");
+
+//       // increment pointers
+//       x_ptr += 1;
+//       w_ptr += out_features;
+//     }
+
+//     // load b
+//     asm volatile("vle32.v v3, (%0)" : : "r"(b_data) : "v3");
+    
+//     // y += b
+//     asm volatile("vfadd.vv v0, v0, v3");
+
+//     // // relu
+//     // asm volatile("vmax.vv v0, v0, zero");
+
+//     // store y
+//     asm volatile("vse32.v v0, (%0)" : : "r"(y_data) : "memory");
+
+//     // increment pointers
+//     y_data += tile_size;
+//     w_data += tile_size;
+//     b_data += tile_size;
+//   }
+// }
 
 static inline void write_data(uint32_t *ptr, float data) {
   vec_t val;
@@ -270,114 +311,34 @@ static inline void write_data(uint32_t *ptr, float data) {
 }
 
 
-// Tensor1D_F32 b = {
-//   .shape = { 4 },
-//   .data = (uint32_t *)b,
-// };
-
 int main(void) {
-  vec_t val;
-
-
-  WRITE_CSR(CSR_SYSCALL2, 1);
-  zero[0] = 0;
-
-  write_data((uint32_t *)x.data, 0.11f);  // 3de147ae
-  write_data((uint32_t *)x.data + 1, 0.22f);  // 3e6147ae
-  write_data((uint32_t *)x.data + 2, 0.33f);  // 3ea8f5c3
+  // initialize x
+  write_data(x_data + 0, 0.01f);
+  write_data(x_data + 1, 0.02f);
+  write_data(x_data + 2, 0.03f);
   
-  // write_data((uint32_t *)w.data, 0.12f);  // 3ea8f5c3
-
-  // write_data((uint32_t *)w.data + 1, 0.34f);  // 3ee147ae
-  // write_data((uint32_t *)w.data + 2, 0.07f);  // 3ea8f5c3
-  // write_data((uint32_t *)w.data + 3, -0.11f);  // 3ee147ae
-  // write_data((uint32_t *)w.data + 4, 0.56f);  // 3ea8f5c3
-  // write_data((uint32_t *)w.data + 5, -0.78f);  // 3ee147ae
-  // write_data((uint32_t *)w.data + 6, 0.08f);  // 3ea8f5c3
-  // write_data((uint32_t *)w.data + 7, 0.22f);  // 3ee147ae
-  // write_data((uint32_t *)w.data + 8, 0.90f);  // 3ea8f5c3
-  // write_data((uint32_t *)w.data + 9, 1.12f);  // 3ee147ae
-  // write_data((uint32_t *)w.data + 10, 0.09f);  // 3ea8f5c3
-  // write_data((uint32_t *)w.data + 11, -0.33f);  // 3ee147ae
-
-  write_data((uint32_t *)b.data, -0.55f);  // 3f0ccccd
-  write_data((uint32_t *)b.data + 1, -0.66f);  // 3f28f5c3
-  write_data((uint32_t *)b.data + 2, -0.77f);  // 3ea8f5c3
-  write_data((uint32_t *)b.data + 3, -0.88f);  // 3ee147ae
-
-  WRITE_CSR(CSR_SYSCALL2, 2);
-  // linear(4, 3, y, x, w, b);
-
-  model_init(&model);
-
-
   print_char('x');
-  print_float(*((uint32_t *)x.data + 0));
-  print_float(*((uint32_t *)x.data + 1));
-  print_float(*((uint32_t *)x.data + 2));
+  print_float(*(x_data + 0));
+  print_float(*(x_data + 1));
+  print_float(*(x_data + 2));
+
 
   print_char('w');
-  print_float(*((uint32_t *)w.data + 0));
-  print_float(*((uint32_t *)w.data + 1));
-  print_float(*((uint32_t *)w.data + 2));
-  print_float(*((uint32_t *)w.data + 3));
+  print_float(*(weights_data + 0));
+  print_float(*(weights_data + 1));
+  print_float(*(weights_data + 2));
+  print_float(*(weights_data + 3));
+  
+  WRITE_CSR(CSR_SYSCALL3, 1);
+  vec_add(y_data, x_data, weights_data);
 
-  // model_forward(&model);
-  linear(&y, &x, &w, &b);
-
-  // load C into debug CSR
-  WRITE_CSR(CSR_SYSCALL2, y.data[0]);
-  WRITE_CSR(CSR_SYSCALL3, y.data[1]);
-  print_float(*((uint32_t *)y.data + 0));
-  print_float(*((uint32_t *)y.data + 1));
-  print_float(*((uint32_t *)y.data + 2));
-  print_float(*((uint32_t *)y.data + 3));
+  print_char('y');
+  print_float(*(y_data + 0));
+  print_float(*(y_data + 1));
+  print_float(*(y_data + 2));
+  print_float(*(y_data + 3));
 
   exit(0);
-
-
-  // // prints("start.\n");
-
-  // uint8_t counter = 0;
-
-  // model_init(&model);
-
-  // for (int i = 0; i < 8; i += 1) {
-  //   model.input_1.data[i] = 1.0;
-  // }
-
-  // model_forward(&model);
-
-
-  // prints("fi in!\n");
-
-  // while (1) {
-
-  //   // volatile uint32_t data = *((uint32_t *)SPI_MEM_BASE);
-    
-    
-
-
-  //   counter += 1;
   
-  //   GPIOA->OUTPUT = counter & 0b1111;
-
-  //   // for (size_t i=0; i<DELAY_CYCLES; i+=1) {
-  //   //   asm volatile("nop");
-  //   // }
-
-  //   // load C into tohost CSR
-  //   // WRITE_CSR("0x51E", y[0]);
-  //   // WRITE_CSR("0x51F", y[1]);
-
-  //   prints("finish loop.\n");
-
-
-  //   // wait FIFO to be empty
-  //   while (!READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_EMPTY_MSK)) {
-  //     asm volatile("nop");
-  //   }
-    
-  //   // exit(1);
-  // }
+  exit(0);
 }

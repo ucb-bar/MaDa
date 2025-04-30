@@ -182,9 +182,7 @@ class Axi4LiteBundle(params: Axi4Params = Axi4Params()) extends Bundle {
 
     // AXI4 to AXI4-Lite does not support bursts
     assert(axi4.ar.bits.len === 0.U(Axi4Constants.LEN_WIDTH.W))
-    assert(axi4.ar.bits.burst === AxBurst.FIXED)
     assert(axi4.aw.bits.len === 0.U(Axi4Constants.LEN_WIDTH.W))
-    assert(axi4.aw.bits.burst === AxBurst.FIXED)
 
     val reg_aw_id = RegInit(0.U(params.idWidth.W))
     val reg_ar_id = RegInit(0.U(params.idWidth.W))
