@@ -42,4 +42,15 @@ typedef struct {
 #define UART_CTRL_ENABLE_INTR_POS       0x4
 #define UART_CTRL_ENABLE_INTR_MSK       (0x1 << UART_CTRL_ENABLE_INTR_POS)
 
+
+void uart_write(XilinxUart *uart, uint32_t data) {
+  while (READ_BITS(uart->STAT, UART_STAT_TX_FIFO_FULL_MSK)) {
+    asm volatile("nop");
+  }
+  uart->TXFIFO = READ_BITS(data, 0xFF);
+}
+
+
+
+
 #endif  // __UART_H

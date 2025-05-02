@@ -117,6 +117,7 @@ set_property -dict [list \\
   CONFIG.C_USE_STARTUP {0} \\
   CONFIG.C_XIP_MODE {1} \\
   CONFIG.C_XIP_PERF_MODE {0} \\
+  CONFIG.C_USE_STARTUP {1} \\
 ] [get_ips ${ip_name}]
 """)
 

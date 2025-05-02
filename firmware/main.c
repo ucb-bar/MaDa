@@ -4,8 +4,8 @@
 
 #include "metal.h"
 #include "riscv.h"
-
 #include "uart.h"
+#include "gpio.h"
 
 
 #define SCRATCH_BASE          0x08000000
@@ -17,19 +17,10 @@
 #define GPIOA                           ((XilinxGpio *) GPIOA_BASE)
 #define UART0                           ((XilinxUart *) UART0_BASE)
 
+#include "glossy.h"
 
-#define CSR_SYSCALL0                 "0x8C0"
-#define CSR_SYSCALL1                 "0x8C1"
-#define CSR_SYSCALL2                 "0x8C2"
-#define CSR_SYSCALL3                 "0x8C3"
-#define CSR_SYSRESP0                 "0xCC0"
-#define CSR_SYSRESP1                 "0xCC1"
-#define CSR_SYSRESP2                 "0xCC2"
-#define CSR_SYSRESP3                 "0xCC3"
 
-#define SYSCALL_EXIT                0x01
-#define SYSCALL_PRINT_CHAR          0x03
-#define SYSCALL_PRINT_F32           0x04
+
 
 
 
@@ -88,42 +79,9 @@ static uint32_t x_data[4] __attribute__((aligned(16))) = {0, 0, 0, 0};
 
 
 
-
 // === function declarations === //
 int main();
 
-
-// === system functions === //
-int putchar(int c) {
-  while (READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_FULL_MSK)) {
-    asm volatile("nop");
-  }
-  UART0->TXFIFO = READ_BITS(c, 0xFF);
-}
-
-void prints(const char *str) {
-  while (*str) {
-    putchar(*str);
-    str += 1;
-  }
-}
-
-void exit(int code) {
-  WRITE_CSR(CSR_SYSCALL1, code);
-  WRITE_CSR(CSR_SYSCALL0, SYSCALL_EXIT);
-}
-
-void print_char(char c) {
-  WRITE_CSR(CSR_SYSCALL1, c);
-  WRITE_CSR(CSR_SYSCALL0, SYSCALL_PRINT_CHAR);
-  WRITE_CSR(CSR_SYSCALL0, 0);
-}
-
-void print_float(uint32_t f) {
-  WRITE_CSR(CSR_SYSCALL1, f);
-  WRITE_CSR(CSR_SYSCALL0, SYSCALL_PRINT_F32);
-  WRITE_CSR(CSR_SYSCALL0, 0);
-}
 
 
 // === startup code === //
@@ -220,6 +178,12 @@ typedef union {
   uint32_t u32;
 } vec_t;
 
+static inline void write_f32(uint32_t *ptr, float data) {
+  vec_t val;
+  val.f32 = data;
+  ptr[0] = val.u32;
+}
+
 
 const size_t SIMD_LEN = 2;
 
@@ -304,41 +268,46 @@ void vec_add(uint32_t *y, const uint32_t *x, const uint32_t *b) {
 //   }
 // }
 
-static inline void write_data(uint32_t *ptr, float data) {
-  vec_t val;
-  val.f32 = data;
-  ptr[0] = val.u32;
-}
-
 
 int main(void) {
-  // initialize x
-  write_data(x_data + 0, 0.01f);
-  write_data(x_data + 1, 0.02f);
-  write_data(x_data + 2, 0.03f);
-  
-  print_char('x');
-  print_float(*(x_data + 0));
-  print_float(*(x_data + 1));
-  print_float(*(x_data + 2));
+  uint8_t counter = 3;
+
+  while (1) {
+    GPIOA->OUTPUT = counter & 0b1111;
+
+    // initialize x
+    write_f32(x_data + 0, 0.01f);
+    write_f32(x_data + 1, 0.02f);
+    write_f32(x_data + 2, 0.03f);
+    
+    putchar('x');
+    putfloat(*(x_data + 0));
+    putfloat(*(x_data + 1));
+    putfloat(*(x_data + 2));
 
 
-  print_char('w');
-  print_float(*(weights_data + 0));
-  print_float(*(weights_data + 1));
-  print_float(*(weights_data + 2));
-  print_float(*(weights_data + 3));
-  
-  WRITE_CSR(CSR_SYSCALL3, 1);
-  vec_add(y_data, x_data, weights_data);
+    putchar('w');
+    putfloat(*(weights_data + 0));
+    putfloat(*(weights_data + 1));
+    putfloat(*(weights_data + 2));
+    putfloat(*(weights_data + 3));
+    
+    WRITE_CSR(CSR_SYSCALL3, 1);
+    vec_add(y_data, x_data, weights_data);
 
-  print_char('y');
-  print_float(*(y_data + 0));
-  print_float(*(y_data + 1));
-  print_float(*(y_data + 2));
-  print_float(*(y_data + 3));
+    putchar('y');
+    putfloat(*(y_data + 0));
+    putfloat(*(y_data + 1));
+    putfloat(*(y_data + 2));
+    putfloat(*(y_data + 3));
 
-  exit(0);
+    fflush(0);
+
+
+    counter += 1;
+
+    sleep(DELAY_CYCLES);
+  }
   
   exit(0);
 }

@@ -6,7 +6,9 @@ ENTRY(_start)
 
 MEMORY {
   SRAM     (rwx): ORIGIN = 0x08000000, LENGTH = 128K
-  FLASH    (rx):  ORIGIN = 0x20000000, LENGTH = 128K
+  
+  /* the lower 4MB of flash is reserved for the FPGA bitstream */
+  FLASH    (rx):  ORIGIN = 0x20400000, LENGTH = 32M - 4M
 }
 
 SECTIONS {
