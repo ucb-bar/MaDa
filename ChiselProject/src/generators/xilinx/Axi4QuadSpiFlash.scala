@@ -3,7 +3,7 @@ import chisel3.util._
 
 import java.io.PrintWriter
 
-class Axi4QuadSpi extends Module {
+class Axi4QuadSpiFlash extends Module {
   val io = IO(new Bundle {
     val ext_spi_clk = Input(Clock())
     val s_axi = Flipped(new Axi4LiteBundle())
@@ -14,16 +14,22 @@ class Axi4QuadSpi extends Module {
     val io1_i = Input(Bool())
     val io1_o = Output(Bool())
     val io1_t = Output(Bool())
-    val sck_i = Input(Bool())
-    val sck_o = Output(Bool())
-    val sck_t = Output(Bool())
+    val io2_i = Input(Bool())
+    val io2_o = Output(Bool())
+    val io2_t = Output(Bool())
+    val io3_i = Input(Bool())
+    val io3_o = Output(Bool())
+    val io3_t = Output(Bool())
+    // val sck_i = Input(Bool())
+    // val sck_o = Output(Bool())
+    // val sck_t = Output(Bool())
     val ss_i = Input(Bool())
     val ss_o = Output(Bool())
     val ss_t = Output(Bool())
     val ip2intc_irpt = Output(Bool())
   })
 
-  val blackbox = Module(new Axi4QuadSpiBlackbox())
+  val blackbox = Module(new Axi4QuadSpiFlashBlackbox())
 
   blackbox.io.ext_spi_clk := io.ext_spi_clk
   blackbox.io.s_axi_aclk := clock
@@ -55,9 +61,15 @@ class Axi4QuadSpi extends Module {
   blackbox.io.io1_i := io.io1_i
   io.io1_o := blackbox.io.io1_o
   io.io1_t := blackbox.io.io1_t
-  blackbox.io.sck_i := io.sck_i
-  io.sck_o := blackbox.io.sck_o
-  io.sck_t := blackbox.io.sck_t
+  blackbox.io.io2_i := io.io2_i
+  io.io2_o := blackbox.io.io2_o
+  io.io2_t := blackbox.io.io2_t
+  blackbox.io.io3_i := io.io3_i
+  io.io3_o := blackbox.io.io3_o
+  io.io3_t := blackbox.io.io3_t 
+  // blackbox.io.sck_i := io.sck_i
+  // io.sck_o := blackbox.io.sck_o
+  // io.sck_t := blackbox.io.sck_t
   blackbox.io.ss_i := io.ss_i
   io.ss_o := blackbox.io.ss_o
   io.ss_t := blackbox.io.ss_t
@@ -72,7 +84,7 @@ class Axi4QuadSpi extends Module {
   }
 }
 
-class Axi4QuadSpiBlackbox extends BlackBox {
+class Axi4QuadSpiFlashBlackbox extends BlackBox {
   val io = IO(new Bundle {
     val ext_spi_clk = Input(Clock())
     val s_axi_aclk = Input(Clock())
@@ -93,9 +105,15 @@ class Axi4QuadSpiBlackbox extends BlackBox {
     val io1_i = Input(Bool())
     val io1_o = Output(Bool())
     val io1_t = Output(Bool())
-    val sck_i = Input(Bool())
-    val sck_o = Output(Bool())
-    val sck_t = Output(Bool())
+    val io2_i = Input(Bool())
+    val io2_o = Output(Bool())
+    val io2_t = Output(Bool())
+    val io3_i = Input(Bool())
+    val io3_o = Output(Bool())
+    val io3_t = Output(Bool())
+    // val sck_i = Input(Bool())
+    // val sck_o = Output(Bool())
+    // val sck_t = Output(Bool())
     val ss_i = Input(Bool())
     val ss_o = Output(Bool())
     val ss_t = Output(Bool())
@@ -104,20 +122,24 @@ class Axi4QuadSpiBlackbox extends BlackBox {
 
   def generate_tcl_script(): Unit = {
     val vivado_project_dir = "out/VivadoProject"
-    val ip_name = "Axi4QuadSpiBlackbox"
+    val ip_name = "Axi4QuadSpiFlashBlackbox"
     val ip_name_lower = ip_name.toLowerCase()
 
     val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
     
     tcl_script.println(s"create_ip -name axi_quad_spi -vendor xilinx.com -library ip -version 3.2 -module_name ${ip_name}")
 
+    // the Flash memory used on the Arty is Spansion S25FL128S
+    // it has 8 dummy cycles for single-mode read commands
+    // and 6 dummy cycles for quad-mode read commands
     tcl_script.println(s"""
 set_property -dict [list \\
-  CONFIG.C_SPI_MEMORY {2} \\
+  CONFIG.C_SPI_MEMORY {3} \\
   CONFIG.C_USE_STARTUP {0} \\
   CONFIG.C_XIP_MODE {1} \\
   CONFIG.C_XIP_PERF_MODE {0} \\
   CONFIG.C_USE_STARTUP {1} \\
+  CONFIG.C_SPI_MODE {2} \\
 ] [get_ips ${ip_name}]
 """)
 

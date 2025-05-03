@@ -1,7 +1,8 @@
 module SimSpiFlashModel #(
   parameter string PLUSARG,
   parameter bit READONLY,
-  parameter longint CAPACITY_BYTES
+  parameter longint CAPACITY_BYTES,
+  parameter int DUMMY_CYCLES = 8
 ) (
   input sck,
   input cs_0,
@@ -22,7 +23,8 @@ module SimSpiFlashModel #(
   wire [$clog2(CAPACITY_BYTES)-1:0] mem_req_addr;
 
   SpiFlashMemCtrl #(
-    .ADDR_BITS($clog2(CAPACITY_BYTES))
+    .ADDR_BITS($clog2(CAPACITY_BYTES)),
+    .DUMMY_CYCLES(DUMMY_CYCLES)
   ) ctrl (
     .sck(sck),
     .cs(cs_0),

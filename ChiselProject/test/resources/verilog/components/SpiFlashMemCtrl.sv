@@ -13,7 +13,12 @@
 `endif
 
 module SpiFlashMemCtrl #(
-  parameter int ADDR_BITS
+  parameter int ADDR_BITS,
+  
+  // Often the number of dummy cycles depends on the instruction, but here
+  // we'll make it all uniform. DUMMY_CYCLES is the number of cycles between
+  // the last address bit and the start of read data transfer.
+  parameter int DUMMY_CYCLES = 8
 ) (
   input sck,
   input cs,
@@ -54,11 +59,6 @@ module SpiFlashMemCtrl #(
   localparam CMD_QUAD_AD_WRITE4 = 8'h3E;
   // No register reads are supported by this model yet
 
-  // SPI flash behavior settings
-  // Often the number of dummy cycles depends on the instruction, but here
-  // we'll make it all uniform. DUMMY_CYCLES is the number of cycles between
-  // the last address bit and the start of read data transfer.
-  localparam DUMMY_CYCLES = 8;
 
   // State
   reg [3:0] state;

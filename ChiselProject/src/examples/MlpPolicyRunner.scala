@@ -68,7 +68,8 @@ class MlpPolicyRunner extends RawModule {
       ),
     ))
 
-    val spi = Module(new Axi4QuadSpi())
+    val spi = Module(new Axi4QuadSpiFlash())
+    // val spi = Module(new Axi4SpiFlash())
     val gpio = Module(new Axi4LiteGpio())
     val uart = Module(new Axi4LiteUartLite())
 
@@ -92,9 +93,9 @@ class MlpPolicyRunner extends RawModule {
     dontTouch(tile.io.sbus.ar.bits.burst)
 
 
-    io.qspi_sck := spi.io.sck_o.asClock
+    // io.qspi_sck := spi.io.sck_o.asClock
     io.qspi_cs := spi.io.ss_o
-    spi.io.sck_i := 0.B
+    // spi.io.sck_i := 0.B
     spi.io.ss_i := 0.B
 
     val qspi_io0_buf = Module(new IOBUF())
@@ -108,6 +109,18 @@ class MlpPolicyRunner extends RawModule {
     qspi_io1_buf.io.IO <> io.qspi_dq(1)
     qspi_io1_buf.io.I := spi.io.io1_o
     qspi_io1_buf.io.T := spi.io.io1_t
+
+    val qspi_io2_buf = Module(new IOBUF())
+    spi.io.io2_i := qspi_io2_buf.io.O
+    qspi_io2_buf.io.IO <> io.qspi_dq(2)
+    qspi_io2_buf.io.I := spi.io.io2_o
+    qspi_io2_buf.io.T := spi.io.io2_t
+
+    val qspi_io3_buf = Module(new IOBUF())
+    spi.io.io3_i := qspi_io3_buf.io.O
+    qspi_io3_buf.io.IO <> io.qspi_dq(3)
+    qspi_io3_buf.io.I := spi.io.io3_o
+    qspi_io3_buf.io.T := spi.io.io3_t
 
     
 

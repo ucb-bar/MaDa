@@ -210,8 +210,10 @@ create_clock -add -name qspi_sck_pin -period 20.00 -waveform {0 10} [get_ports {
 set_property -dict { PACKAGE_PIN L13   IOSTANDARD LVCMOS33 } [get_ports { io_qspi_cs }]; #IO_L6P_T0_FCS_B_14 Sch=qspi_cs
 set_property -dict { PACKAGE_PIN K17   IOSTANDARD LVCMOS33 } [get_ports { io_qspi_dq_0 }]; #IO_L1P_T0_D00_MOSI_14 Sch=qspi_dq[0]
 set_property -dict { PACKAGE_PIN K18   IOSTANDARD LVCMOS33 } [get_ports { io_qspi_dq_1 }]; #IO_L1N_T0_D01_DIN_14 Sch=qspi_dq[1]
-# set_property -dict { PACKAGE_PIN L14   IOSTANDARD LVCMOS33 } [get_ports { io_qspi_dq_2 }]; #IO_L2P_T0_D02_14 Sch=qspi_dq[2]
-# set_property -dict { PACKAGE_PIN M14   IOSTANDARD LVCMOS33 } [get_ports { io_qspi_dq_3 }]; #IO_L2N_T0_D03_14 Sch=qspi_dq[3]
+set_property -dict { PACKAGE_PIN L14   IOSTANDARD LVCMOS33 } [get_ports { io_qspi_dq_2 }]; #IO_L2P_T0_D02_14 Sch=qspi_dq[2]
+set_property -dict { PACKAGE_PIN M14   IOSTANDARD LVCMOS33 } [get_ports { io_qspi_dq_3 }]; #IO_L2N_T0_D03_14 Sch=qspi_dq[3]
+
+set_property -dict { BITSTREAM.CONFIG.SPI_BUSWIDTH {4} } [current_design]
 
 ## Power Measurements 
 #set_property -dict { PACKAGE_PIN B17   IOSTANDARD LVCMOS33     } [get_ports { vsnsvu_n }]; #IO_L7N_T1_AD2N_15 Sch=ad_n[2]
