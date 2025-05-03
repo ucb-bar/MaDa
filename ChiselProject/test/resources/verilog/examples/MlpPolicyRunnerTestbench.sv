@@ -164,18 +164,17 @@ module MlpPolicyRunnerTestbench();
 
           // handle syscall
           if (tohost == 8'h01) begin  // exit()
-            $display("FASVR: exit() called from DUT at %t.", $time);
+            $write("FASVR: exit() called from DUT at %t.", $time);
             $display("FASVR: error code: %d", dut.tile.core.io_debug_syscall1);
             $finish;
           end 
           if (tohost == 8'h03) begin  // print char
-            $display("FASVR: print: %c (0x%x)",
-              dut.tile.core.io_debug_syscall1,
+            $write("%c",
               dut.tile.core.io_debug_syscall1
             );
           end
           if (tohost == 8'h04) begin  // print float
-            $display("FASVR: print: %.4f (0x%x)",
+            $write("%.4f (0x%x) ",
               $bitstoshortreal(dut.tile.core.io_debug_syscall1),
               dut.tile.core.io_debug_syscall1
             );

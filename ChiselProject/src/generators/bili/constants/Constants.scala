@@ -104,10 +104,11 @@ object ScalarControlConstants {
 object SimdControlConstants {
   val SIMD_X    = 0.asUInt(3.W)
   val SIMD_ADD  = 1.asUInt(3.W)
-  val SIMD_MIN  = 2.asUInt(3.W)
-  val SIMD_MAX  = 3.asUInt(3.W)
-  val SIMD_MUL  = 4.asUInt(3.W)
-  val SIMD_MACC = 5.asUInt(3.W)
+  val SIMD_XOR  = 2.asUInt(3.W)
+  val SIMD_MIN  = 3.asUInt(3.W)
+  val SIMD_MAX  = 4.asUInt(3.W)
+  val SIMD_MUL  = 5.asUInt(3.W)
+  val SIMD_MACC = 6.asUInt(3.W)
 
   val STRIDE_X    = 0.asUInt(1.W)
   val STRIDE_UNIT = 0.asUInt(1.W)

@@ -23,12 +23,15 @@ class SimdFloatingPoint(
   val one = 0x3F800000.U(32.W)
   val zero = 0x00000000.U(32.W)
 
+  val op2_positive = io.op2.map(x => x(31) === 0.U)
+
+  dontTouch(op2_positive(0))
+  dontTouch(op2_positive(1))
+
   for (i <- 0 until nVectors) {   
     fmacc(i).io.a.valid := true.B
     fmacc(i).io.b.valid := true.B
     fmacc(i).io.c.valid := true.B
-  
-    
 
     when(io.func === SIMD_ADD) {
       fmacc(i).io.a.bits := io.op1(i)
@@ -51,7 +54,10 @@ class SimdFloatingPoint(
       fmacc(i).io.c.bits := zero
     }
 
-    io.out(i) := fmacc(i).io.result.bits
+    io.out(i) := MuxCase(fmacc(i).io.result.bits, Seq(
+      (io.func === SIMD_XOR) -> zero,
+      (io.func === SIMD_MAX) -> Mux(op2_positive(i), io.op2(i), zero),
+    ))
   }
 
 }

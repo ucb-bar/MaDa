@@ -125,13 +125,14 @@ class InstructionDecode extends Module {
 
       VADD_VV   -> List( T , OP1_RS1 , OP2_RS2 , SIMD_ADD  , M_X  , STRIDE_X , WB_ALU , T  ),
       VADD_VF   -> List( T , OP1_RS1 , OP2_RS2 , SIMD_ADD  , M_X  , STRIDE_X , WB_ALU , T  ),
+      VXOR_VV   -> List( T , OP1_RS1 , OP2_RS2 , SIMD_XOR  , M_X  , STRIDE_X , WB_ALU , T  ),
       VFMIN_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MIN  , M_X  , STRIDE_X , WB_ALU , T  ),
       VFMAX_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MAX  , M_X  , STRIDE_X , WB_ALU , T  ),
       VFMUL_VV  -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MUL  , M_X  , STRIDE_X , WB_ALU , T  ),
       VFMACC_VV -> List( T , OP1_RS1 , OP2_RS2 , SIMD_MACC , M_X  , STRIDE_X , WB_ALU , T  ),
       VLE32_V   -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_RD , STRIDE_X , WB_MEM , T  ),
       VLSE32_V  -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_RD , STRIDE_0 , WB_MEM , T  ),  // used as broadcast load
-      VSE32_V   -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_WR , STRIDE_X , WB_MEM , T  ),
+      VSE32_V   -> List( T , OP1_X   , OP2_X   , SIMD_X    , M_WR , STRIDE_X , WB_MEM , F  ),
     )
   )
 
