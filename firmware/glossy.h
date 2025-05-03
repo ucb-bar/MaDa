@@ -22,6 +22,9 @@
 void exit(int code) {
   WRITE_CSR(CSR_SYSCALL1, code);
   WRITE_CSR(CSR_SYSCALL0, SYSCALL_EXIT);
+  while (1) {
+    asm volatile("nop");
+  }
 }
 
 void putfloat(uint32_t f) {
@@ -29,11 +32,11 @@ void putfloat(uint32_t f) {
   WRITE_CSR(CSR_SYSCALL0, SYSCALL_PRINT_F32);
   WRITE_CSR(CSR_SYSCALL0, 0);
 
-  uart_write(UART0, SYSCALL_PRINT_F32);
-  uart_write(UART0, f >> 24);
-  uart_write(UART0, f >> 16);
-  uart_write(UART0, f >> 8);
-  uart_write(UART0, f);
+  // uart_write(UART0, SYSCALL_PRINT_F32);
+  // uart_write(UART0, f >> 24);
+  // uart_write(UART0, f >> 16);
+  // uart_write(UART0, f >> 8);
+  // uart_write(UART0, f);
 }
 
 
@@ -43,8 +46,8 @@ int putchar(int c) {
   WRITE_CSR(CSR_SYSCALL0, SYSCALL_PRINT_CHAR);
   WRITE_CSR(CSR_SYSCALL0, 0);
 
-  uart_write(UART0, SYSCALL_PRINT_CHAR);
-  uart_write(UART0, c);
+  // uart_write(UART0, SYSCALL_PRINT_CHAR);
+  // uart_write(UART0, c);
 }
 
 int fflush(FILE *fd) {

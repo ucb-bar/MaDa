@@ -150,6 +150,14 @@ set_property -dict [list \\
     tcl_script.println(s"export_ip_user_files -of_objects [get_ips ${ip_name}] -no_script -sync -force -quiet")
     tcl_script.println(s"create_ip_run [get_ips ${ip_name}]")
 
+    // HACK: add flash memory file to Vivado project
+      // Get current working directory
+      val file_path = System.getProperty("user.dir") + "/firmware/" + "firmware.flash.8.hex"
+      
+      // Use current directory to create paths
+      tcl_script.println(s"add_files -norecurse ${file_path}")
+      tcl_script.println(s"set_property file_type {Memory Initialization Files} [get_files ${file_path}]")
+
     tcl_script.close()
   }
   generate_tcl_script()

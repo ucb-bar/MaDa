@@ -9,17 +9,17 @@ Program Header:
 0x70000003 off    0x0000204f vaddr 0x00000000 paddr 0x00000000 align 2**0
          filesz 0x00000089 memsz 0x00000000 flags r--
     LOAD off    0x00001000 vaddr 0x08000000 paddr 0x08000000 align 2**12
-         filesz 0x000003c0 memsz 0x000003e0 flags rwx
+         filesz 0x0000046c memsz 0x000004a4 flags rwx
     LOAD off    0x00002000 vaddr 0x20400000 paddr 0x20400000 align 2**12
          filesz 0x00000034 memsz 0x00000034 flags r--
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         000003c0  08000000  08000000  00001000  2**2
+  0 .text         0000046c  08000000  08000000  00001000  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
   1 .rodata       00000034  20400000  20400000  00002000  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  2 .bss          00000020  080003c0  080003c0  000013c0  2**4
+  2 .bss          00000034  08000470  08000470  0000146c  2**4
                   ALLOC
   3 .comment      0000001b  00000000  00000000  00002034  2**0
                   CONTENTS, READONLY
@@ -28,25 +28,28 @@ Idx Name          Size      VMA       LMA       File off  Algn
 SYMBOL TABLE:
 08000000 l    d  .text	00000000 .text
 20400000 l    d  .rodata	00000000 .rodata
-080003c0 l    d  .bss	00000000 .bss
+08000470 l    d  .bss	00000000 .bss
 00000000 l    d  .comment	00000000 .comment
 00000000 l    d  .riscv.attributes	00000000 .riscv.attributes
 00000000 l    df *ABS*	00000000 main.c
-080003c0 l     O .bss	00000010 x_data
-080003d0 l     O .bss	00000010 y_data
-080001c0 g     F .text	00000044 putchar
-0800027c g     F .text	00000024 vec_add
-08000158 g     F .text	00000068 putfloat
+080004a0 l     O .bss	00000004 zero
+08000470 l     O .bss	00000010 x_tensor
+08000480 l     O .bss	00000010 b_tensor
+08000490 l     O .bss	00000010 y_tensor
+08000170 g     F .text	00000010 putchar
+08000160 g     F .text	00000010 putfloat
+20400000 g       .rodata	00000000 w_tensor_data
+08000288 g     F .text	00000064 nn_mini_linear
 08000128 g     F .text	00000028 uart_write
-08000264 g     F .text	00000018 sleep
-08000204 g     F .text	00000028 fflush
+080001e0 g     F .text	00000018 sleep
+08000180 g     F .text	00000028 fflush
 20400030 g     O .rodata	00000004 SIMD_LEN
-20400000 g       .rodata	00000000 weights_start
 08000000 g     F .text	00000128 _start
-0800022c g     F .text	00000038 prints
-080002a0 g     F .text	00000120 main
-20400030 g       .rodata	00000000 weights_end
-08000150 g     F .text	00000008 exit
-20400000 g       .rodata	00000000 weights_data
+080001a8 g     F .text	00000038 prints
+080002ec g     F .text	00000180 main
+080001f8 g     F .text	00000090 nn_mini_add
+20400000 g       .rodata	00000000 w_tensor_start
+08000150 g     F .text	00000010 exit
+20400030 g       .rodata	00000000 w_tensor_end
 
 
