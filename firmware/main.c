@@ -162,19 +162,19 @@ void nn_mini_add(size_t out_features, uint32_t *y, const uint32_t *a, const uint
   for (size_t tile = 0; tile < out_features; tile += tile_size) {
     // load a
     WRITE_CSR(CSR_SYSCALL3, 2);
-    asm volatile("vle32.v v0, (%0)" : : "r"(a_data) : "v0");
+    asm volatile("vle32.v v1, (%0)" : : "r"(a_data) : "v1");
 
     // load b
     WRITE_CSR(CSR_SYSCALL3, 3);
-    asm volatile("vle32.v v1, (%0)" : : "r"(b_data) : "v1");
+    asm volatile("vle32.v v2, (%0)" : : "r"(b_data) : "v2");
 
     // y = a + b
     WRITE_CSR(CSR_SYSCALL3, 4);
-    asm volatile("vfadd.vv v2, v0, v1");
+    asm volatile("vfadd.vv v0, v1, v2");
 
     // store y
     WRITE_CSR(CSR_SYSCALL3, 5);
-    asm volatile("vse32.v v2, (%0)" : : "r"(y_data) : "memory");
+    asm volatile("vse32.v v0, (%0)" : : "r"(y_data) : "memory");
 
     // increment pointers
     y_data += tile_size;
@@ -204,8 +204,17 @@ void nn_mini_linear(size_t out_features, size_t in_features, uint32_t *y, const 
     w_ptr = w_data;
     x_ptr = x_data;
 
-    // broadcast zero
-    asm volatile("vlse32.v v0, (%0), zero" : : "r"(zero) : "v0");
+    /* 
+    Register allocation plan:
+    v0 is used to store the final result. 
+      It is initialized with the b vector value
+      In each iteration, v0 is accumulated with the loop result
+    v1 is used to store the x vector.
+    v2 is used to store the w column vector.
+    */
+
+    // load b first to avoid extra add
+    asm volatile("vle32.v v0, (%0)" : : "r"(b_data) : "v0");
 
     // loop over x and column vector of w    
     for (size_t i = 0; i < in_features; i += 1) {
@@ -222,12 +231,6 @@ void nn_mini_linear(size_t out_features, size_t in_features, uint32_t *y, const 
       x_ptr += 1;
       w_ptr += out_features;
     }
-
-    // load b
-    asm volatile("vle32.v v3, (%0)" : : "r"(b_data) : "v3");
-    
-    // y += b
-    asm volatile("vfadd.vv v0, v0, v3");
 
     // // relu
     // asm volatile("vmax.vv v0, v0, zero");
