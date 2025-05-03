@@ -10,10 +10,10 @@
 
 /* ======== Axi4Lite Uart Lite ======== */
 typedef struct {
-  uint32_t RXFIFO;
-  uint32_t TXFIFO;
-  uint32_t STAT;
-  uint32_t CTRL;
+  volatile uint32_t RXFIFO;
+  volatile uint32_t TXFIFO;
+  volatile uint32_t STAT;
+  volatile uint32_t CTRL;
 } XilinxUart;
 
 

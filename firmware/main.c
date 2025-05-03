@@ -4,19 +4,34 @@
 
 #include "metal.h"
 #include "riscv.h"
+
+
+#define AXI_CLOCK_PERIOD      64  // 64 ns
+#define PWM_PERIOD      20000000  // 20 ms
+#define PWM_HIGH_TIME    1000000  // 1 ms
+
+#define PWM_PERIOD_COUNT  (PWM_PERIOD / AXI_CLOCK_PERIOD)
+#define PWM_HIGH_TIME_COUNT  (PWM_HIGH_TIME / AXI_CLOCK_PERIOD)
+
+
 #include "uart.h"
 #include "gpio.h"
+#include "timer.h"
+
 #include "nn_mini.h"
 
 
 #define SCRATCH_BASE          0x08000000
 #define GPIOA_BASE            0x10010000
 #define UART0_BASE            0x10020000
-#define FLASH_BASE            0x20000000
+#define QSPI_BASE             0x10030000
+#define TIM0_BASE             0x10040000
 
+#define FLASH_BASE            0x20000000
 
 #define GPIOA                           ((XilinxGpio *) GPIOA_BASE)
 #define UART0                           ((XilinxUart *) UART0_BASE)
+#define TIM0                            ((XilinxTimer *) TIM0_BASE)
 
 #include "glossy.h"
 
@@ -26,7 +41,7 @@
 #define VLEN   2
 
 
-#define DELAY_CYCLES 2000000
+#define DELAY_CYCLES 100000
 // #define DELAY_CYCLES 2
 
 
@@ -288,8 +303,18 @@ void nn_mini_linear(size_t out_features, size_t in_features, uint32_t *y, const 
 }
 
 
+
+uint32_t pwm_high = 1000000;
+
+
 int main(void) {
   uint8_t counter = 3;
+
+  // configure timer
+  timer_pwm_init(TIM0);
+  timer_pwm_set_period(TIM0, PWM_PERIOD_COUNT);
+  timer_pwm_set_high_time(TIM0, pwm_high / 64);
+  timer_pwm_enable(TIM0);
 
   const size_t in_features = 32;
 
@@ -444,8 +469,18 @@ int main(void) {
 
     fflush(0);
 
-    exit(0);
+    // exit(0);
 
+    timer_pwm_set_high_time(TIM0, pwm_high / 64);
+    timer_pwm_enable(TIM0);
+
+
+    if (counter >> 7) {
+      pwm_high = 2000000;
+    }
+    else {
+      pwm_high = 1000000;
+    }
 
     counter += 1;
 

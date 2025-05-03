@@ -12,6 +12,7 @@ import chisel3.util._
   * SBUS
   * 0x2000_0000 - 0x200F_FFFF: QSPI Memory (1 MB)
   * PBUS
+  * 0x1004_0000 - 0x1004_0FFF: TIMER
   * 0x1003_0000 - 0x1003_0FFF: QSPI Control
   * 0x1002_0000 - 0x1002_0FFF: UART
   * 0x1001_0000 - 0x1001_0FFF: GPIO
@@ -53,7 +54,7 @@ class MlpPolicyRunner extends RawModule {
 
     val pbus_crossbar = Module(new Axi4LiteCrossbar(
       numSlave=1,
-      numMaster=2,
+      numMaster=3,
       // params=Axi4Params(
       //   dataWidth=32,
       //   idWidth=4,
@@ -61,22 +62,36 @@ class MlpPolicyRunner extends RawModule {
       deviceSizes=Array(
         0x0000_0400,  // UART
         0x0000_0400,  // GPIO
+        0x0000_0400,  // TIMER
       ),
       deviceAddresses=Array(
         0x1001_0000,   // GPIO
         0x1002_0000,   // UART
+        0x1004_0000,   // TIMER
       ),
     ))
 
     val spi = Module(new Axi4QuadSpiFlash())
     // val spi = Module(new Axi4SpiFlash())
+
     val gpio = Module(new Axi4LiteGpio())
     val uart = Module(new Axi4LiteUartLite())
+    val timer = Module(new Axi4LiteTimer())
 
     pbus_crossbar.io.s_axi(0).connectFromAxi4(tile.io.pbus)
 
     gpio.io.s_axi <> pbus_crossbar.io.m_axi(0)
     uart.io.s_axi <> pbus_crossbar.io.m_axi(1)
+    timer.io.s_axi <> pbus_crossbar.io.m_axi(2)
+
+    timer.io.capturetrig0 := 0.B
+    timer.io.capturetrig1 := 0.B
+    timer.io.freeze := 0.B
+
+    io.ck_io(3) := timer.io.pwm0
+    io.ck_io(4) := timer.io.pwm0
+
+
 
     spi.io.ext_spi_clk := clock
 

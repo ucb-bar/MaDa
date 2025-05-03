@@ -11,15 +11,16 @@ try:
         if command == b"\x01":
             print("DUT request exit()")
         elif command == b"\x03":
-            print("DUT request putchar(): ", end="")
+            # print("DUT request putchar(): ", end="")
             data = ser.read(1)
-            print(data)
+            print(data.decode("utf-8"), end="")
         elif command == b"\x04":
-            print("DUT request putfloat(): ", end="")
+            # print("DUT request putfloat(): ", end="")
             data = ser.read(4)
             data_f32 = struct.unpack(">f", data)[0]
             data_u32 = struct.unpack(">I", data)[0]
-            print(f"{data_f32:.2f} (0x{data_u32:08X})")
+            print(f" {data_f32:.3f} ", end="")
+            # print(f"(0x{data_u32:08X}) ", end="")
             
 except KeyboardInterrupt:
     pass

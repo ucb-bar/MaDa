@@ -10,7 +10,7 @@
 
 /* ======== Axi4Lite Uart Lite ======== */
 typedef struct {
-  uint32_t OUTPUT;
+  volatile uint32_t OUTPUT;
 } XilinxGpio;
 
 

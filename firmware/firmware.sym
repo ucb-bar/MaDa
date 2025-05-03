@@ -9,45 +9,53 @@ Program Header:
 0x70000003 off    0x0000243b vaddr 0x00000000 paddr 0x00000000 align 2**0
          filesz 0x00000089 memsz 0x00000000 flags r--
     LOAD off    0x00001000 vaddr 0x08000000 paddr 0x08000000 align 2**12
-         filesz 0x000007f4 memsz 0x00000920 flags rwx
+         filesz 0x00000b54 memsz 0x00000b54 flags rwx
     LOAD off    0x00002000 vaddr 0x20400000 paddr 0x20400000 align 2**12
          filesz 0x00000420 memsz 0x00000420 flags r--
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         000007f4  08000000  08000000  00001000  2**2
+  0 .text         00000a24  08000000  08000000  00001000  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
   1 .rodata       00000420  20400000  20400000  00002000  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  2 .bss          00000120  08000800  08000800  000017f4  2**4
+  2 .bss          00000120  08000a30  08000a30  00001a24  2**4
                   ALLOC
-  3 .comment      0000001b  00000000  00000000  00002420  2**0
+  3 .data         00000004  08000b50  08000b50  00001b50  2**4
+                  CONTENTS, ALLOC, LOAD, DATA
+  4 .comment      0000001b  00000000  00000000  00002420  2**0
                   CONTENTS, READONLY
-  4 .riscv.attributes 00000089  00000000  00000000  0000243b  2**0
+  5 .riscv.attributes 00000089  00000000  00000000  0000243b  2**0
                   CONTENTS, READONLY
 SYMBOL TABLE:
 08000000 l    d  .text	00000000 .text
 20400000 l    d  .rodata	00000000 .rodata
-08000800 l    d  .bss	00000000 .bss
+08000a30 l    d  .bss	00000000 .bss
+08000b50 l    d  .data	00000000 .data
 00000000 l    d  .comment	00000000 .comment
 00000000 l    d  .riscv.attributes	00000000 .riscv.attributes
 00000000 l    df *ABS*	00000000 main.c
-08000800 l     O .bss	00000100 x_tensor
-08000900 l     O .bss	00000020 y_tensor
-08000170 g     F .text	00000010 putchar
-08000160 g     F .text	00000010 putfloat
-080002a0 g     F .text	00000058 nn_mini_linear
+08000a30 l     O .bss	00000100 x_tensor
+08000b30 l     O .bss	00000020 y_tensor
+08000298 g     F .text	00000044 putchar
+08000230 g     F .text	00000068 putfloat
+080001fc g     F .text	00000010 timer_pwm_enable
+080003fc g     F .text	00000058 nn_mini_linear
 08000128 g     F .text	00000028 uart_write
-080001e0 g     F .text	00000018 sleep
-08000180 g     F .text	00000028 fflush
+08000150 g     F .text	00000064 timer_pwm_init
+08000b50 g     O .data	00000004 pwm_high
+0800033c g     F .text	00000018 sleep
+080002dc g     F .text	00000028 fflush
+080001b4 g     F .text	00000024 timer_pwm_set_period
 20400000 g       .rodata	00000000 weights_start
 08000000 g     F .text	00000128 _start
-080001a8 g     F .text	00000038 prints
-080002f8 g     F .text	000004fc main
-080001f8 g     F .text	00000030 nn_mini_add
+08000304 g     F .text	00000038 prints
+080001d8 g     F .text	00000024 timer_pwm_set_high_time
+08000454 g     F .text	000005d0 main
+08000354 g     F .text	00000030 nn_mini_add
 20400420 g       .rodata	00000000 weights_end
-08000228 g     F .text	00000078 nn_mini_linear_relu
-08000150 g     F .text	00000010 exit
+08000384 g     F .text	00000078 nn_mini_linear_relu
+0800020c g     F .text	00000024 exit
 20400000 g       .rodata	00000000 weights_data
 
 
