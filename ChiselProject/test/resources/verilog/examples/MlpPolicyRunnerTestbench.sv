@@ -78,7 +78,7 @@ module MlpPolicyRunnerTestbench();
   SimSpiFlashModel #(
     .PLUSARG("firmware.flash.8.hex"),
     .READONLY(0),
-    .CAPACITY_BYTES(1024),
+    .CAPACITY_BYTES(4096),
     .DUMMY_CYCLES(DUMMY_CYCLES)
   ) sim_spi (
     .sck(qspi_sclk),
@@ -174,10 +174,8 @@ module MlpPolicyRunnerTestbench();
             );
           end
           if (tohost == 8'h04) begin  // print float
-            $write("%.4f (0x%x) ",
-              $bitstoshortreal(dut.tile.core.io_debug_syscall1),
-              dut.tile.core.io_debug_syscall1
-            );
+            $write(" %.4f ", $bitstoshortreal(dut.tile.core.io_debug_syscall1));
+//            $write("(0x%x) ", dut.tile.core.io_debug_syscall1);
           end
         end
       end

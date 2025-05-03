@@ -5,8 +5,8 @@ torch.manual_seed(42)
 
 torch.set_printoptions(precision=3)
 
-in_features = 3
-out_features = 4
+in_features = 32
+out_features = 8
 
 x = torch.rand((1, in_features)) - 0.5
 # w = torch.rand((out_features, in_features)) - 0.5
@@ -33,9 +33,9 @@ def generate_weight_binary(tensors: list[torch.Tensor]) -> str:
     for tensor in tensors:
         if tensor.dim() == 2:
             # transpose weight matrix
-            flat_tensors.append(tensor.T.cpu().flatten())
-        else:
-            flat_tensors.append(tensor.cpu().flatten())
+            tensor = tensor.T
+        tensor = tensor.detach().cpu().flatten()
+        flat_tensors.append(tensor)
 
     offset = 0
     for tensor in flat_tensors:
@@ -71,5 +71,8 @@ print("y: ", y)
 
 generate_weight_binary([w, b])
 
+
+for i, elem in enumerate(x.flatten()):
+    print(f"write_f32(x_tensor + {i}, {elem.item():.4f});")
 
 # print([hex(x) for x in data])

@@ -38,9 +38,8 @@ extern size_t weights_start[];
 extern size_t weights_end[];
 
 
-static uint32_t zero[1] __attribute__((aligned(16)));
-static uint32_t y_tensor[4] __attribute__((aligned(16)));
-static uint32_t x_tensor[4] __attribute__((aligned(16)));
+static uint32_t x_tensor[64] __attribute__((aligned(16)));
+static uint32_t y_tensor[8] __attribute__((aligned(16)));
 
 
 // === function declarations === //
@@ -292,8 +291,10 @@ void nn_mini_linear(size_t out_features, size_t in_features, uint32_t *y, const 
 int main(void) {
   uint8_t counter = 3;
 
-  const size_t out_features = 4;
-  const size_t in_features = 3;
+  const size_t in_features = 32;
+
+  // NOTE: out_features must be a multiple of VLEN
+  const size_t out_features = 8;
 
   const uint32_t *w_tensor = weights_data;
   const uint32_t *b_tensor = weights_data + out_features * in_features;
@@ -302,10 +303,72 @@ int main(void) {
     GPIOA->OUTPUT = counter & 0b1111;
 
     // initialize tensor data
-    write_f32(x_tensor + 0, 0.382f);
-    write_f32(x_tensor + 1, 0.415f);
-    write_f32(x_tensor + 2, -0.117f);
-    write_f32(x_tensor + 3, 0.44f);
+    write_f32(x_tensor + 0, 0.3823);
+    write_f32(x_tensor + 1, 0.4150);
+    write_f32(x_tensor + 2, -0.1171);
+    write_f32(x_tensor + 3, 0.4593);
+    write_f32(x_tensor + 4, -0.1096);
+    write_f32(x_tensor + 5, 0.1009);
+    write_f32(x_tensor + 6, -0.2434);
+    write_f32(x_tensor + 7, 0.2936);
+    write_f32(x_tensor + 8, 0.4408);
+    write_f32(x_tensor + 9, -0.3668);
+    write_f32(x_tensor + 10, 0.4346);
+    write_f32(x_tensor + 11, 0.0936);
+    write_f32(x_tensor + 12, 0.3694);
+    write_f32(x_tensor + 13, 0.0677);
+    write_f32(x_tensor + 14, 0.2411);
+    write_f32(x_tensor + 15, -0.0706);
+    write_f32(x_tensor + 16, 0.3854);
+    write_f32(x_tensor + 17, 0.0739);
+    write_f32(x_tensor + 18, -0.2334);
+    write_f32(x_tensor + 19, 0.1274);
+    write_f32(x_tensor + 20, -0.2304);
+    write_f32(x_tensor + 21, -0.0586);
+    write_f32(x_tensor + 22, -0.2031);
+    write_f32(x_tensor + 23, 0.3317);
+    write_f32(x_tensor + 24, -0.3947);
+    write_f32(x_tensor + 25, -0.2305);
+    write_f32(x_tensor + 26, -0.1412);
+    write_f32(x_tensor + 27, -0.3006);
+    write_f32(x_tensor + 28, 0.0472);
+    write_f32(x_tensor + 29, -0.4938);
+    write_f32(x_tensor + 30, 0.4516);
+    write_f32(x_tensor + 31, -0.4247);
+    write_f32(x_tensor + 32, 0.3860);
+    write_f32(x_tensor + 33, 0.0832);
+    write_f32(x_tensor + 34, -0.1624);
+    write_f32(x_tensor + 35, 0.3090);
+    write_f32(x_tensor + 36, 0.0779);
+    write_f32(x_tensor + 37, 0.4040);
+    write_f32(x_tensor + 38, 0.0547);
+    write_f32(x_tensor + 39, -0.1577);
+    write_f32(x_tensor + 40, 0.1343);
+    write_f32(x_tensor + 41, -0.1356);
+    write_f32(x_tensor + 42, 0.2104);
+    write_f32(x_tensor + 43, 0.4464);
+    write_f32(x_tensor + 44, 0.2890);
+    write_f32(x_tensor + 45, -0.2186);
+    write_f32(x_tensor + 46, 0.2886);
+    write_f32(x_tensor + 47, 0.0895);
+    write_f32(x_tensor + 48, 0.2539);
+    write_f32(x_tensor + 49, -0.3048);
+    write_f32(x_tensor + 50, -0.4950);
+    write_f32(x_tensor + 51, -0.1932);
+    write_f32(x_tensor + 52, -0.3835);
+    write_f32(x_tensor + 53, 0.4103);
+    write_f32(x_tensor + 54, 0.1440);
+    write_f32(x_tensor + 55, 0.2071);
+    write_f32(x_tensor + 56, 0.1581);
+    write_f32(x_tensor + 57, -0.0087);
+    write_f32(x_tensor + 58, 0.3913);
+    write_f32(x_tensor + 59, -0.3553);
+    write_f32(x_tensor + 60, 0.0315);
+    write_f32(x_tensor + 61, -0.3413);
+    write_f32(x_tensor + 62, 0.1542);
+    write_f32(x_tensor + 63, -0.1722);
+    
+
 
     // write_f32(x_tensor + 0, 0);
     // write_f32(x_tensor + 1, 0);
@@ -360,6 +423,10 @@ int main(void) {
     putfloat(y_tensor[1]);
     putfloat(y_tensor[2]);
     putfloat(y_tensor[3]);
+    putfloat(y_tensor[4]);
+    putfloat(y_tensor[5]);
+    putfloat(y_tensor[6]);
+    putfloat(y_tensor[7]);
     putchar('\n');
     
     nn_mini_linear_relu(out_features, in_features, y_tensor, x_tensor, w_tensor, b_tensor);
@@ -369,6 +436,10 @@ int main(void) {
     putfloat(y_tensor[1]);
     putfloat(y_tensor[2]);
     putfloat(y_tensor[3]);
+    putfloat(y_tensor[4]);
+    putfloat(y_tensor[5]);
+    putfloat(y_tensor[6]);
+    putfloat(y_tensor[7]);
     putchar('\n');
 
     fflush(0);
