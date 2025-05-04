@@ -90,12 +90,25 @@
 // ***** Function 7 codes *****
 // vector, lowest 1 bit is mop
 `define FNC6_VADD        6'b000000  // vd[i] = vs1[i] + vs2[i]
+`define FNC6_VXOR        6'b001011  // vd[i] = vs1[i] ^ vs2[i]
+`define FNC6_VMAX        6'b000101  // vd[i] = max(vs1[i], vs2[i])
 `define FNC6_VFMIN       6'b000100  // vd[i] = min(vs1[i], vs2[i])
 `define FNC6_VFMAX       6'b000110  // vd[i] = max(vs1[i], vs2[i])
 `define FNC6_VFMUL       6'b100100  // vd[i] = vs1[i] * vs2[i]
 `define FNC6_VFMADD      6'b101000  // vd[i] = +(vs1[i] * vd[i]) + vs2[i]
 `define FNC6_VFMACC      6'b101100  // vd[i] = +(vs1[i] * vs2[i]) + vd[i]
 
+// disassembles:
+// 000000 1 00010 00001 000 00011 1010111  vadd.vv	v3,v2,v1
+// 001011 1 00010 00001 000 00100 1010111  vxor.vv	v4,v2,v1
+// 000100 1 00010 00001 001 00101 1010111  vfmin.vv	v5,v2,v1
+// 000110 1 00010 00001 001 00110 1010111  vfmax.vv	v6,v2,v1
+// 100100 1 00010 00001 001 00111 1010111  vfmul.vv	v7,v2,v1
+// 101100 1 00001 00010 001 01000 1010111  vfmacc.vv	v8,v2,v1
+
+// 000000 1 00000 00000 110 01001 0000111  vle32.v	v9,(zero)
+// 000010 1 00000 00000 110 01010 0000111  vlse32.v	v10,(zero),zero
+// 000000 1 00000 00000 110 01011 0100111  vse32.v	v11,(zero)
 
 
 module EECS252TileTestbench();

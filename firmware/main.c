@@ -267,7 +267,7 @@ void nn_mini_linear_relu(size_t in_features, size_t out_features, uint32_t *y, c
     // relu
     WRITE_CSR(CSR_SYSCALL3, 6);
     // ummmm okay so GCC thinks v1 is rs2 and v0 is rs1...
-    asm volatile("vmax.vv v1, v1, v0");
+    asm volatile("vfmax.vv v1, v1, v0");
 
     // store y
     WRITE_CSR(CSR_SYSCALL3, 7);
