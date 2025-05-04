@@ -14,6 +14,7 @@ class FloatingPoint extends Module {
 
   val blackbox = Module(new FloatingPointBlackbox())
 
+  blackbox.io.aclk := clock
   blackbox.io.s_axis_a_tvalid := io.a.valid
   blackbox.io.s_axis_a_tdata := io.a.bits
   blackbox.io.s_axis_b_tvalid := io.b.valid
@@ -26,6 +27,7 @@ class FloatingPoint extends Module {
 
 class FloatingPointBlackbox extends BlackBox {
   val io = IO(new Bundle {
+    val aclk = Input(Clock())
     val s_axis_a_tvalid = Input(Bool())
     val s_axis_a_tdata = Input(UInt(32.W))
     val s_axis_b_tvalid = Input(Bool())
@@ -51,7 +53,7 @@ set_property -dict [list \\
   CONFIG.Add_Sub_Value {Add} \\
   CONFIG.C_A_Exponent_Width {8} \\
   CONFIG.C_A_Fraction_Width {24} \\
-  CONFIG.C_Latency {0} \\
+  CONFIG.C_Latency {1} \\
   CONFIG.C_Mult_Usage {Full_Usage} \\
   CONFIG.C_Optimization {Speed_Optimized} \\
   CONFIG.C_Rate {1} \\

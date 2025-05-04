@@ -273,7 +273,7 @@ class Core(
 
 
   // backpressure the IF stage if we are busy with data memory
-  ifu.io.ex.ready := !(lsu.io.busy || vlsu.io.busy)
+  ifu.io.ex.ready := !(lsu.io.busy || vlsu.io.busy || valu.io.busy)
 
 
   // Write Back (WB)

@@ -15,6 +15,7 @@ class SimdFloatingPoint(
     val func = Input(UInt(SIMD_X.getWidth.W))
 
     val out = Output(Vec(nVectors, UInt(32.W)))
+    val busy = Output(Bool())
   })
 
 
@@ -25,13 +26,26 @@ class SimdFloatingPoint(
 
   val op2_positive = io.op2.map(x => x(31) === 0.U)
 
-  dontTouch(op2_positive(0))
-  dontTouch(op2_positive(1))
+  // since everybody will execute the same instruction, we need to
+  // handle the flow control of the first instance
+  val reg_op_pending = RegInit(false.B)
+
+  val input_valid = io.func =/= SIMD_X && !reg_op_pending
+  
+  when (io.func =/= SIMD_X) {
+    reg_op_pending := true.B
+  }
+  when (fmacc(0).io.result.valid) {
+    reg_op_pending := false.B
+  }
+  
+  io.busy := (io.func =/= SIMD_X || reg_op_pending) && !fmacc(0).io.result.valid
+
 
   for (i <- 0 until nVectors) {   
-    fmacc(i).io.a.valid := true.B
-    fmacc(i).io.b.valid := true.B
-    fmacc(i).io.c.valid := true.B
+    fmacc(i).io.a.valid := input_valid
+    fmacc(i).io.b.valid := input_valid
+    fmacc(i).io.c.valid := input_valid
 
     when(io.func === SIMD_ADD) {
       fmacc(i).io.a.bits := io.op1(i)
@@ -59,5 +73,4 @@ class SimdFloatingPoint(
       (io.func === SIMD_MAX) -> Mux(op2_positive(i), io.op2(i), zero),
     ))
   }
-
 }
