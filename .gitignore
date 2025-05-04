@@ -13,7 +13,7 @@ firmware/*.dis
 firmware/*.elf
 firmware/*.hex
 firmware/*.section
-firmware/*.sym
+firmware/*.symbol
 
 # Toolchains
 toolchains/mill

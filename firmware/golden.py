@@ -5,22 +5,38 @@ torch.manual_seed(42)
 
 torch.set_printoptions(precision=3)
 
-in_features = 32
+in_features = 83
 out_features = 8
 
+class ToyMlpPolicy(torch.nn.Module):
+     def __init__(self, in_features, out_features):
+         super().__init__()
+         self.lin1 = torch.nn.Linear(in_features, 32)
+         self.lin2 = torch.nn.Linear(32, 16)
+         self.lin3 = torch.nn.Linear(16, out_features)
+ 
+     def forward(self, x):
+         x = self.lin1(x)
+         x = torch.nn.functional.relu(x)
+         x = self.lin2(x)
+         x = torch.nn.functional.relu(x)
+         x = self.lin3(x)
+         return x
 
 class MlpPolicy(torch.nn.Module):
     def __init__(self, in_features, out_features):
-        super(MlpPolicy, self).__init__()
-        self.lin1 = torch.nn.Linear(in_features, 128)
-        self.lin2 = torch.nn.Linear(128, 128)
-        self.lin3 = torch.nn.Linear(128, out_features)
+        super().__init__()
+        self.lin1 = torch.nn.Linear(in_features, 512)
+        self.lin2 = torch.nn.Linear(512, 256)
+        self.lin3 = torch.nn.Linear(256, out_features)
 
     def forward(self, x):
         x = self.lin1(x)
         x = torch.nn.functional.relu(x)
+        print("v: ", x)
         x = self.lin2(x)
         x = torch.nn.functional.relu(x)
+        print("u: ", x)
         x = self.lin3(x)
         return x
 
@@ -32,6 +48,9 @@ def generate_weight_binary(tensors: list[torch.Tensor]) -> str:
             # transpose weight matrix
             tensor = tensor.T
         tensor = tensor.detach().cpu().flatten()
+
+        assert tensor.shape[0] % 8 == 0, tensor.shape[0]
+
         flat_tensors.append(tensor)
 
     offset = 0

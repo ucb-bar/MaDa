@@ -27,7 +27,7 @@ hex: build
 dump: build
 	riscv64-unknown-elf-objdump -S firmware.elf > firmware.dis
 	riscv64-unknown-elf-objdump -h firmware.elf > firmware.section
-	riscv64-unknown-elf-objdump -x firmware.elf > firmware.sym
+	riscv64-unknown-elf-objdump -x firmware.elf > firmware.symbol
 
 clean:
 	rm -f *.elf *.bin *.hex *.dis *.section

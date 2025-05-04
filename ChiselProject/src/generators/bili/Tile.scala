@@ -19,12 +19,12 @@ class Tile extends Module {
   val core = Module(new Core(nVectors = busWidth / 32))
 
   val itim = Module(new Axi4Memory(
-    params=Axi4Params(addressWidth=14, dataWidth=32),
+    params=Axi4Params(addressWidth=16, dataWidth=32),
     memoryFileHex="firmware.hex"
   ))
 
   val dtim = Module(new Axi4Memory(
-    params=Axi4Params(addressWidth=14, dataWidth=busWidth),
+    params=Axi4Params(addressWidth=16, dataWidth=busWidth),
     memoryFileHex="firmware.64.hex"
   ))
   
