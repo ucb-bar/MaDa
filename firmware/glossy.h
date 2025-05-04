@@ -5,8 +5,6 @@
 #include "uart.h"
 
 
-#define USE_UART      1
-
 
 #define CSR_SYSCALL0                 "0x8C0"
 #define CSR_SYSCALL1                 "0x8C1"
@@ -28,7 +26,7 @@ void exit(int code) {
   WRITE_CSR(CSR_SYSCALL0, SYSCALL_EXIT);
   while (1) {
     asm volatile("nop");
-    #if USE_UART
+    #if SIMULATION == 0
       uart_write(UART0, SYSCALL_EXIT);
     #endif
   }
@@ -39,7 +37,7 @@ void putfloat(uint32_t f) {
   WRITE_CSR(CSR_SYSCALL0, SYSCALL_PRINT_F32);
   WRITE_CSR(CSR_SYSCALL0, 0);
 
-  #if USE_UART
+  #if SIMULATION == 0
     uart_write(UART0, SYSCALL_PRINT_F32);
     uart_write(UART0, f >> 24);
     uart_write(UART0, f >> 16);
@@ -55,7 +53,7 @@ int putchar(int c) {
   WRITE_CSR(CSR_SYSCALL0, SYSCALL_PRINT_CHAR);
   WRITE_CSR(CSR_SYSCALL0, 0);
 
-  #if USE_UART
+  #if SIMULATION == 0
     uart_write(UART0, SYSCALL_PRINT_CHAR);
     uart_write(UART0, c);
   #endif

@@ -78,7 +78,7 @@ module MlpPolicyRunnerTestbench();
   SimSpiFlashModel #(
     .PLUSARG("firmware.flash.8.hex"),
     .READONLY(0),
-    .CAPACITY_BYTES(4096),
+    .CAPACITY_BYTES('h40000),
     .DUMMY_CYCLES(DUMMY_CYCLES)
   ) sim_spi (
     .sck(qspi_sclk),

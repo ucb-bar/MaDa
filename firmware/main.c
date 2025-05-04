@@ -14,6 +14,9 @@
 #define PWM_HIGH_TIME_COUNT  (PWM_HIGH_TIME / AXI_CLOCK_PERIOD)
 
 
+#define SIMULATION    0
+
+
 #include "uart.h"
 #include "gpio.h"
 #include "timer.h"
@@ -41,8 +44,11 @@
 #define VLEN   2
 
 
-#define DELAY_CYCLES 100000
-// #define DELAY_CYCLES 2
+#if SIMULATION == 1
+  #define DELAY_CYCLES 2
+#else
+  #define DELAY_CYCLES 100000
+#endif
 
 
 
@@ -54,6 +60,8 @@ extern size_t weights_end[];
 
 
 static uint32_t x_tensor[64] __attribute__((aligned(16)));
+static uint32_t lin1_tensor[128] __attribute__((aligned(16)));
+static uint32_t lin2_tensor[128] __attribute__((aligned(16)));
 static uint32_t y_tensor[8] __attribute__((aligned(16)));
 
 
@@ -63,6 +71,8 @@ int main();
 
 
 // === startup code === //
+extern unsigned int __sp;
+
 void __attribute__((section(".text.init"), naked)) _start() {
   // clear all registers to avoid X's
   asm volatile("li x1, 0");
@@ -99,7 +109,7 @@ void __attribute__((section(".text.init"), naked)) _start() {
 
   // set stack pointer to 0x08001000
   // and set C runtime argc to 0
-  asm volatile("li sp, 0x08001000");
+  asm volatile("la sp, __sp");
   asm volatile("addi s0, sp, -32");
   asm volatile("sw zero, 0x00(s0)");
   asm volatile("sw zero, 0x04(s0)");
@@ -316,50 +326,54 @@ int main(void) {
   timer_pwm_set_high_time(TIM0, pwm_high / 64);
   timer_pwm_enable(TIM0);
 
-  const size_t in_features = 32;
-
   // NOTE: out_features must be a multiple of VLEN
+  const size_t in_features = 32;
   const size_t out_features = 8;
 
-  const uint32_t *w_tensor = weights_data;
-  const uint32_t *b_tensor = weights_data + out_features * in_features;
+
+  const uint32_t *w1_tensor = weights_data + 0;
+  const uint32_t *b1_tensor = weights_data + 4096;
+  const uint32_t *w2_tensor = weights_data + 4224;
+  const uint32_t *b2_tensor = weights_data + 20608;
+  const uint32_t *w3_tensor = weights_data + 20736;
+  const uint32_t *b3_tensor = weights_data + 21760;
 
   while (1) {
     GPIOA->OUTPUT = counter & 0b1111;
 
     // initialize tensor data
-    write_f32(x_tensor + 0, 0.3823);
-    write_f32(x_tensor + 1, 0.4150);
-    write_f32(x_tensor + 2, -0.1171);
-    write_f32(x_tensor + 3, 0.4593);
-    write_f32(x_tensor + 4, -0.1096);
-    write_f32(x_tensor + 5, 0.1009);
-    write_f32(x_tensor + 6, -0.2434);
-    write_f32(x_tensor + 7, 0.2936);
-    write_f32(x_tensor + 8, 0.4408);
-    write_f32(x_tensor + 9, -0.3668);
-    write_f32(x_tensor + 10, 0.4346);
-    write_f32(x_tensor + 11, 0.0936);
-    write_f32(x_tensor + 12, 0.3694);
-    write_f32(x_tensor + 13, 0.0677);
-    write_f32(x_tensor + 14, 0.2411);
-    write_f32(x_tensor + 15, -0.0706);
-    write_f32(x_tensor + 16, 0.3854);
-    write_f32(x_tensor + 17, 0.0739);
-    write_f32(x_tensor + 18, -0.2334);
-    write_f32(x_tensor + 19, 0.1274);
-    write_f32(x_tensor + 20, -0.2304);
-    write_f32(x_tensor + 21, -0.0586);
-    write_f32(x_tensor + 22, -0.2031);
-    write_f32(x_tensor + 23, 0.3317);
-    write_f32(x_tensor + 24, -0.3947);
-    write_f32(x_tensor + 25, -0.2305);
-    write_f32(x_tensor + 26, -0.1412);
-    write_f32(x_tensor + 27, -0.3006);
-    write_f32(x_tensor + 28, 0.0472);
-    write_f32(x_tensor + 29, -0.4938);
-    write_f32(x_tensor + 30, 0.4516);
-    write_f32(x_tensor + 31, -0.4247);
+    write_f32(x_tensor + 0, 0.38226926);
+    write_f32(x_tensor + 1, 0.41500396);
+    write_f32(x_tensor + 2, -0.11713624);
+    write_f32(x_tensor + 3, 0.45930564);
+    write_f32(x_tensor + 4, -0.10955179);
+    write_f32(x_tensor + 5, 0.10089535);
+    write_f32(x_tensor + 6, -0.24342752);
+    write_f32(x_tensor + 7, 0.29364133);
+    write_f32(x_tensor + 8, 0.44077146);
+    write_f32(x_tensor + 9, -0.36681408);
+    write_f32(x_tensor + 10, 0.43459809);
+    write_f32(x_tensor + 11, 0.09357965);
+    write_f32(x_tensor + 12, 0.36940444);
+    write_f32(x_tensor + 13, 0.06771529);
+    write_f32(x_tensor + 14, 0.24109405);
+    write_f32(x_tensor + 15, -0.07059550);
+    write_f32(x_tensor + 16, 0.38544291);
+    write_f32(x_tensor + 17, 0.07390445);
+    write_f32(x_tensor + 18, -0.23341995);
+    write_f32(x_tensor + 19, 0.12744915);
+    write_f32(x_tensor + 20, -0.23036832);
+    write_f32(x_tensor + 21, -0.05863643);
+    write_f32(x_tensor + 22, -0.20307916);
+    write_f32(x_tensor + 23, 0.33168548);
+    write_f32(x_tensor + 24, -0.39468509);
+    write_f32(x_tensor + 25, -0.23050517);
+    write_f32(x_tensor + 26, -0.14118737);
+    write_f32(x_tensor + 27, -0.30063623);
+    write_f32(x_tensor + 28, 0.04719156);
+    write_f32(x_tensor + 29, -0.49383956);
+    write_f32(x_tensor + 30, 0.45155454);
+    write_f32(x_tensor + 31, -0.42473412);
     write_f32(x_tensor + 32, 0.3860);
     write_f32(x_tensor + 33, 0.0832);
     write_f32(x_tensor + 34, -0.1624);
@@ -393,19 +407,6 @@ int main(void) {
     write_f32(x_tensor + 62, 0.1542);
     write_f32(x_tensor + 63, -0.1722);
     
-
-
-    // write_f32(x_tensor + 0, 0);
-    // write_f32(x_tensor + 1, 0);
-    // write_f32(x_tensor + 2, 0);
-    // write_f32(x_tensor + 3, 0);
-
-
-    // write_f32(x_tensor + 0, 0.11f);
-    // write_f32(x_tensor + 1, 0.22f);
-    // write_f32(x_tensor + 2, 0.33f);
-
-
     putchar('x');
     putfloat(x_tensor[0]);
     putfloat(x_tensor[1]);
@@ -414,47 +415,77 @@ int main(void) {
     putchar('\n');
 
     putchar('w');  // transposed, (in X out)
-    putfloat(w_tensor[0]);
-    putfloat(w_tensor[1]);
-    putfloat(w_tensor[2]);
-    putfloat(w_tensor[3]);
+    putfloat(w1_tensor[0]);
+    putfloat(w1_tensor[1]);
+    putfloat(w1_tensor[2]);
+    putfloat(w1_tensor[3]);
     putchar('\n');
-    putfloat(w_tensor[4]);
-    putfloat(w_tensor[5]);
-    putfloat(w_tensor[6]);
-    putfloat(w_tensor[7]);
+    putfloat(w1_tensor[4]);
+    putfloat(w1_tensor[5]);
+    putfloat(w1_tensor[6]);
+    putfloat(w1_tensor[7]);
     putchar('\n');
-    putfloat(w_tensor[8]);
-    putfloat(w_tensor[9]);
-    putfloat(w_tensor[10]);
-    putfloat(w_tensor[11]);
+    putfloat(w1_tensor[8]);
+    putfloat(w1_tensor[9]);
+    putfloat(w1_tensor[10]);
+    putfloat(w1_tensor[11]);
     putchar('\n');
 
     putchar('b');
-    putfloat(b_tensor[0]);
-    putfloat(b_tensor[1]);
-    putfloat(b_tensor[2]);
-    putfloat(b_tensor[3]);
+    putfloat(b1_tensor[0]);
+    putfloat(b1_tensor[1]);
+    putfloat(b1_tensor[2]);
+    putfloat(b1_tensor[3]);
     putchar('\n');
 
     
     WRITE_CSR(CSR_SYSCALL3, 1);
 
     // nn_mini_add(4, y_tensor, x_tensor, b_tensor);
-    nn_mini_linear(out_features, in_features, y_tensor, x_tensor, w_tensor, b_tensor);
+    // nn_mini_linear(out_features, in_features, y_tensor, x_tensor, w_tensor, b_tensor);
 
-    putchar('_'); putchar('y');
-    putfloat(y_tensor[0]);
-    putfloat(y_tensor[1]);
-    putfloat(y_tensor[2]);
-    putfloat(y_tensor[3]);
-    putfloat(y_tensor[4]);
-    putfloat(y_tensor[5]);
-    putfloat(y_tensor[6]);
-    putfloat(y_tensor[7]);
-    putchar('\n');
+    // putchar('_'); putchar('y');
+    // putfloat(y_tensor[0]);
+    // putfloat(y_tensor[1]);
+    // putfloat(y_tensor[2]);
+    // putfloat(y_tensor[3]);
+    // putfloat(y_tensor[4]);
+    // putfloat(y_tensor[5]);
+    // putfloat(y_tensor[6]);
+    // putfloat(y_tensor[7]);
+    // putchar('\n');
+
+    nn_mini_linear_relu(128, in_features, lin1_tensor, x_tensor, w1_tensor, b1_tensor);
     
-    nn_mini_linear_relu(out_features, in_features, y_tensor, x_tensor, w_tensor, b_tensor);
+    
+    putchar('v');
+    putfloat(lin1_tensor[0]);
+    putfloat(lin1_tensor[1]);
+    putfloat(lin1_tensor[2]);
+    putfloat(lin1_tensor[3]);
+    putfloat(lin1_tensor[4]);
+    putfloat(lin1_tensor[5]);
+    putfloat(lin1_tensor[6]);
+    putfloat(lin1_tensor[7]);
+    putchar('\n');
+
+    nn_mini_linear_relu(128, 128, lin2_tensor, lin1_tensor, w2_tensor, b2_tensor);
+    
+    
+    
+    putchar('u');
+    putfloat(lin2_tensor[0]);
+    putfloat(lin2_tensor[1]);
+    putfloat(lin2_tensor[2]);
+    putfloat(lin2_tensor[3]);
+    putfloat(lin2_tensor[4]);
+    putfloat(lin2_tensor[5]);
+    putfloat(lin2_tensor[6]);
+    putfloat(lin2_tensor[7]);
+    putchar('\n');
+
+    nn_mini_linear(out_features, 128, y_tensor, lin2_tensor, w3_tensor, b3_tensor);
+
 
     putchar('y');
     putfloat(y_tensor[0]);
@@ -469,7 +500,9 @@ int main(void) {
 
     fflush(0);
 
-    // exit(0);
+    #if SIMULATION == 1
+      exit(0);
+    #endif
 
     timer_pwm_set_high_time(TIM0, pwm_high / 64);
     timer_pwm_enable(TIM0);
