@@ -321,15 +321,20 @@ module EECS252TileTestbench();
     `VRF_PATH[RS2] = RD2;
     INST_ADDR       = 14'h0000;
 
-    `VRF_PATH[5] = 128'h3F800000_3F800000_3F800000_3F800000;
+    // pre-load value for fpmacc
+    `VRF_PATH[7] = 128'h3F800000_3F800000_3F800000_3F800000;
 
     `IMEM_PATH[INST_ADDR + 0]  = {`FNC6_VADD,   1'b1, RS2, RS1, `FNC3_FVV, 5'd3,  `OPC_VEC_ARI};
-    `IMEM_PATH[INST_ADDR + 1]  = {`FNC6_VFMUL,  1'b1, RS2, RS1, `FNC3_FVV, 5'd4,  `OPC_VEC_ARI};
-    `IMEM_PATH[INST_ADDR + 2]  = {`FNC6_VFMACC, 1'b1, RS2, RS1, `FNC3_FVV, 5'd5,  `OPC_VEC_ARI};
+    `IMEM_PATH[INST_ADDR + 1]  = {`FNC6_VXOR,   1'b1, RS2, RS1, `FNC3_FVV, 5'd4,  `OPC_VEC_ARI};
+    `IMEM_PATH[INST_ADDR + 2]  = {`FNC6_VFMAX,  1'b1, RS2, RS1, `FNC3_FVV, 5'd5,  `OPC_VEC_ARI};
+    `IMEM_PATH[INST_ADDR + 3]  = {`FNC6_VFMUL,  1'b1, RS2, RS1, `FNC3_FVV, 5'd6,  `OPC_VEC_ARI};
+    `IMEM_PATH[INST_ADDR + 4]  = {`FNC6_VFMACC, 1'b1, RS2, RS1, `FNC3_FVV, 5'd7,  `OPC_VEC_ARI};
 
     check_result_vrf(5'd3,  128'h42C80000_42C80000_42C80000_42C80000, "Vector FP ADD");
-    check_result_vrf(5'd4,  128'hC69C4000_C69C4000_C69C4000_C69C4000, "Vector FP MUL");
-    check_result_vrf(5'd5,  128'hC69C3E00_C69C3E00_C69C3E00_C69C3E00, "Vector FP MACC");
+    check_result_vrf(5'd4,  128'h00000000_00000000_00000000_00000000, "Vector FP XOR");
+    check_result_vrf(5'd5,  128'h43480000_43480000_43480000_43480000, "Vector FP MAX");
+    check_result_vrf(5'd6,  128'hC69C4000_C69C4000_C69C4000_C69C4000, "Vector FP MUL");
+    check_result_vrf(5'd7,  128'hC69C3E00_C69C3E00_C69C3E00_C69C3E00, "Vector FP MACC");
 
 
     // Test Vector Load Insts --------------------------------------------------
