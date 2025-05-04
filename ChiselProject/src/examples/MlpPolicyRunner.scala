@@ -88,8 +88,8 @@ class MlpPolicyRunner extends RawModule {
     timer.io.capturetrig1 := 0.B
     timer.io.freeze := 0.B
 
-    io.ck_io(3) := timer.io.pwm0
-    io.ck_io(4) := timer.io.pwm0
+    io.ck_io(8) := timer.io.pwm0
+    io.ck_io(9) := timer.io.pwm0
 
 
 
@@ -143,6 +143,15 @@ class MlpPolicyRunner extends RawModule {
     gpio.io.gpio_io_i := 0x05050505.U
     io.led := gpio.io.gpio_io_o
 
+    io.ck_io(0) := gpio.io.gpio_io_o(0)
+    io.ck_io(1) := gpio.io.gpio_io_o(1)
+    io.ck_io(2) := gpio.io.gpio_io_o(2)
+    io.ck_io(3) := gpio.io.gpio_io_o(3)
+    io.ck_io(4) := gpio.io.gpio_io_o(4)
+    io.ck_io(5) := gpio.io.gpio_io_o(5)
+    io.ck_io(6) := gpio.io.gpio_io_o(6)
+    io.ck_io(7) := gpio.io.gpio_io_o(7)
+    
     io.uart_rxd_out := uart.io.tx
     uart.io.rx := io.uart_txd_in
 
