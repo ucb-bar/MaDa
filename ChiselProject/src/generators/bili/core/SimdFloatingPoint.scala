@@ -6,7 +6,8 @@ import SimdControlConstants._
 
 
 class SimdFloatingPoint(
-  nVectors: Int = 1
+  nVectors: Int = 1,
+  pipelineStages: Int = 1,
 ) extends Module {
   val io = IO(new Bundle {
     val op1 = Input(Vec(nVectors, UInt(32.W)))
@@ -18,7 +19,7 @@ class SimdFloatingPoint(
     val busy = Output(Bool())
   })
 
-  val fmacc = Array.fill(nVectors)(Module(new FloatingPoint(pipelineStages=1)))
+  val fmacc = Array.fill(nVectors)(Module(new FloatingPoint(pipelineStages=pipelineStages)))
 
   val one = 0x3F800000.U(32.W)
   val zero = 0x00000000.U(32.W)

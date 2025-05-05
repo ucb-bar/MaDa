@@ -2,7 +2,9 @@ import chisel3._
 import chisel3.util._
 
 
-class Tile extends Module {
+class Tile(
+  val sbusFrequency: Int = 20,
+) extends Module {
   val io = IO(new Bundle {
     val reset_vector = Input(UInt(32.W))
     val debug = new DebugIO()
@@ -16,7 +18,10 @@ class Tile extends Module {
 
   val busWidth = 64
 
-  val core = Module(new Core(nVectors = busWidth / 32))
+  val core = Module(new Core(
+    nVectors=busWidth/32,
+    pipelineStages=3,
+  ))
 
   val itim = Module(new Axi4Memory(
     params=Axi4Params(addressWidth=16, dataWidth=32),

@@ -23,7 +23,7 @@ module SimQspiClockGen #(
       reg_sclk <= 1'b0;
     end
     else begin
-      if (reg_counter >= PRESCALER) begin
+      if (reg_counter >= PRESCALER - 1) begin
         reg_counter <= 4'b0000;
         reg_sclk <= ~reg_sclk;
       end
@@ -41,8 +41,8 @@ module MlpPolicyRunnerTestbench();
   parameter CLOCK_FREQ = 100_000_000;
   parameter CLOCK_PERIOD = 1_000_000_000 / CLOCK_FREQ;
 
-  // parameter TIMEOUT_CYCLES = 2_000_000;
-  parameter TIMEOUT_CYCLES = 500_000;
+  parameter TIMEOUT_CYCLES = 2_000_000;
+  // parameter TIMEOUT_CYCLES = 500_000;
   
   // setup clock and reset
   reg clock, reset;
@@ -60,15 +60,6 @@ module MlpPolicyRunnerTestbench();
   wire qspi_io3;
   wire qspi_sclk;
   wire qspi_cs;
-
-  SimQspiClockGen #(
-    .PRESCALER(4)
-  ) qspi_clock_gen (
-    .clock(clock),
-    .qspi_sclk(qspi_sclk),
-    .qspi_cs(qspi_cs)
-  );
-
   
   // We simulate the Spansion S25FL128S flash memory on the Arty board
   // it has 8 dummy cycles for single-mode read commands
@@ -124,6 +115,16 @@ module MlpPolicyRunnerTestbench();
     .io_qspi_dq_3(qspi_io3),
     .io_led(led)
   );
+
+  
+  SimQspiClockGen #(
+    .PRESCALER(1)
+  ) qspi_clock_gen (
+    .clock(dut.tile.core.clock),
+    .qspi_sclk(qspi_sclk),
+    .qspi_cs(qspi_cs)
+  );
+
 
   SimUartConsole #(
     .BAUD_RATE(115200)

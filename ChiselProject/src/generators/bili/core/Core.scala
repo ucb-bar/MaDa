@@ -30,7 +30,8 @@ class DebugIO extends Bundle() {
 
 
 class Core(
-  nVectors: Int = 1
+  nVectors: Int = 1,
+  pipelineStages: Int = 1,
 ) extends Module {
   val io = IO(new Bundle {
     val reset_vector = Input(UInt(32.W))
@@ -243,7 +244,7 @@ class Core(
   val vrd_data = vregfile(rd_addr)
 
 
-  val valu = Module(new SimdFloatingPoint(nVectors))
+  val valu = Module(new SimdFloatingPoint(nVectors=nVectors, pipelineStages=pipelineStages))
   // result = a * b + c
 
   valu.io.func := ctrl.valu_func
@@ -262,7 +263,7 @@ class Core(
   lsu.io.dmem <> io.dmem
 
 
-  val vlsu = Module(new SimdLoadStore(nVectors))
+  val vlsu = Module(new SimdLoadStore(nVectors=nVectors))
 
   vlsu.io.mem_func := Mux(ifu.io.ex.valid, ctrl.vmem_func, M_X)
   vlsu.io.strided := ctrl.vmem_stride

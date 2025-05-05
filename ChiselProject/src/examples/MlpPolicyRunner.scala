@@ -23,6 +23,8 @@ import chisel3.util._
 class MlpPolicyRunner extends RawModule {
   val io = IO(new Arty100TIO())
 
+  val systemClockFrequency = 60
+
   io := DontCare
 
   val clock = Wire(Clock())
@@ -30,7 +32,7 @@ class MlpPolicyRunner extends RawModule {
   
   val pll_locked = Wire(Bool())
 
-  val clk_wiz = Module(new ClockingWizard(Seq(20)))
+  val clk_wiz = Module(new ClockingWizard(Seq(systemClockFrequency)))
   // clocking wizard connection
   clk_wiz.io.clk_in := io.CLK100MHZ
   clk_wiz.io.reset := ~io.ck_rst
@@ -48,7 +50,7 @@ class MlpPolicyRunner extends RawModule {
   withClockAndReset(clock, reset) {
     val reset_vector = RegInit(0x0800_0000.U(32.W))
 
-    val tile = Module(new Tile())
+    val tile = Module(new Tile(sbusFrequency=systemClockFrequency))
 
     tile.io.reset_vector := reset_vector
 
@@ -75,7 +77,7 @@ class MlpPolicyRunner extends RawModule {
     // val spi = Module(new Axi4SpiFlash())
 
     val gpio = Module(new Axi4LiteGpio())
-    val uart = Module(new Axi4LiteUartLite())
+    val uart = Module(new Axi4LiteUartLite(axiClockFrequency=systemClockFrequency))
     val timer = Module(new Axi4LiteTimer())
 
     pbus_crossbar.io.s_axi(0).connectFromAxi4(tile.io.pbus)
@@ -151,7 +153,7 @@ class MlpPolicyRunner extends RawModule {
     io.ck_io(5) := gpio.io.gpio_io_o(5)
     io.ck_io(6) := gpio.io.gpio_io_o(6)
     io.ck_io(7) := gpio.io.gpio_io_o(7)
-    
+
     io.uart_rxd_out := uart.io.tx
     uart.io.rx := io.uart_txd_in
 
