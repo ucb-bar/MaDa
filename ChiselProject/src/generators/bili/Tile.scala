@@ -32,6 +32,10 @@ class Tile(
     params=Axi4Params(addressWidth=32, dataWidth=busWidth),
     coeFile=s"/home/tk/Desktop/MaDa/firmware/firmware.${busWidth}.coe"
   ))
+  // val dtim = Module(new Axi4WiderMemory(
+  //   params=Axi4Params(addressWidth=32, dataWidth=busWidth),
+  //   coeFile=s"/home/tk/Desktop/MaDa/firmware/firmware.${busWidth}.coe"
+  // ))
   
   val xbar = Module(new Axi4Crossbar(
     numSlave=2,
