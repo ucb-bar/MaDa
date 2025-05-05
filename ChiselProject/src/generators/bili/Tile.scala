@@ -28,9 +28,9 @@ class Tile(
     memoryFileHex="firmware.hex"
   ))
 
-  val dtim = Module(new Axi4Memory(
-    params=Axi4Params(addressWidth=16, dataWidth=busWidth),
-    memoryFileHex=s"firmware.${busWidth}.hex"
+  val dtim = Module(new Axi4BlockMemory(
+    params=Axi4Params(addressWidth=32, dataWidth=busWidth),
+    coeFile=s"/home/tk/Desktop/MaDa/firmware/firmware.${busWidth}.coe"
   ))
   
   val xbar = Module(new Axi4Crossbar(

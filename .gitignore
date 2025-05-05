@@ -12,6 +12,7 @@ firmware/*.bin
 firmware/*.dis
 firmware/*.elf
 firmware/*.hex
+firmware/*.coe
 firmware/*.section
 firmware/*.symbol
 

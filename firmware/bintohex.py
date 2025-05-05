@@ -22,6 +22,15 @@ def bin_to_hex(input_file: str, output_file: str, data_width: int = 32, endianne
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
+def hex_to_coe(input_file: str):
+    output_file = input_file.replace(".hex", ".coe")
+    with open(input_file, "r") as hex_file, open(output_file, "w") as coe_file:
+        coe_file.write("memory_initialization_radix=16;\n")
+        coe_file.write("memory_initialization_vector=\n")
+        for line in hex_file:
+            coe_file.write(line.strip() + ",\n")
+        coe_file.write(";\n")
+
 def process_binary_file(bin_file: BinaryIO, hex_file: TextIO, data_width: int, endianness: str, padding_lines: int) -> None:
     """Process the binary file and write hex output.
     
@@ -99,3 +108,4 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     bin_to_hex(args.input_file, args.output_file, args.data_width, args.endianness, args.padding_lines)
+    hex_to_coe(args.output_file)

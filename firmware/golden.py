@@ -18,8 +18,10 @@ class ToyMlpPolicy(torch.nn.Module):
      def forward(self, x):
          x = self.lin1(x)
          x = torch.nn.functional.relu(x)
+         print("l1: ", x[:, :12])
          x = self.lin2(x)
          x = torch.nn.functional.relu(x)
+         print("l2: ", x[:, :12])
          x = self.lin3(x)
          return x
 
@@ -33,10 +35,10 @@ class MlpPolicy(torch.nn.Module):
     def forward(self, x):
         x = self.lin1(x)
         x = torch.nn.functional.relu(x)
-        print("v: ", x)
+        print("l1: ", x[:12])
         x = self.lin2(x)
         x = torch.nn.functional.relu(x)
-        print("u: ", x)
+        print("l2: ", x[:12])
         x = self.lin3(x)
         return x
 
@@ -73,12 +75,12 @@ def generate_weight_binary(tensors: list[torch.Tensor]) -> str:
 x = torch.rand((1, in_features)) - 0.5
 
 
-# model = ToyMlpPolicy(in_features, out_features)
-model = MlpPolicy(in_features, out_features)
+model = ToyMlpPolicy(in_features, out_features)
+# model = MlpPolicy(in_features, out_features)
 
-print("x: ", x)
-print("w: ", model.lin1.weight.T)
-print("b: ", model.lin1.bias)
+print("x: ", x[:, :12])
+print("w1: ", model.lin1.weight.T)
+print("b1: ", model.lin1.bias[:12])
 
 y = model.forward(x)
 

@@ -30,4 +30,4 @@ dump: build
 	riscv64-unknown-elf-objdump -x firmware.elf > firmware.symbol
 
 clean:
-	rm -f *.elf *.bin *.hex *.dis *.section
+	rm -f *.elf *.bin *.hex *.dis *.section *.symbol *.coe

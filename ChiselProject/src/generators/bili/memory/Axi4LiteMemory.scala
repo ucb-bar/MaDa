@@ -4,7 +4,7 @@ import chisel3.util._
 import java.io.PrintWriter
 
 class Axi4LiteMemory(
-  params: Axi4Params = Axi4Params(),
+  val params: Axi4Params = Axi4Params(),
   val memoryFileHex: String = "",
   val memoryFileBin: String = ""
 ) extends Module {

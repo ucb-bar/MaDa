@@ -14,7 +14,7 @@
 #define PWM_HIGH_TIME_COUNT  (PWM_HIGH_TIME / AXI_CLOCK_PERIOD)
 
 
-#define SIMULATION    0
+#define SIMULATION    1
 
 
 #include "uart.h"
@@ -336,19 +336,19 @@ int main(void) {
   const size_t out_features = 8;
 
   // weights are transposed, (in_features X out_features)
-  // const uint32_t *w1_tensor = weights_data + 0;
-  // const uint32_t *b1_tensor = weights_data + 2656;
-  // const uint32_t *w2_tensor = weights_data + 2688;
-  // const uint32_t *b2_tensor = weights_data + 3200;
-  // const uint32_t *w3_tensor = weights_data + 3216;
-  // const uint32_t *b3_tensor = weights_data + 3344;
-
   const uint32_t *w1_tensor = weights_data + 0;
-  const uint32_t *b1_tensor = weights_data + 42496;
-  const uint32_t *w2_tensor = weights_data + 43008;
-  const uint32_t *b2_tensor = weights_data + 174080;
-  const uint32_t *w3_tensor = weights_data + 174336;
-  const uint32_t *b3_tensor = weights_data + 176384;
+  const uint32_t *b1_tensor = weights_data + 2656;
+  const uint32_t *w2_tensor = weights_data + 2688;
+  const uint32_t *b2_tensor = weights_data + 3200;
+  const uint32_t *w3_tensor = weights_data + 3216;
+  const uint32_t *b3_tensor = weights_data + 3344;
+
+  // const uint32_t *w1_tensor = weights_data + 0;
+  // const uint32_t *b1_tensor = weights_data + 42496;
+  // const uint32_t *w2_tensor = weights_data + 43008;
+  // const uint32_t *b2_tensor = weights_data + 174080;
+  // const uint32_t *w3_tensor = weights_data + 174336;
+  // const uint32_t *b3_tensor = weights_data + 176384;
 
 
   while (1) {
@@ -439,13 +439,13 @@ int main(void) {
       write_f32(x_tensor + 82, 0.26528907);
 
       // forward
-      // nn_mini_linear_relu(in_features, 32, lin1_tensor, x_tensor, w1_tensor, b1_tensor);
-      // nn_mini_linear_relu(32, 16, lin2_tensor, lin1_tensor, w2_tensor, b2_tensor);
-      // nn_mini_linear(16, out_features, y_tensor, lin2_tensor, w3_tensor, b3_tensor);
+      nn_mini_linear_relu(in_features, 32, lin1_tensor, x_tensor, w1_tensor, b1_tensor);
+      nn_mini_linear_relu(32, 16, lin2_tensor, lin1_tensor, w2_tensor, b2_tensor);
+      nn_mini_linear(16, out_features, y_tensor, lin2_tensor, w3_tensor, b3_tensor);
 
-      nn_mini_linear_relu(in_features, 512, lin1_tensor, x_tensor, w1_tensor, b1_tensor);
-      nn_mini_linear_relu(512, 256, lin2_tensor, lin1_tensor, w2_tensor, b2_tensor);
-      nn_mini_linear(256, out_features, y_tensor, lin2_tensor, w3_tensor, b3_tensor);
+      // nn_mini_linear_relu(in_features, 512, lin1_tensor, x_tensor, w1_tensor, b1_tensor);
+      // nn_mini_linear_relu(512, 256, lin2_tensor, lin1_tensor, w2_tensor, b2_tensor);
+      // nn_mini_linear(256, out_features, y_tensor, lin2_tensor, w3_tensor, b3_tensor);
 
       // update LED
       GPIOA->OUTPUT = loop_iter;
