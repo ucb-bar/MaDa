@@ -461,6 +461,12 @@ int main(void) {
     putfloat(x_tensor[1]);
     putfloat(x_tensor[2]);
     putfloat(x_tensor[3]);
+    putfloat(x_tensor[4]);
+    putfloat(x_tensor[5]);
+    putfloat(x_tensor[6]);
+    putfloat(x_tensor[7]);
+    putfloat(x_tensor[8]);
+    putfloat(x_tensor[9]);
     putchar('\n');
 
     putchar('w'); putchar('1'); putchar('.'); putchar('T'); putchar('\n');
@@ -468,16 +474,12 @@ int main(void) {
     putfloat(w1_tensor[1]);
     putfloat(w1_tensor[2]);
     putfloat(w1_tensor[3]);
-    putchar('\n');
     putfloat(w1_tensor[4]);
     putfloat(w1_tensor[5]);
     putfloat(w1_tensor[6]);
     putfloat(w1_tensor[7]);
-    putchar('\n');
     putfloat(w1_tensor[8]);
     putfloat(w1_tensor[9]);
-    putfloat(w1_tensor[10]);
-    putfloat(w1_tensor[11]);
     putchar('\n');
 
     putchar('b'); putchar('1'); putchar('\n');
@@ -485,6 +487,12 @@ int main(void) {
     putfloat(b1_tensor[1]);
     putfloat(b1_tensor[2]);
     putfloat(b1_tensor[3]);
+    putfloat(b1_tensor[4]);
+    putfloat(b1_tensor[5]);
+    putfloat(b1_tensor[6]);
+    putfloat(b1_tensor[7]);
+    putfloat(b1_tensor[8]);
+    putfloat(b1_tensor[9]);
     putchar('\n');
 
     putchar('l'); putchar('1'); putchar('\n');
@@ -496,6 +504,8 @@ int main(void) {
     putfloat(lin1_tensor[5]);
     putfloat(lin1_tensor[6]);
     putfloat(lin1_tensor[7]);
+    putfloat(lin1_tensor[8]);
+    putfloat(lin1_tensor[9]);
     putchar('\n');
 
     putchar('w'); putchar('2'); putchar('.'); putchar('T'); putchar('\n');
@@ -503,11 +513,12 @@ int main(void) {
     putfloat(w2_tensor[1]);
     putfloat(w2_tensor[2]);
     putfloat(w2_tensor[3]);
-    putchar('\n');
     putfloat(w2_tensor[4]);
     putfloat(w2_tensor[5]);
     putfloat(w2_tensor[6]);
     putfloat(w2_tensor[7]);
+    putfloat(w2_tensor[8]);
+    putfloat(w2_tensor[9]);
     putchar('\n');
 
     putchar('b'); putchar('2'); putchar('\n');
@@ -515,6 +526,12 @@ int main(void) {
     putfloat(b2_tensor[1]);
     putfloat(b2_tensor[2]);
     putfloat(b2_tensor[3]);
+    putfloat(b2_tensor[4]);
+    putfloat(b2_tensor[5]);
+    putfloat(b2_tensor[6]);
+    putfloat(b2_tensor[7]);
+    putfloat(b2_tensor[8]);
+    putfloat(b2_tensor[9]);
     putchar('\n');
     
     putchar('l'); putchar('2'); putchar('\n');
@@ -526,6 +543,8 @@ int main(void) {
     putfloat(lin2_tensor[5]);
     putfloat(lin2_tensor[6]);
     putfloat(lin2_tensor[7]);
+    putfloat(lin2_tensor[8]);
+    putfloat(lin2_tensor[9]);
     putchar('\n');
 
     putchar('y'); putchar('\n');

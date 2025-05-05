@@ -18,10 +18,10 @@ class ToyMlpPolicy(torch.nn.Module):
      def forward(self, x):
          x = self.lin1(x)
          x = torch.nn.functional.relu(x)
-         print("l1: ", x[:, :12])
+         print("l1:", x.detach()[:, :10])
          x = self.lin2(x)
          x = torch.nn.functional.relu(x)
-         print("l2: ", x[:, :12])
+         print("l2:", x.detach()[:, :10])
          x = self.lin3(x)
          return x
 
@@ -35,10 +35,10 @@ class MlpPolicy(torch.nn.Module):
     def forward(self, x):
         x = self.lin1(x)
         x = torch.nn.functional.relu(x)
-        print("l1: ", x[:, :12])
+        print("l1:", x.detach()[:, :10])
         x = self.lin2(x)
         x = torch.nn.functional.relu(x)
-        print("l2: ", x[:, :12])
+        print("l2:", x.detach()[:, :10])
         x = self.lin3(x)
         return x
 
@@ -78,9 +78,11 @@ x = torch.rand((1, in_features)) - 0.5
 # model = ToyMlpPolicy(in_features, out_features)
 model = MlpPolicy(in_features, out_features)
 
-print("x: ", x[:, :12])
-print("w1: ", model.lin1.weight.T)
-print("b1: ", model.lin1.bias[:12])
+print("x:", x[:, :10])
+print("w1:", model.lin1.weight.T.detach().flatten()[:10])
+print("b1:", model.lin1.bias.detach()[:10])
+print("w2:", model.lin2.weight.T.detach().flatten()[:10])
+print("b2:", model.lin2.bias.detach()[:10])
 
 y = model.forward(x)
 
