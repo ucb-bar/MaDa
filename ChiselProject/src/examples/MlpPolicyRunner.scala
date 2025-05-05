@@ -23,7 +23,7 @@ import chisel3.util._
 class MlpPolicyRunner extends RawModule {
   val io = IO(new Arty100TIO())
 
-  val systemClockFrequency = 60
+  val systemClockFrequency = 50
 
   io := DontCare
 

@@ -23,6 +23,8 @@ hex: build
 	python bintohex.py firmware.bin firmware.hex --data_width 32
 	python bintohex.py firmware.bin firmware.64.hex --data_width 64
 	python bintohex.py firmware.bin firmware.128.hex --data_width 128
+	python bintohex.py firmware.bin firmware.256.hex --data_width 256
+	python bintohex.py firmware.bin firmware.512.hex --data_width 512
 
 dump: build
 	riscv64-unknown-elf-objdump -S firmware.elf > firmware.dis

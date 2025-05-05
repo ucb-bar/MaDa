@@ -14,7 +14,7 @@
 #define PWM_HIGH_TIME_COUNT  (PWM_HIGH_TIME / AXI_CLOCK_PERIOD)
 
 
-#define SIMULATION    1
+#define SIMULATION    0
 
 
 #include "uart.h"
@@ -62,10 +62,10 @@ extern size_t weights_start[];
 extern size_t weights_end[];
 
 
-static uint32_t x_tensor[83] __attribute__((aligned(16)));
-static uint32_t lin1_tensor[512] __attribute__((aligned(16)));
-static uint32_t lin2_tensor[256] __attribute__((aligned(16)));
-static uint32_t y_tensor[8] __attribute__((aligned(16)));
+static uint32_t x_tensor[83] __attribute__((aligned(64)));
+static uint32_t lin1_tensor[512] __attribute__((aligned(64)));
+static uint32_t lin2_tensor[256] __attribute__((aligned(64)));
+static uint32_t y_tensor[8] __attribute__((aligned(64)));
 
 
 // === function declarations === //
@@ -181,12 +181,12 @@ static inline void write_f32(uint32_t *ptr, float data) {
  * Add two vectors
  * y = a + b
  */
-void nn_mini_add(size_t in_features, uint32_t *y, const uint32_t *a, const uint32_t *b) {
+void nn_mini_add(size_t out_features, uint32_t *y, const uint32_t *a, const uint32_t *b) {
   uint32_t *y_data = y;
   const uint32_t *a_data = a;
   const uint32_t *b_data = b;
 
-  for (size_t tile = 0; tile < in_features; tile += VLEN) {
+  for (size_t tile = 0; tile < out_features; tile += VLEN) {
     // load a
     // WRITE_CSR(CSR_SYSCALL3, 2);
     asm volatile("vle32.v v2, (%0)" : : "r"(a_data) : "v2");
@@ -336,19 +336,21 @@ int main(void) {
   const size_t out_features = 8;
 
   // weights are transposed, (in_features X out_features)
-  const uint32_t *w1_tensor = weights_data + 0;
-  const uint32_t *b1_tensor = weights_data + 2656;
-  const uint32_t *w2_tensor = weights_data + 2688;
-  const uint32_t *b2_tensor = weights_data + 3200;
-  const uint32_t *w3_tensor = weights_data + 3216;
-  const uint32_t *b3_tensor = weights_data + 3344;
-
+  // toy example
   // const uint32_t *w1_tensor = weights_data + 0;
-  // const uint32_t *b1_tensor = weights_data + 42496;
-  // const uint32_t *w2_tensor = weights_data + 43008;
-  // const uint32_t *b2_tensor = weights_data + 174080;
-  // const uint32_t *w3_tensor = weights_data + 174336;
-  // const uint32_t *b3_tensor = weights_data + 176384;
+  // const uint32_t *b1_tensor = weights_data + 2656;
+  // const uint32_t *w2_tensor = weights_data + 2688;
+  // const uint32_t *b2_tensor = weights_data + 3200;
+  // const uint32_t *w3_tensor = weights_data + 3216;
+  // const uint32_t *b3_tensor = weights_data + 3344;
+
+  // real model
+  const uint32_t *w1_tensor = weights_data + 0;
+  const uint32_t *b1_tensor = weights_data + 42496;
+  const uint32_t *w2_tensor = weights_data + 43008;
+  const uint32_t *b2_tensor = weights_data + 174080;
+  const uint32_t *w3_tensor = weights_data + 174336;
+  const uint32_t *b3_tensor = weights_data + 176384;
 
 
   while (1) {
@@ -439,13 +441,15 @@ int main(void) {
       write_f32(x_tensor + 82, 0.26528907);
 
       // forward
-      nn_mini_linear_relu(in_features, 32, lin1_tensor, x_tensor, w1_tensor, b1_tensor);
-      nn_mini_linear_relu(32, 16, lin2_tensor, lin1_tensor, w2_tensor, b2_tensor);
-      nn_mini_linear(16, out_features, y_tensor, lin2_tensor, w3_tensor, b3_tensor);
+      // toy example
+      // nn_mini_linear_relu(in_features, 32, lin1_tensor, x_tensor, w1_tensor, b1_tensor);
+      // nn_mini_linear_relu(32, 16, lin2_tensor, lin1_tensor, w2_tensor, b2_tensor);
+      // nn_mini_linear(16, out_features, y_tensor, lin2_tensor, w3_tensor, b3_tensor);
 
-      // nn_mini_linear_relu(in_features, 512, lin1_tensor, x_tensor, w1_tensor, b1_tensor);
-      // nn_mini_linear_relu(512, 256, lin2_tensor, lin1_tensor, w2_tensor, b2_tensor);
-      // nn_mini_linear(256, out_features, y_tensor, lin2_tensor, w3_tensor, b3_tensor);
+      // real model
+      nn_mini_linear_relu(in_features, 512, lin1_tensor, x_tensor, w1_tensor, b1_tensor);
+      nn_mini_linear_relu(512, 256, lin2_tensor, lin1_tensor, w2_tensor, b2_tensor);
+      nn_mini_linear(256, out_features, y_tensor, lin2_tensor, w3_tensor, b3_tensor);
 
       // update LED
       GPIOA->OUTPUT = loop_iter;
@@ -492,6 +496,25 @@ int main(void) {
     putfloat(lin1_tensor[5]);
     putfloat(lin1_tensor[6]);
     putfloat(lin1_tensor[7]);
+    putchar('\n');
+
+    putchar('w'); putchar('2'); putchar('.'); putchar('T'); putchar('\n');
+    putfloat(w2_tensor[0]);
+    putfloat(w2_tensor[1]);
+    putfloat(w2_tensor[2]);
+    putfloat(w2_tensor[3]);
+    putchar('\n');
+    putfloat(w2_tensor[4]);
+    putfloat(w2_tensor[5]);
+    putfloat(w2_tensor[6]);
+    putfloat(w2_tensor[7]);
+    putchar('\n');
+
+    putchar('b'); putchar('2'); putchar('\n');
+    putfloat(b2_tensor[0]);
+    putfloat(b2_tensor[1]);
+    putfloat(b2_tensor[2]);
+    putfloat(b2_tensor[3]);
     putchar('\n');
     
     putchar('l'); putchar('2'); putchar('\n');

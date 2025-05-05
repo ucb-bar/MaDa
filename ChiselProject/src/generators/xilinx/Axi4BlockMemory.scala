@@ -49,8 +49,8 @@ set_property -dict [list \\
   CONFIG.AXI_Type {AXI4} \\
   CONFIG.Interface_Type {AXI4} \\
   CONFIG.Write_Width_A {${params.dataWidth}} \\
-  CONFIG.Write_Depth_A {8192} \\
-  CONFIG.Load_Init_File {false} \\
+  CONFIG.Write_Depth_A {${(1048576 / params.dataWidth).toInt}} \\
+  CONFIG.Load_Init_File {true} \\
   CONFIG.Fill_Remaining_Memory_Locations {${fillUnused}} \\
   CONFIG.Coe_File {${coeFile}} \\
 ] [get_ips ${ip_name}]

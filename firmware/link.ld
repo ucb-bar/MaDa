@@ -30,10 +30,10 @@ SECTIONS {
 
   /* Section containing read-only data */
   .rodata : {
-    . = ALIGN(4);
+    . = ALIGN(64);
     *(.rodata .rodata.*)
     *(.gnu.linkonce.r.*)
-    . = ALIGN(8);
+    . = ALIGN(64);
     *(.srodata.cst16)
     *(.srodata.cst8)
     *(.srodata.cst4)
