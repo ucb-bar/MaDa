@@ -25,7 +25,7 @@ class Tile extends Module {
 
   val dtim = Module(new Axi4Memory(
     params=Axi4Params(addressWidth=16, dataWidth=busWidth),
-    memoryFileHex="firmware.128.hex"
+    memoryFileHex=s"firmware.${busWidth}.hex"
   ))
   
   val xbar = Module(new Axi4Crossbar(

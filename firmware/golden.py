@@ -73,6 +73,7 @@ def generate_weight_binary(tensors: list[torch.Tensor]) -> str:
 x = torch.rand((1, in_features)) - 0.5
 
 
+# model = ToyMlpPolicy(in_features, out_features)
 model = MlpPolicy(in_features, out_features)
 
 print("x: ", x)

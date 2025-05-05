@@ -40,44 +40,55 @@ class SimdFloatingPoint(
   io.busy := (io.func =/= SIMD_X || reg_op_pending) && !fmacc(0).io.result.valid
 
 
-  // EX 2 stage pipeline
-  val ex2_reg_op_1 = RegNext(io.op1)
-  val ex2_reg_op_2 = RegNext(io.op2)
-  val ex2_reg_op_3 = RegNext(io.op3)
+  // EX 2 stage pipeline registers
+  val ex2_reg_op_a = Reg(Vec(nVectors, UInt(32.W)))
+  val ex2_reg_op_b = Reg(Vec(nVectors, UInt(32.W)))
+  val ex2_reg_op_c = Reg(Vec(nVectors, UInt(32.W)))
+  
+  val ex2_reg_op_rs2 = RegNext(io.op2)
   val ex2_reg_func = RegNext(io.func)
   val ex2_reg_valid = RegNext(input_valid)
 
-  val op2_positive = ex2_reg_op_2.map(x => x(31) === 0.U)
+
+  for (i <- 0 until nVectors) {
+    when(io.func === SIMD_ADD) {
+      ex2_reg_op_a(i) := io.op1(i)
+      ex2_reg_op_b(i) := one
+      ex2_reg_op_c(i) := io.op2(i)
+    }
+    .elsewhen(io.func === SIMD_MUL) {
+      ex2_reg_op_a(i) := io.op1(i)
+      ex2_reg_op_b(i) := io.op2(i)
+      ex2_reg_op_c(i) := zero
+    }
+    .elsewhen(io.func === SIMD_MACC) {
+      ex2_reg_op_a(i) := io.op1(i)
+      ex2_reg_op_b(i) := io.op2(i)
+      ex2_reg_op_c(i) := io.op3(i)
+    }
+    .otherwise {
+      ex2_reg_op_a(i) := zero
+      ex2_reg_op_b(i) := zero
+      ex2_reg_op_c(i) := zero
+    }
+  }
+
+  // ====== pipeline cross here ======
+
+  val ex2_op2_positive = ex2_reg_op_rs2.map(x => x(31) === 0.U)
 
   for (i <- 0 until nVectors) {
     fmacc(i).io.a.valid := ex2_reg_valid
     fmacc(i).io.b.valid := ex2_reg_valid
     fmacc(i).io.c.valid := ex2_reg_valid
 
-    when(ex2_reg_func === SIMD_ADD) {
-      fmacc(i).io.a.bits := ex2_reg_op_1(i)
-      fmacc(i).io.b.bits := one
-      fmacc(i).io.c.bits := ex2_reg_op_2(i)
-    }
-    .elsewhen(ex2_reg_func === SIMD_MUL) {
-      fmacc(i).io.a.bits := ex2_reg_op_1(i)
-      fmacc(i).io.b.bits := ex2_reg_op_2(i)
-      fmacc(i).io.c.bits := zero
-    }
-    .elsewhen(ex2_reg_func === SIMD_MACC) {
-      fmacc(i).io.a.bits := ex2_reg_op_1(i)
-      fmacc(i).io.b.bits := ex2_reg_op_2(i)
-      fmacc(i).io.c.bits := ex2_reg_op_3(i)
-    }
-    .otherwise {
-      fmacc(i).io.a.bits := zero
-      fmacc(i).io.b.bits := zero
-      fmacc(i).io.c.bits := zero
-    }
+    fmacc(i).io.a.bits := ex2_reg_op_a(i)
+    fmacc(i).io.b.bits := ex2_reg_op_b(i)
+    fmacc(i).io.c.bits := ex2_reg_op_c(i)
 
     io.out(i) := MuxCase(fmacc(i).io.result.bits, Seq(
       (ex2_reg_func === SIMD_XOR) -> zero,
-      (ex2_reg_func === SIMD_MAX) -> Mux(op2_positive(i), ex2_reg_op_2(i), zero),
+      (ex2_reg_func === SIMD_MAX) -> Mux(ex2_op2_positive(i), ex2_reg_op_rs2(i), zero),
     ))
   }
 }
