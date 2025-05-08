@@ -10,13 +10,9 @@
 
 /* ======== Axi4Lite Uart Lite ======== */
 typedef struct {
-  uint32_t OUTPUT;
+  volatile uint32_t OUTPUT;
 } XilinxGpio;
 
-
-#define GPIOA_BASE  0x10000000
-
-#define GPIOA                           ((XilinxGpio *) GPIOA_BASE)
 
 #endif  // __GPIO_H
 

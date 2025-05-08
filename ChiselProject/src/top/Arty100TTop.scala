@@ -31,6 +31,8 @@ class Arty100TIO extends Bundle {
   val uart_rxd_out = Output(Bool())
   val uart_txd_in = Input(Bool())
 
+  val ck_io = Vec(10, Output(Bool()))
+
   val ck_ioa = Input(Bool())
   val ck_rst = Input(Bool())
 
@@ -47,6 +49,10 @@ class Arty100TIO extends Bundle {
   val eth_tx_clk = Input(Bool())
   val eth_tx_en = Output(Bool())
   val eth_txd = Output(UInt(4.W))
+
+  val qspi_cs = Output(Bool())
+  val qspi_sck = Output(Clock())
+  val qspi_dq = Vec(4, Analog(1.W))
 }
 
 

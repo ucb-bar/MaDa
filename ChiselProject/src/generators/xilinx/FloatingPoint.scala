@@ -4,7 +4,9 @@ import chisel3.util._
 import java.io.PrintWriter
 
 
-class FloatingPoint extends Module {
+class FloatingPoint(
+  val pipelineStages: Int = 1
+) extends Module {
   val io = IO(new Bundle {
     val a = Flipped(Valid(UInt(32.W)))
     val b = Flipped(Valid(UInt(32.W)))
@@ -12,8 +14,9 @@ class FloatingPoint extends Module {
     val result = Valid(UInt(32.W))
   })
 
-  val blackbox = Module(new FloatingPointBlackbox())
+  val blackbox = Module(new FloatingPointBlackbox(pipelineStages=pipelineStages))
 
+  blackbox.io.aclk := clock
   blackbox.io.s_axis_a_tvalid := io.a.valid
   blackbox.io.s_axis_a_tdata := io.a.bits
   blackbox.io.s_axis_b_tvalid := io.b.valid
@@ -24,8 +27,11 @@ class FloatingPoint extends Module {
   io.result.bits := blackbox.io.m_axis_result_tdata
 }
 
-class FloatingPointBlackbox extends BlackBox {
+class FloatingPointBlackbox(
+  val pipelineStages: Int = 1
+) extends BlackBox {
   val io = IO(new Bundle {
+    val aclk = Input(Clock())
     val s_axis_a_tvalid = Input(Bool())
     val s_axis_a_tdata = Input(UInt(32.W))
     val s_axis_b_tvalid = Input(Bool())
@@ -51,7 +57,7 @@ set_property -dict [list \\
   CONFIG.Add_Sub_Value {Add} \\
   CONFIG.C_A_Exponent_Width {8} \\
   CONFIG.C_A_Fraction_Width {24} \\
-  CONFIG.C_Latency {0} \\
+  CONFIG.C_Latency {${pipelineStages}} \\
   CONFIG.C_Mult_Usage {Full_Usage} \\
   CONFIG.C_Optimization {Speed_Optimized} \\
   CONFIG.C_Rate {1} \\

@@ -2,43 +2,80 @@
 #include <stddef.h>
 #include <stdio.h>
 
-
 #include "metal.h"
 #include "riscv.h"
+
+
+#define AXI_CLOCK_PERIOD      64  // 64 ns
+#define PWM_PERIOD      20000000  // 20 ms
+#define PWM_HIGH_TIME    1000000  // 1 ms
+
+#define PWM_PERIOD_COUNT  (PWM_PERIOD / AXI_CLOCK_PERIOD)
+#define PWM_HIGH_TIME_COUNT  (PWM_HIGH_TIME / AXI_CLOCK_PERIOD)
+
+
+#define SIMULATION    0
+
+
 #include "uart.h"
 #include "gpio.h"
+#include "timer.h"
+
+#include "nn_mini.h"
 
 
-// #define DELAY_CYCLES 2000000
-#define DELAY_CYCLES 2
+#define SCRATCH_BASE          0x08000000
+#define GPIOA_BASE            0x10010000
+#define UART0_BASE            0x10020000
+#define QSPI_BASE             0x10030000
+#define TIM0_BASE             0x10040000
+
+#define FLASH_BASE            0x20000000
+
+#define GPIOA                           ((XilinxGpio *) GPIOA_BASE)
+#define UART0                           ((XilinxUart *) UART0_BASE)
+#define TIM0                            ((XilinxTimer *) TIM0_BASE)
+
+#include "glossy.h"
+
+
+
+
+#define VLEN   2
+
+
+#if SIMULATION == 1
+  #define DELAY_CYCLES 2
+  #define N_ITER 1
+#else
+  #define DELAY_CYCLES 1000000
+  #define N_ITER 10
+#endif
+
+
+
+
+// load the weight data block from the model.bin file
+INCLUDE_FILE(".rodata", "./weights.bin", weights);
+extern uint32_t weights_data[];
+extern size_t weights_start[];
+extern size_t weights_end[];
+
+
+static uint32_t x_tensor[83] __attribute__((aligned(64)));
+static uint32_t lin1_tensor[512] __attribute__((aligned(64)));
+static uint32_t lin2_tensor[256] __attribute__((aligned(64)));
+static uint32_t y_tensor[8] __attribute__((aligned(64)));
 
 
 // === function declarations === //
 int main();
 
 
-// === system functions === //
-int putchar(int c) {
-  while (READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_FULL_MSK)) {
-    asm volatile("nop");
-  }
-  UART0->TXFIFO = READ_BITS(c, 0xFF);
-}
-
-void prints(const char *str) {
-  while (*str) {
-    putchar(*str);
-    str += 1;
-  }
-}
-
-void exit(int code) {
-  WRITE_CSR("0x51E", 0x01);
-}
-
-
 
 // === startup code === //
+extern unsigned int __sp;
+
 void __attribute__((section(".text.init"), naked)) _start() {
   // clear all registers to avoid X's
   asm volatile("li x1, 0");
@@ -75,7 +112,7 @@ void __attribute__((section(".text.init"), naked)) _start() {
 
   // set stack pointer to 0x08001000
   // and set C runtime argc to 0
-  asm volatile("li sp, 0x08001000");
+  asm volatile("la sp, __sp");
   asm volatile("addi s0, sp, -32");
   asm volatile("sw zero, 0x00(s0)");
   asm volatile("sw zero, 0x04(s0)");
@@ -132,185 +169,414 @@ typedef union {
   uint32_t u32;
 } vec_t;
 
-static uint32_t zero[1] __attribute__((aligned(16))) = { 0 };
-static uint32_t y[4] __attribute__((aligned(16))) = { 0 };
-static uint32_t x[4] __attribute__((aligned(16))) = { 0 };
-static uint32_t w[16] __attribute__((aligned(16))) = { 0 };
-static uint32_t b[4] __attribute__((aligned(16))) = { 0 };
+static inline void write_f32(uint32_t *ptr, float data) {
+  vec_t val;
+  val.f32 = data;
+  ptr[0] = val.u32;
+}
 
 
-// /**
-//  * nn_print_f32
-//  * 
-//  * Prints a float.
-//  * 
-//  * @param v The float to print.
-//  * @param num_digits The number of decimal digits to print.
-//  */
-// void nn_print_f32(float v, int16_t num_digits) {
-//   if (isinf(v)) {
-//     if (signbit(v)) {
-//       printf("-inf");
-//     } else {
-//       printf("inf");
-//     }
-//     return;
-//   }
-  
-//   if (v < 0) {
-//     printf("-");  // Print the minus sign for negative numbers
-//     v = -v;        // Make the number positive for processing
-//   }
-//   else {
-//     printf(" ");
-//   }
 
-//   // Calculate the integer part of the number
-//   long int_part = (long)v;
-//   float fractional_part = v - int_part;
+/**
+ * Add two vectors
+ * y = a + b
+ */
+void nn_mini_add(size_t out_features, uint32_t *y, const uint32_t *a, const uint32_t *b) {
+  uint32_t *y_data = y;
+  const uint32_t *a_data = a;
+  const uint32_t *b_data = b;
 
-//   // Print the integer part
-//   printf("%ld", int_part);
+  for (size_t tile = 0; tile < out_features; tile += VLEN) {
+    // load a
+    // WRITE_CSR(CSR_SYSCALL3, 2);
+    asm volatile("vle32.v v2, (%0)" : : "r"(a_data) : "v2");
 
-//   if (num_digits > 0) {
-//     printf("."); // Print the decimal point
-//   }
+    // load b
+    // WRITE_CSR(CSR_SYSCALL3, 3);
+    asm volatile("vle32.v v3, (%0)" : : "r"(b_data) : "v3");
 
-//   // Handle the fractional part
-//   while (num_digits > 0) {
-//     num_digits -= 1;
-//     fractional_part *= 10;
-//     int digit = (int)(fractional_part);
-//     printf("%d", digit);
-//     fractional_part -= digit;
-//   }
-// }
+    // y = a + b
+    // WRITE_CSR(CSR_SYSCALL3, 4);
+    asm volatile("vfadd.vv v1, v2, v3");
 
-const size_t SIMD_LEN = 2;
+    // store y
+    // WRITE_CSR(CSR_SYSCALL3, 5);
+    asm volatile("vse32.v v1, (%0)" : : "r"(y_data) : "memory");
+
+    // increment pointers
+    y_data += VLEN;
+    a_data += VLEN;
+    b_data += VLEN;
+  }
+}
 
 
-void linear(uint32_t out_features, uint32_t in_features, uint32_t *y, uint32_t *x, uint32_t *w, uint32_t *b) {
+/**
+ * Fused linear layer with relu activation
+ * y = max(0, w.T * x + b)
+ */
+void nn_mini_linear_relu(size_t in_features, size_t out_features, uint32_t *y, const uint32_t *x, const uint32_t *w, const uint32_t *b) {
   // vy = vw * vx (broadcast x) + vb
-  const size_t batch_size = 1;
 
-  size_t tile_size = 2;
-
-  uint32_t *w_ptr;
-  uint32_t *x_ptr;
+  uint32_t *y_data = y;
+  const uint32_t *x_data = x;
+  const uint32_t *w_data = w;
+  const uint32_t *b_data = b;
 
   // tiling, when out_features is greater than SIMD length
-  for (size_t tile = 0; tile < 4; tile += tile_size) {
-    w_ptr = w;
-    x_ptr = x;
+  for (size_t tile = 0; tile < out_features; tile += VLEN) {
+    const uint32_t *w_ptr = w_data;
+    const uint32_t *x_ptr = x_data;
 
-    // broadcast zero
-    asm volatile("vlse32.v v0, (%0), zero" : : "r"(zero) : "v0");
+    /* 
+      Register allocation plan:
+      v0 stores zero, used to do relu activation
+      v1 is used to store the final result. 
+        It is initialized with the b vector value
+        In each iteration, v1 is accumulated with the loop result
+      v2 is used to store the x vector.
+      v3 is used to store the w column vector.
+    */
 
-    WRITE_CSR("0x51F", 4);
+    // zero out v0
+    asm volatile("vxor.vv v0, v0, v0");
+
+    WRITE_CSR(CSR_SYSCALL3, 2);
+    // load b first to avoid extra add
+    asm volatile("vle32.v v1, (%0)" : : "r"(b_data) : "v1");
+
     // loop over x and column vector of w    
     for (size_t i = 0; i < in_features; i += 1) {
       // broadcast x
-      asm volatile("vlse32.v v1, (%0), zero" : : "r"(x_ptr) : "v1");
+      WRITE_CSR(CSR_SYSCALL3, 3);
+      asm volatile("vlse32.v v2, (%0), zero" : : "r"(x_ptr) : "v2");
 
       // load w column
-      asm volatile("vle32.v v2, (%0)" : : "r"(w_ptr) : "v2");
+      WRITE_CSR(CSR_SYSCALL3, 4);
+      asm volatile("vle32.v v3, (%0)" : : "r"(w_ptr) : "v3");
 
       // y += w.T * x
-      asm volatile("vfmacc.vv v0, v1, v2");
+      WRITE_CSR(CSR_SYSCALL3, 5);
+      asm volatile("vfmacc.vv v1, v2, v3");
 
       // increment pointers
       x_ptr += 1;
       w_ptr += out_features;
     }
-    WRITE_CSR("0x51F", 0);
 
-    // load b
-    asm volatile("vle32.v v3, (%0)" : : "r"(b) : "v3");
-    
-    // y += b
-    asm volatile("vfadd.vv v0, v0, v3");
-    
+    // relu
+    WRITE_CSR(CSR_SYSCALL3, 6);
+    // ummmm okay so GCC thinks v1 is rs2 and v0 is rs1...
+    asm volatile("vfmax.vv v1, v1, v0");
+
     // store y
-    asm volatile("vse32.v v0, (%0)" : : "r"(y) : "memory");
+    WRITE_CSR(CSR_SYSCALL3, 7);
+    asm volatile("vse32.v v1, (%0)" : : "r"(y_data) : "memory");
 
     // increment pointers
-    y += tile_size;
-    w += tile_size;
-    b += tile_size;
+    y_data += VLEN;
+    w_data += VLEN;
+    b_data += VLEN;
   }
-  
+}
 
-  // asm volatile("vfadd.vv v3, v2, v1");
-  // asm volatile("vfmul.vv v4, v2, v1");
-  // asm volatile("vfmacc.vv v5, v1, v2");
-  // asm volatile("vse32.v v2, 0(x1)");
+/**
+ * Linear layer
+ * y = w.T * x + b
+ */
+void nn_mini_linear(size_t in_features, size_t out_features, uint32_t *y, const uint32_t *x, const uint32_t *w, const uint32_t *b) {
+  uint32_t *y_data = y;
+  const uint32_t *x_data = x;
+  const uint32_t *w_data = w;
+  const uint32_t *b_data = b;
+
+  // tiling, when out_features is greater than SIMD length
+  for (size_t tile = 0; tile < out_features; tile += VLEN) {
+    const uint32_t *w_ptr = w_data;
+    const uint32_t *x_ptr = x_data;
+
+    asm volatile("vle32.v v1, (%0)" : : "r"(b_data) : "v1");
+
+    // loop over x and column vector of w    
+    for (size_t i = 0; i < in_features; i += 1) {
+      asm volatile("vlse32.v v2, (%0), zero" : : "r"(x_ptr) : "v2");
+      asm volatile("vle32.v v3, (%0)" : : "r"(w_ptr) : "v3");
+      asm volatile("vfmacc.vv v1, v2, v3");
+      x_ptr += 1;
+      w_ptr += out_features;
+    }
+
+    asm volatile("vse32.v v1, (%0)" : : "r"(y_data) : "memory");
+
+    // increment pointers
+    y_data += VLEN;
+    w_data += VLEN;
+    b_data += VLEN;
+  }
 }
 
 
+
+uint32_t pwm_high = 1000000;
+
+
 int main(void) {
-  // prints("start.\n");
+  uint8_t counter = 0;
+
+  // configure timer
+  // timer_pwm_init(TIM0);
+  // timer_pwm_set_period(TIM0, PWM_PERIOD_COUNT);
+  // timer_pwm_set_high_time(TIM0, pwm_high / 64);
+  // timer_pwm_enable(TIM0);
+
+  
+  // ==== Model Initialization ==== //
+  // NOTE: out_features must be a multiple of VLEN
+  const size_t in_features = 83;
+  const size_t out_features = 8;
+
+  // weights are transposed, (in_features X out_features)
+  // toy example
+  // const uint32_t *w1_tensor = weights_data + 0;
+  // const uint32_t *b1_tensor = weights_data + 2656;
+  // const uint32_t *w2_tensor = weights_data + 2688;
+  // const uint32_t *b2_tensor = weights_data + 3200;
+  // const uint32_t *w3_tensor = weights_data + 3216;
+  // const uint32_t *b3_tensor = weights_data + 3344;
+
+  // real model
+  const uint32_t *w1_tensor = weights_data + 0;
+  const uint32_t *b1_tensor = weights_data + 42496;
+  const uint32_t *w2_tensor = weights_data + 43008;
+  const uint32_t *b2_tensor = weights_data + 174080;
+  const uint32_t *w3_tensor = weights_data + 174336;
+  const uint32_t *b3_tensor = weights_data + 176384;
+
 
   while (1) {
-    vec_t val;
+    for (size_t loop_iter=0; loop_iter<N_ITER; loop_iter+=1) {
+      // initialize input tensor
+      write_f32(x_tensor + 0, 0.38226926);
+      write_f32(x_tensor + 1, 0.41500396);
+      write_f32(x_tensor + 2, -0.11713624);
+      write_f32(x_tensor + 3, 0.45930564);
+      write_f32(x_tensor + 4, -0.10955179);
+      write_f32(x_tensor + 5, 0.10089535);
+      write_f32(x_tensor + 6, -0.24342752);
+      write_f32(x_tensor + 7, 0.29364133);
+      write_f32(x_tensor + 8, 0.44077146);
+      write_f32(x_tensor + 9, -0.36681408);
+      write_f32(x_tensor + 10, 0.43459809);
+      write_f32(x_tensor + 11, 0.09357965);
+      write_f32(x_tensor + 12, 0.36940444);
+      write_f32(x_tensor + 13, 0.06771529);
+      write_f32(x_tensor + 14, 0.24109405);
+      write_f32(x_tensor + 15, -0.07059550);
+      write_f32(x_tensor + 16, 0.38544291);
+      write_f32(x_tensor + 17, 0.07390445);
+      write_f32(x_tensor + 18, -0.23341995);
+      write_f32(x_tensor + 19, 0.12744915);
+      write_f32(x_tensor + 20, -0.23036832);
+      write_f32(x_tensor + 21, -0.05863643);
+      write_f32(x_tensor + 22, -0.20307916);
+      write_f32(x_tensor + 23, 0.33168548);
+      write_f32(x_tensor + 24, -0.39468509);
+      write_f32(x_tensor + 25, -0.23050517);
+      write_f32(x_tensor + 26, -0.14118737);
+      write_f32(x_tensor + 27, -0.30063623);
+      write_f32(x_tensor + 28, 0.04719156);
+      write_f32(x_tensor + 29, -0.49383956);
+      write_f32(x_tensor + 30, 0.45155454);
+      write_f32(x_tensor + 31, -0.42473412);
+      write_f32(x_tensor + 32, 0.38601369);
+      write_f32(x_tensor + 33, 0.08320957);
+      write_f32(x_tensor + 34, -0.16235226);
+      write_f32(x_tensor + 35, 0.30897498);
+      write_f32(x_tensor + 36, 0.07792538);
+      write_f32(x_tensor + 37, 0.40398169);
+      write_f32(x_tensor + 38, 0.05465984);
+      write_f32(x_tensor + 39, -0.15768659);
+      write_f32(x_tensor + 40, 0.13434184);
+      write_f32(x_tensor + 41, -0.13558972);
+      write_f32(x_tensor + 42, 0.21042877);
+      write_f32(x_tensor + 43, 0.44641107);
+      write_f32(x_tensor + 44, 0.28902978);
+      write_f32(x_tensor + 45, -0.21858627);
+      write_f32(x_tensor + 46, 0.28863233);
+      write_f32(x_tensor + 47, 0.08946311);
+      write_f32(x_tensor + 48, 0.25391752);
+      write_f32(x_tensor + 49, -0.30475253);
+      write_f32(x_tensor + 50, -0.49495423);
+      write_f32(x_tensor + 51, -0.19318026);
+      write_f32(x_tensor + 52, -0.38351142);
+      write_f32(x_tensor + 53, 0.41026944);
+      write_f32(x_tensor + 54, 0.14401567);
+      write_f32(x_tensor + 55, 0.20710677);
+      write_f32(x_tensor + 56, 0.15813059);
+      write_f32(x_tensor + 57, -0.00869799);
+      write_f32(x_tensor + 58, 0.39130414);
+      write_f32(x_tensor + 59, -0.35525680);
+      write_f32(x_tensor + 60, 0.03148186);
+      write_f32(x_tensor + 61, -0.34127009);
+      write_f32(x_tensor + 62, 0.15417600);
+      write_f32(x_tensor + 63, -0.17219114);
+      write_f32(x_tensor + 64, 0.15320814);
+      write_f32(x_tensor + 65, -0.10417074);
+      write_f32(x_tensor + 66, 0.41469592);
+      write_f32(x_tensor + 67, -0.29635096);
+      write_f32(x_tensor + 68, -0.29819900);
+      write_f32(x_tensor + 69, -0.29821700);
+      write_f32(x_tensor + 70, 0.44972140);
+      write_f32(x_tensor + 71, 0.16662556);
+      write_f32(x_tensor + 72, 0.48112535);
+      write_f32(x_tensor + 73, -0.41263813);
+      write_f32(x_tensor + 74, -0.49593806);
+      write_f32(x_tensor + 75, -0.39118189);
+      write_f32(x_tensor + 76, -0.33634454);
+      write_f32(x_tensor + 77, 0.20252007);
+      write_f32(x_tensor + 78, 0.17903793);
+      write_f32(x_tensor + 79, 0.41546220);
+      write_f32(x_tensor + 80, -0.25821269);
+      write_f32(x_tensor + 81, -0.34085590);
+      write_f32(x_tensor + 82, 0.26528907);
 
-    val.f32 = 0.11f;  // 3de147ae
-    x[0] = val.u32;
-    val.f32 = 0.22f;  // 3e6147ae
-    x[1] = val.u32;
-    val.f32 = 0.33f;  // 3ea8f5c3
-    x[2] = val.u32;
+      // forward
+      // toy example
+      // nn_mini_linear_relu(in_features, 32, lin1_tensor, x_tensor, w1_tensor, b1_tensor);
+      // nn_mini_linear_relu(32, 16, lin2_tensor, lin1_tensor, w2_tensor, b2_tensor);
+      // nn_mini_linear(16, out_features, y_tensor, lin2_tensor, w3_tensor, b3_tensor);
+
+      // real model
+      nn_mini_linear_relu(in_features, 512, lin1_tensor, x_tensor, w1_tensor, b1_tensor);
+      nn_mini_linear_relu(512, 256, lin2_tensor, lin1_tensor, w2_tensor, b2_tensor);
+      nn_mini_linear(256, out_features, y_tensor, lin2_tensor, w3_tensor, b3_tensor);
+
+      // update LED
+      GPIOA->OUTPUT = loop_iter;
+    }
     
-    val.f32 = 0.12f;  // 3ea8f5c3
-    w[0] = val.u32;
-    val.f32 = 0.34f;  // 3ee147ae
-    w[1] = val.u32;
-    val.f32 = 0.07f;  // 3ea8f5c3
-    w[2] = val.u32;
-    val.f32 = -0.11f;  // 3ee147ae
-    w[3] = val.u32;
-    val.f32 = 0.56f;  // 3ea8f5c3
-    w[4] = val.u32;
-    val.f32 = -0.78f;  // 3ee147ae
-    w[5] = val.u32;
-    val.f32 = 0.08f;  // 3ea8f5c3
-    w[6] = val.u32;
-    val.f32 = 0.22f;  // 3ee147ae
-    w[7] = val.u32;
-    val.f32 = 0.90f;  // 3ea8f5c3
-    w[8] = val.u32;
-    val.f32 = 1.12f;  // 3ee147ae
-    w[9] = val.u32;
-    val.f32 = 0.09f;  // 3ea8f5c3
-    w[10] = val.u32;
-    val.f32 = -0.33f;  // 3ee147ae
-    w[11] = val.u32;
+    // print results
+    putchar('x'); putchar('1'); putchar('\n');
+    putfloat(x_tensor[0]);
+    putfloat(x_tensor[1]);
+    putfloat(x_tensor[2]);
+    putfloat(x_tensor[3]);
+    putfloat(x_tensor[4]);
+    putfloat(x_tensor[5]);
+    putfloat(x_tensor[6]);
+    putfloat(x_tensor[7]);
+    putfloat(x_tensor[8]);
+    putfloat(x_tensor[9]);
+    putchar('\n');
 
-    val.f32 = -0.55f;  // 3f0ccccd
-    b[0] = val.u32;
-    val.f32 = -0.66f;  // 3f28f5c3
-    b[1] = val.u32;
-    val.f32 = -0.77f;  // 3ea8f5c3
-    b[2] = val.u32;
-    val.f32 = -0.88f;  // 3ee147ae
-    b[3] = val.u32;
+    putchar('w'); putchar('1'); putchar('.'); putchar('T'); putchar('\n');
+    putfloat(w1_tensor[0]);
+    putfloat(w1_tensor[1]);
+    putfloat(w1_tensor[2]);
+    putfloat(w1_tensor[3]);
+    putfloat(w1_tensor[4]);
+    putfloat(w1_tensor[5]);
+    putfloat(w1_tensor[6]);
+    putfloat(w1_tensor[7]);
+    putfloat(w1_tensor[8]);
+    putfloat(w1_tensor[9]);
+    putchar('\n');
 
-    WRITE_CSR("0x51F", 0);
+    putchar('b'); putchar('1'); putchar('\n');
+    putfloat(b1_tensor[0]);
+    putfloat(b1_tensor[1]);
+    putfloat(b1_tensor[2]);
+    putfloat(b1_tensor[3]);
+    putfloat(b1_tensor[4]);
+    putfloat(b1_tensor[5]);
+    putfloat(b1_tensor[6]);
+    putfloat(b1_tensor[7]);
+    putfloat(b1_tensor[8]);
+    putfloat(b1_tensor[9]);
+    putchar('\n');
+
+    putchar('l'); putchar('1'); putchar('\n');
+    putfloat(lin1_tensor[0]);
+    putfloat(lin1_tensor[1]);
+    putfloat(lin1_tensor[2]);
+    putfloat(lin1_tensor[3]);
+    putfloat(lin1_tensor[4]);
+    putfloat(lin1_tensor[5]);
+    putfloat(lin1_tensor[6]);
+    putfloat(lin1_tensor[7]);
+    putfloat(lin1_tensor[8]);
+    putfloat(lin1_tensor[9]);
+    putchar('\n');
+
+    putchar('w'); putchar('2'); putchar('.'); putchar('T'); putchar('\n');
+    putfloat(w2_tensor[0]);
+    putfloat(w2_tensor[1]);
+    putfloat(w2_tensor[2]);
+    putfloat(w2_tensor[3]);
+    putfloat(w2_tensor[4]);
+    putfloat(w2_tensor[5]);
+    putfloat(w2_tensor[6]);
+    putfloat(w2_tensor[7]);
+    putfloat(w2_tensor[8]);
+    putfloat(w2_tensor[9]);
+    putchar('\n');
+
+    putchar('b'); putchar('2'); putchar('\n');
+    putfloat(b2_tensor[0]);
+    putfloat(b2_tensor[1]);
+    putfloat(b2_tensor[2]);
+    putfloat(b2_tensor[3]);
+    putfloat(b2_tensor[4]);
+    putfloat(b2_tensor[5]);
+    putfloat(b2_tensor[6]);
+    putfloat(b2_tensor[7]);
+    putfloat(b2_tensor[8]);
+    putfloat(b2_tensor[9]);
+    putchar('\n');
     
-    linear(4, 3, y, x, w, b);
-  
-    // load C into tohost CSR
-    // WRITE_CSR("0x51E", y[0]);
-    // WRITE_CSR("0x51F", y[1]);
-    WRITE_CSR("0x51F", 2);
+    putchar('l'); putchar('2'); putchar('\n');
+    putfloat(lin2_tensor[0]);
+    putfloat(lin2_tensor[1]);
+    putfloat(lin2_tensor[2]);
+    putfloat(lin2_tensor[3]);
+    putfloat(lin2_tensor[4]);
+    putfloat(lin2_tensor[5]);
+    putfloat(lin2_tensor[6]);
+    putfloat(lin2_tensor[7]);
+    putfloat(lin2_tensor[8]);
+    putfloat(lin2_tensor[9]);
+    putchar('\n');
 
-    // prints("finish loop.\n");
+    putchar('y'); putchar('\n');
+    putfloat(y_tensor[0]);
+    putfloat(y_tensor[1]);
+    putfloat(y_tensor[2]);
+    putfloat(y_tensor[3]);
+    putfloat(y_tensor[4]);
+    putfloat(y_tensor[5]);
+    putfloat(y_tensor[6]);
+    putfloat(y_tensor[7]);
+    putchar('\n');
 
+    fflush(0);
 
-    // wait FIFO to be empty
-    // while (!READ_BITS(UART0->STAT, UART_STAT_TX_FIFO_EMPTY_MSK)) {
-    //   asm volatile("nop");
+    #if SIMULATION == 1
+      exit(0);
+    #endif
+
+    // timer_pwm_set_high_time(TIM0, pwm_high / 64);
+    // timer_pwm_enable(TIM0);
+    // if (counter >> 7) {
+    //   pwm_high = 2000000;
     // }
-    
-    // exit(1);
+    // else {
+    //   pwm_high = 1000000;
+    // }
+
+    counter += 1;
+
+    sleep(DELAY_CYCLES);
   }
+  
+  exit(0);
 }

@@ -10,16 +10,12 @@
 
 /* ======== Axi4Lite Uart Lite ======== */
 typedef struct {
-  uint32_t RXFIFO;
-  uint32_t TXFIFO;
-  uint32_t STAT;
-  uint32_t CTRL;
+  volatile uint32_t RXFIFO;
+  volatile uint32_t TXFIFO;
+  volatile uint32_t STAT;
+  volatile uint32_t CTRL;
 } XilinxUart;
 
-
-#define UART0_BASE                      0x10001000
-
-#define UART0                           ((XilinxUart *) UART0_BASE)
 
 
 #define UART_STAT_RX_FIFO_VALID_POS     0x0
@@ -45,5 +41,16 @@ typedef struct {
 #define UART_CTRL_RST_RX_FIFO_MSK       (0x1 << UART_CTRL_RST_RX_FIFO_POS)
 #define UART_CTRL_ENABLE_INTR_POS       0x4
 #define UART_CTRL_ENABLE_INTR_MSK       (0x1 << UART_CTRL_ENABLE_INTR_POS)
+
+
+void uart_write(XilinxUart *uart, uint32_t data) {
+  while (READ_BITS(uart->STAT, UART_STAT_TX_FIFO_FULL_MSK)) {
+    asm volatile("nop");
+  }
+  uart->TXFIFO = READ_BITS(data, 0xFF);
+}
+
+
+
 
 #endif  // __UART_H

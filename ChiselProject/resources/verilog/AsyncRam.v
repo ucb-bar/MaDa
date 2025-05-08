@@ -1,5 +1,6 @@
-
-// Single-port RAM with asynchronous read with write byte-enable
+/**
+ * Single-port RAM with asynchronous read with write byte-enable
+ */
 module AsyncRam #(
   parameter ADDR_WIDTH = 12,
   parameter DEPTH = (1 << ADDR_WIDTH),
@@ -17,12 +18,6 @@ module AsyncRam #(
 );
 
   (* ram_style="block" *) reg [DATA_WIDTH-1:0] mem [0:DEPTH-1];
-  
-  wire [ADDR_WIDTH-3:0] raddr_idx;
-  wire [ADDR_WIDTH-3:0] waddr_idx;
-
-  assign raddr_idx = raddr[ADDR_WIDTH-1:2];
-  assign waddr_idx = waddr[ADDR_WIDTH-1:2];
 
   integer i;
   initial begin
@@ -42,10 +37,10 @@ module AsyncRam #(
   always @(posedge clock) begin
     for (i = 0; i < DATA_WIDTH/8; i = i+1) begin
       if (wstrb[i])
-        mem[waddr_idx][i*8 +: 8] <= wdata[i*8 +: 8];
+        mem[waddr][i*8 +: 8] <= wdata[i*8 +: 8];
     end
   end
   
-  assign rdata = mem[raddr_idx];
+  assign rdata = mem[raddr];
 
 endmodule

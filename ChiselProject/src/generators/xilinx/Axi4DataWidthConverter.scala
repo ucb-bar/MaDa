@@ -16,8 +16,8 @@ class Axi4DataWidthConverter(
 
   blackbox.io.s_axi_aclk := clock
   blackbox.io.s_axi_aresetn := ~reset.asBool
-  blackbox.io.s_axi.connect(io.s_axi)
-  blackbox.io.m_axi.flipConnect(io.m_axi)
+  blackbox.io.s_axi.connectFrom(io.s_axi)
+  blackbox.io.m_axi.connectTo(io.m_axi)
 }
 
 class Axi4DataWidthConverterBlackbox(

@@ -32,18 +32,8 @@ class Axi4LiteCrossbarBlackboxBundle(n: Int, params: Axi4Params = Axi4Params()) 
 class Axi4LiteCrossbar(
   numSlave: Int,
   numMaster: Int,
-  device0Size: Int = 1 << 16,  // 64KB address space
-  device0Address: BigInt = 0x08000000,
-  device1Size: Int = 1 << 12,  // 4KB address space
-  device1Address: BigInt = 0x10000000,
-  device2Size: Int = 0,
-  device2Address: BigInt = 0x18000000,
-  device3Size: Int = 0,
-  device3Address: BigInt = 0x20000000,
-  device4Size: Int = 0,
-  device4Address: BigInt = 0x28000000,
-  device5Size: Int = 0,
-  device5Address: BigInt = 0x30000000,
+  deviceSizes: Array[Int],
+  deviceAddresses: Array[BigInt],
   ) extends Module {
   val io = IO(new Bundle {
     val s_axi = Flipped(Vec(numSlave, new Axi4LiteBundle()))
@@ -53,18 +43,8 @@ class Axi4LiteCrossbar(
   val blackbox = Module(new Axi4LiteCrossbarBlackbox(
     numSlave,
     numMaster,
-    device0Size,
-    device0Address,
-    device1Size,
-    device1Address,
-    device2Size,
-    device2Address,
-    device3Size,
-    device3Address,
-    device4Size,
-    device4Address,
-    device5Size,
-    device5Address
+    deviceSizes,
+    deviceAddresses,
     ))
 
   blackbox.io.aclk := clock
@@ -84,7 +64,7 @@ class Axi4LiteCrossbar(
 
   (io.s_axi zip blackbox.io.s_axi.bvalid.asBools).foreach { case (s_axi, bvalid) => s_axi.b.valid := bvalid }
   for (i <- 0 until numSlave) {
-    io.s_axi(i).b.bits.resp := blackbox.io.s_axi.bresp(2*i + 1, 2*i)
+    io.s_axi(i).b.bits.resp := blackbox.io.s_axi.bresp(2*i + 1, 2*i).asTypeOf(AxResponse())
   }
   blackbox.io.s_axi.bready := Cat(io.s_axi.reverse.map(_.b.ready))
 
@@ -95,7 +75,7 @@ class Axi4LiteCrossbar(
   (io.s_axi zip blackbox.io.s_axi.rvalid.asBools).foreach { case (s_axi, rvalid) => s_axi.r.valid := rvalid }
   for (i <- 0 until numSlave) {
     io.s_axi(i).r.bits.data := blackbox.io.s_axi.rdata(32*i + 31, 32*i)
-    io.s_axi(i).r.bits.resp := blackbox.io.s_axi.rresp(2*i + 1, 2*i)
+    io.s_axi(i).r.bits.resp := blackbox.io.s_axi.rresp(2*i + 1, 2*i).asTypeOf(AxResponse())
   }
   blackbox.io.s_axi.rready := Cat(io.s_axi.reverse.map(_.r.ready))
 
@@ -114,7 +94,7 @@ class Axi4LiteCrossbar(
   blackbox.io.m_axi.wready := Cat(io.m_axi.reverse.map(_.w.ready))
 
   (io.m_axi zip blackbox.io.m_axi.bready.asBools).foreach { case (m_axi, bready) => m_axi.b.ready := bready }
-  blackbox.io.m_axi.bresp := Cat(io.m_axi.reverse.map(_.b.bits.resp))
+  blackbox.io.m_axi.bresp := Cat(io.m_axi.reverse.map(_.b.bits.resp.asUInt))
   blackbox.io.m_axi.bvalid := Cat(io.m_axi.reverse.map(_.b.valid))
 
   (io.m_axi zip blackbox.io.m_axi.arvalid.asBools).foreach { case (m_axi, arvalid) => m_axi.ar.valid := arvalid }
@@ -124,7 +104,7 @@ class Axi4LiteCrossbar(
   blackbox.io.m_axi.arready := Cat(io.m_axi.reverse.map(_.ar.ready))
   
   blackbox.io.m_axi.rdata := Cat(io.m_axi.reverse.map(_.r.bits.data))
-  blackbox.io.m_axi.rresp := Cat(io.m_axi.reverse.map(_.r.bits.resp))
+  blackbox.io.m_axi.rresp := Cat(io.m_axi.reverse.map(_.r.bits.resp.asUInt))
   blackbox.io.m_axi.rvalid := Cat(io.m_axi.reverse.map(_.r.valid))
   (io.m_axi zip blackbox.io.m_axi.rready.asBools).foreach { case (m_axi, rready) => m_axi.r.ready := rready }
 }
@@ -132,19 +112,9 @@ class Axi4LiteCrossbar(
 class Axi4LiteCrossbarBlackbox(
   numSlave: Int,
   numMaster: Int,
-  device0Size: Int = 1 << 16,  // 64KB address space
-  device0Address: BigInt = 0x08000000,
-  device1Size: Int = 1 << 12,  // 4KB address space
-  device1Address: BigInt = 0x10000000,
-  device2Size: Int = 0,
-  device2Address: BigInt = 0x18000000,
-  device3Size: Int = 0,
-  device3Address: BigInt = 0x20000000,
-  device4Size: Int = 0,
-  device4Address: BigInt = 0x28000000,
-  device5Size: Int = 0,
-  device5Address: BigInt = 0x30000000,
-  ) extends BlackBox {
+  deviceSizes: Array[Int],
+  deviceAddresses: Array[BigInt],
+) extends BlackBox {
   val io = IO(new Bundle {
     val aclk = Input(Clock())
     val aresetn = Input(Bool())
@@ -175,12 +145,17 @@ set_property -dict [list \\
   CONFIG.PROTOCOL {AXI4LITE} \\
   CONFIG.NUM_MI {${numMaster}} \\
   CONFIG.NUM_SI {${numSlave}} \\
-  CONFIG.M00_A00_ADDR_WIDTH {${log2Ceil(device0Size)}} \\
-  CONFIG.M00_A00_BASE_ADDR {0x${device0Address.toString(16).reverse.padTo(16, '0').reverse}} \\
-  CONFIG.M01_A00_ADDR_WIDTH {${log2Ceil(device1Size)}} \\
-  CONFIG.M01_A00_BASE_ADDR {0x${device1Address.toString(16).reverse.padTo(16, '0').reverse}} \\
 ] [get_ips ${ip_name}]
 """)
+
+    for (i <- 0 until numMaster) {
+      tcl_script.println(s"""
+set_property -dict [list \\
+  CONFIG.M${i.toString().reverse.padTo(2, '0').reverse}_A00_ADDR_WIDTH {${log2Ceil(deviceSizes(i))}} \\
+  CONFIG.M${i.toString().reverse.padTo(2, '0').reverse}_A00_BASE_ADDR {0x${deviceAddresses(i).toString(16).reverse.padTo(16, '0').reverse}} \\
+] [get_ips ${ip_name}]
+""")
+    }
 
     tcl_script.close()
   }

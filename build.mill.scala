@@ -40,7 +40,7 @@ object ChiselProject extends ScalaModule with ScalafmtModule { m =>
     if (useChisel3)
       ivy"edu.berkeley.cs::chisel3:3.6.0"
     else
-      ivy"org.chipsalliance::chisel:6.6.0"
+      ivy"org.chipsalliance::chisel:6.7.0"
   )
 
   // Add Chisel compiler plugin
@@ -48,7 +48,7 @@ object ChiselProject extends ScalaModule with ScalafmtModule { m =>
     if (useChisel3)
       ivy"edu.berkeley.cs:::chisel3-plugin:3.6.0"
     else
-      ivy"org.chipsalliance:::chisel-plugin:6.6.0"
+      ivy"org.chipsalliance:::chisel-plugin:6.7.0"
   )
 
   /**
