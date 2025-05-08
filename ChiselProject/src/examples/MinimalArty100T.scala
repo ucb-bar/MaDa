@@ -6,6 +6,8 @@ import chisel3.experimental.Analog
 class MinimalArty100T extends RawModule {
   val io = IO(new Arty100TIO())
 
+  io := DontCare
+
   val clock = Wire(Clock())
   val reset = Wire(Bool())
 
@@ -36,10 +38,5 @@ class MinimalArty100T extends RawModule {
     io.led := counter(28, 25)
 
     io.uart_rxd_out := io.uart_txd_in
-
-    io.eth_ref_clk := clock
-    io.eth_rstn := false.B
-    io.eth_tx_en := false.B
-    io.eth_txd := 0.U
   }
 }
