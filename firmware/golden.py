@@ -1,4 +1,5 @@
 import torch
+from torch.profiler import profile, record_function, ProfilerActivity
 
 
 torch.manual_seed(42)
@@ -105,3 +106,15 @@ generate_weight_binary([
 #     print(f"write_f32(x_tensor + {i}, {elem.item():.8f});")
 
 # print([hex(x) for x in data])
+
+# report model numbers
+with profile(activities=[ProfilerActivity.CPU], with_flops=True, record_shapes=True) as prof:
+    with record_function("model_inference"):
+        model(x)
+
+print("Model FLOPs:")
+print(prof.key_averages().table(sort_by="flops", row_limit=10))
+
+# Calculate total FLOPs
+total_flops = sum(event.flops for event in prof.key_averages())
+print("\nTotal FLOPs:", total_flops)
