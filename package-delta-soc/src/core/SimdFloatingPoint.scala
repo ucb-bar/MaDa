@@ -1,5 +1,8 @@
+package delta
+
 import chisel3._
 import chisel3.util._
+import vivadoips.FloatingPoint
 
 import Instructions._
 import SimdControlConstants._

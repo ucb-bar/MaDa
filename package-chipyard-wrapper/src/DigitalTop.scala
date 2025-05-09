@@ -1,6 +1,7 @@
+package chipyardwrapper
+
 import chisel3.{BlackBox, _}
 import chisel3.util._
-
 
 
 class DigitalTop extends BlackBox {

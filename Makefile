@@ -8,13 +8,13 @@ MILL_PATH ?= ./toolchains/mill
 
 verilog:
 	mkdir -p $(BUILD_DIR)
-	$(MILL_PATH) -i package-$(PACKAGE).runMain buildVerilog --target-dir $(BUILD_DIR) --module-name $(MODULE)
+	$(MILL_PATH) -i package-$(PACKAGE).runMain builder.buildVerilog --target-dir $(BUILD_DIR) --module-name $(MODULE)
 	
 project: verilog
-	$(MILL_PATH) -i package-$(PACKAGE).runMain buildProject --target-dir $(BUILD_DIR) --module-name $(MODULE)
+	$(MILL_PATH) -i package-$(PACKAGE).runMain builder.buildProject --target-dir $(BUILD_DIR) --module-name $(MODULE)
 
 bitstream: project
-	$(MILL_PATH) -i package-$(PACKAGE).runMain buildBitstream --target-dir $(BUILD_DIR) --module-name $(MODULE)
+	$(MILL_PATH) -i package-$(PACKAGE).runMain builder.buildBitstream --target-dir $(BUILD_DIR) --module-name $(MODULE)
 
 test:
 	$(MILL_PATH) -i package-$(PACKAGE).Test

@@ -1,6 +1,9 @@
+package vivadoips
+
 import chisel3._
 import chisel3.util._
 import amba.{Axi4Params, Axi4StreamBundle}
+import builder.addVivadoIp
 
 
 class Axi4LiteStreamDataFifo(width: Int) extends Module {

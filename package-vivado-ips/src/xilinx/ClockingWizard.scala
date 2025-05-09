@@ -1,5 +1,8 @@
+package vivadoips
+
 import chisel3.{BlackBox, _}
 import chisel3.util._
+import builder.addVivadoIp
 
 
 class ClockingWizard(

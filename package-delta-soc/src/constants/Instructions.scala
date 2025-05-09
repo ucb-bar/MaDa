@@ -1,4 +1,4 @@
-// See LICENSE for license details.
+package delta
 
 import chisel3._
 import chisel3.util._

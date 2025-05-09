@@ -1,6 +1,9 @@
+package vivadoips
+
 import chisel3._
 import chisel3.util._
 import amba.{Axi4Params, Axi4Bundle, AxResponse, AxSize, AxBurst}
+import builder.addVivadoIp
 
 
 class Axi4CrossbarBlackboxBundle(n: Int, params: Axi4Params = Axi4Params()) extends Bundle {
