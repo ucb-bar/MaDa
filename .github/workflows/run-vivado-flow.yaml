@@ -14,7 +14,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Run Vivado flow on MlpPolicyRunner
+    - name: Build MemorySubsystem
+      run: |
+        source /ecad/tools/xilinx/Vivado/2023.2.1/settings64.sh
+        make project CONFIG=MemorySubsystem
+
+    - name: Build MlpPolicyRunner
       run: |
         source /ecad/tools/xilinx/Vivado/2023.2.1/settings64.sh
         make project CONFIG=MlpPolicyRunner
