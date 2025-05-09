@@ -14,10 +14,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Set up Vivado
-      run: source /ecad/tools/xilinx/Vivado/2023.2.1/settings64.sh
-
-    - name: Run Vivado Flow
+    - name: Run Vivado flow on MlpPolicyRunner
       run: |
-        source ./env.sh
+        source /ecad/tools/xilinx/Vivado/2023.2.1/settings64.sh
         make project CONFIG=MlpPolicyRunner

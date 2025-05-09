@@ -16,10 +16,6 @@ jobs:
       # with:
       #   submodules: recursive
 
-    - name: Set up Toolchain
-      run: source $GITHUB_WORKSPACE/scripts/install-mill.sh
-
     - name: Run make verilog
       run: |
-        export PATH=$GITHUB_WORKSPACE/toolchains:$PATH
         make verilog
