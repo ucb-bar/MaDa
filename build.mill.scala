@@ -56,15 +56,15 @@ trait ChiselModule extends ScalaModule with ScalafmtModule { m =>
 
 object builder extends ChiselModule
 
-object `module-vivado-ips` extends ChiselModule { m =>
+object `package-vivado-ips` extends ChiselModule { m =>
   override def moduleDeps = Seq(builder)
 }
 
-object `module-delta-soc` extends ChiselModule { m =>
-  override def moduleDeps = Seq(builder, `module-vivado-ips`)
+object `package-delta-soc` extends ChiselModule { m =>
+  override def moduleDeps = Seq(builder, `package-vivado-ips`)
 }
 
-object `module-chipyard-wrapper` extends ChiselModule { m =>
-  override def moduleDeps = Seq(builder, `module-vivado-ips`)
+object `package-chipyard-wrapper` extends ChiselModule { m =>
+  override def moduleDeps = Seq(builder, `package-vivado-ips`)
 }
 
