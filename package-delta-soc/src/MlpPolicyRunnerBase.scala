@@ -130,9 +130,7 @@ class MlpPolicyRunnerBase(val config: SoCConfig) extends RawModule {
     dontTouch(tile.io.sbus.ar.bits.burst)
 
 
-    // io.qspi_sck := spi.io.sck_o.asClock
     io.qspi_cs := spi.io.ss_o
-    // spi.io.sck_i := 0.B
     spi.io.ss_i := 0.B
 
     val qspi_io0_buf = Module(new IOBUF())

@@ -47,10 +47,11 @@ class Axi4LiteUartLiteBlackbox(
     library="ip",
     version="2.0",
     moduleName=ipName,
+    // the "d" is not a typo down there
     extra = s"""
 set_property -dict [list \\
   CONFIG.C_BAUDRATE {${config.baudRate}} \\
-  CONFIG.C_S_AXI_ACLK_FREQ_HZ {${config.axiClockFrequency}} \\
+  CONFIG.C_S_AXI_ACLK_FREQ_HZ_d {${config.axiClockFrequency}} \\
 ] [get_ips ${ipName}]
 """
   )

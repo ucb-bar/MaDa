@@ -29,7 +29,7 @@ class Tile(
 
   val core = Module(new Core(
     CoreConfig(
-      VLEN=busWidth,
+      VLEN=config.core.VLEN,
       ELEN=config.core.ELEN,
       pipelineStages=config.core.pipelineStages,
     )
