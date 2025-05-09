@@ -56,10 +56,15 @@ trait ChiselModule extends ScalaModule with ScalafmtModule { m =>
 
 object builder extends ChiselModule
 
-/**
- * Main build definition for the Chisel project.
- * This object defines the project structure and its dependencies.
- */
-object ChiselProject extends ChiselModule { m =>
+object `module-vivado-ips` extends ChiselModule { m =>
   override def moduleDeps = Seq(builder)
 }
+
+object `module-delta-soc` extends ChiselModule { m =>
+  override def moduleDeps = Seq(builder, `module-vivado-ips`)
+}
+
+object `module-chipyard-wrapper` extends ChiselModule { m =>
+  override def moduleDeps = Seq(builder, `module-vivado-ips`)
+}
+

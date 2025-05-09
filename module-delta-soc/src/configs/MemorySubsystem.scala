@@ -132,12 +132,10 @@ class MemorySubsystem extends Module {
   flash.io.s_axi := DontCare
   flash.io.io0_i := false.B
   flash.io.io1_i := true.B
-  // flash.io.sck_i := false.B
   flash.io.ss_i := false.B
 
-  // io.qspi_sck := flash.io.sck_o.asClock
+  io.qspi_sck := DontCare
   io.qspi_cs := flash.io.ss_o
-  // flash.io.sck_i := 0.B
   flash.io.ss_i := 0.B
 
   val qspi_io0_buf = Module(new IOBUF())

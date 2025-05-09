@@ -15,8 +15,8 @@ import java.io.FileWriter
 
 object BuilderConfig {
   val chiselGeneratedFilelist = "generated-src/filelist.f"
-  val simulationFilelist = "generated-src/sim_filelist.f"
-  val constraintsFilelist = "generated-src/constraints_filelist.f"
+  val simulationFilelist = "generated-src/filelist_simulation.f"
+  val constraintsFilelist = "generated-src/filelist_constraints.f"
   
   val vivadoProjectDir = "out/vivado-project"
 }

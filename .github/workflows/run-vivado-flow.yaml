@@ -17,9 +17,9 @@ jobs:
     - name: Build MemorySubsystem
       run: |
         source /ecad/tools/xilinx/Vivado/2023.2.1/settings64.sh
-        make project CONFIG=MemorySubsystem
+        make project MODULE=delta-soc CONFIG=MemorySubsystem
 
     - name: Build MlpPolicyRunner
       run: |
         source /ecad/tools/xilinx/Vivado/2023.2.1/settings64.sh
-        make project CONFIG=MlpPolicyRunner
+        make project MODULE=delta-soc CONFIG=MlpPolicyRunner
