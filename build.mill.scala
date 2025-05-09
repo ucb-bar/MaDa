@@ -17,15 +17,11 @@ import mill.bsp._
 
 
 /**
- * Main build definition for the Chisel project.
- * This object defines the project structure and its dependencies.
+ * Common configuration trait for Chisel projects
  */
-object ChiselProject extends ScalaModule with ScalafmtModule { m =>
-  // Flag to switch between Chisel 3.x and Chisel 6.x
-  val useChisel3 = false
-
+trait ChiselModule extends ScalaModule with ScalafmtModule { m =>
   // Configure Scala version based on Chisel version
-  override def scalaVersion = if (useChisel3) "2.13.10" else "2.13.15"
+  override def scalaVersion = "2.13.16"
 
   // Scala compiler options
   override def scalacOptions = Seq(
@@ -36,19 +32,13 @@ object ChiselProject extends ScalaModule with ScalafmtModule { m =>
   )
 
   // Define Chisel dependencies based on version
-  override def ivyDeps = Agg(  
-    if (useChisel3)
-      ivy"edu.berkeley.cs::chisel3:3.6.0"
-    else
-      ivy"org.chipsalliance::chisel:6.7.0"
+  override def ivyDeps = Agg(
+    ivy"org.chipsalliance::chisel:7.0.0-RC1",
   )
 
   // Add Chisel compiler plugin
   override def scalacPluginIvyDeps = Agg(
-    if (useChisel3)
-      ivy"edu.berkeley.cs:::chisel3-plugin:3.6.0"
-    else
-      ivy"org.chipsalliance:::chisel-plugin:6.7.0"
+    ivy"org.chipsalliance:::chisel-plugin:7.0.0-RC1",
   )
 
   /**
@@ -58,19 +48,27 @@ object ChiselProject extends ScalaModule with ScalafmtModule { m =>
     // Add test dependencies
     override def ivyDeps = super.ivyDeps() ++ Agg(
       ivy"org.scalatest::scalatest::3.2.19",
-      if (useChisel3)
-        ivy"edu.berkeley.cs::chiseltest:0.6.0"
-      else
-        ivy"edu.berkeley.cs::chiseltest:6.0.0"
+      ivy"edu.berkeley.cs::chiseltest:6.0.0"
     )
   }
-
-  // Configure additional Maven repositories for dependency resolution
-  def repositoriesTask = Task.Anon {
-    Seq(
-      coursier.MavenRepository("https://repo.scala-sbt.org/scalasbt/maven-releases"),
-      coursier.MavenRepository("https://oss.sonatype.org/content/repositories/releases"),
-      coursier.MavenRepository("https://oss.sonatype.org/content/repositories/snapshots")
-    ) ++ super.repositoriesTask()
-  }
 }
+
+
+object builder extends ChiselModule
+
+object `package-amba` extends ChiselModule { m =>
+  override def moduleDeps = Seq(builder)
+}
+
+object `package-vivado-ips` extends ChiselModule { m =>
+  override def moduleDeps = Seq(builder, `package-amba`)
+}
+
+object `package-delta-soc` extends ChiselModule { m =>
+  override def moduleDeps = Seq(builder, `package-amba`, `package-vivado-ips`)
+}
+
+object `package-chipyard-wrapper` extends ChiselModule { m =>
+  override def moduleDeps = Seq(builder, `package-vivado-ips`)
+}
+
