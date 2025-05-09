@@ -90,9 +90,9 @@ object _parseModuleName {
     }
 
     args.sliding(2).zipWithIndex.collectFirst {
-      case (Array("--module-name", name), i) => (name, args.take(i) ++ args.drop(i + 2))
+      case (Array("--design-name", name), i) => (name, args.take(i) ++ args.drop(i + 2))
     }.getOrElse {
-      println("Error: Please provide the module name with --module-name flag")
+      println("Error: Please provide the design name with --design-name flag")
       System.exit(1)
       ("", Array.empty[String])  // This is never reached but needed for type inference
     }
@@ -113,14 +113,14 @@ object buildVerilog extends App {
   new File(BuilderConfig.vivadoProjectDir).mkdirs()
   new File(BuilderConfig.vivadoTclDir).mkdirs()
 
-  val (moduleName, remainingArgs) = _parseModuleName(args)
+  val (designName, remainingArgs) = _parseModuleName(args)
 
-  val moduleClass = () => {
-    val module = Class.forName(moduleName)
+  val designClass = () => {
+    val design = Class.forName(designName)
       .getDeclaredConstructor()
       .newInstance()
       .asInstanceOf[chisel3.RawModule]
-    module
+    design
   }
   val chiselOpts = remainingArgs ++ Array("--split-verilog")
   val firtoolOpts = Array(
@@ -129,14 +129,14 @@ object buildVerilog extends App {
   )
 
   ChiselStage.emitSystemVerilogFile(
-    gen=moduleClass(),
+    gen=designClass(),
     args=chiselOpts,
     firtoolOpts=firtoolOpts
   )
 }
 
 object buildProject extends App {
-  val (moduleName, remainingArgs) = _parseModuleName(args)
+  val (designName, remainingArgs) = _parseModuleName(args)
 
   new File(BuilderConfig.vivadoProjectDir).mkdirs()
   new File(BuilderConfig.vivadoTclDir).mkdirs()
@@ -201,7 +201,7 @@ object buildProject extends App {
       runTcl.println("}")
     }
 
-    runTcl.println(s"set_property top ${moduleName} [current_fileset]")
+    runTcl.println(s"set_property top ${designName} [current_fileset]")
 
     /* create Vivado IPs */
     runTcl.println("update_ip_catalog")
@@ -219,7 +219,7 @@ object buildProject extends App {
     runTcl.println(s"update_compile_order -fileset sources_1")
     runTcl.println(s"set_property -name {xsim.simulate.runtime} -value {1000us} -objects [get_filesets sim_1]")
     runTcl.println(s"set_property -name {xsim.simulate.log_all_signals} -value {true} -objects [get_filesets sim_1]")
-    runTcl.println(s"set_property top ${moduleName}Testbench [get_filesets sim_1]")
+    runTcl.println(s"set_property top ${designName}Testbench [get_filesets sim_1]")
     // run_tcl.println(s"set_property top_lib xil_defaultlib [get_filesets sim_1]")
 
 
@@ -232,7 +232,7 @@ object buildProject extends App {
 }
 
 object GenerateBitstream extends App {
-  val (module_name, remaining_args) = _parseModuleName(args)
+  val (designName, remainingArgs) = _parseModuleName(args)
 
 
   // {

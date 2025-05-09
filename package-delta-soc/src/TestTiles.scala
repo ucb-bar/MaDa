@@ -12,7 +12,7 @@ class EECS151Tile extends Module {
     val debug = new DebugIO()
   })
 
-  val core = Module(new Core(nVectors=1))
+  val core = Module(new Core(CoreConfig(VLEN=32, ELEN=32)))
 
   // instruction memory must be a synchronous 1 cycle read delay memory
   val itim = Module(new Axi4MemoryWithLatency(
@@ -49,7 +49,7 @@ class EECS252Tile extends Module {
     val debug = new DebugIO()
   })
 
-  val core = Module(new Core(nVectors=2))
+  val core = Module(new Core(CoreConfig(VLEN=64, ELEN=32)))
 
   val xbar = Module(new Axi4Crossbar(
     2, 1,

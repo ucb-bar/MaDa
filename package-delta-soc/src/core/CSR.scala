@@ -39,35 +39,35 @@ object CsrAddress {
   val MHARTID   = 0xF14.U
 }
 
-class CSR extends Module {
+class CSR(val XLEN: Int = 32) extends Module {
   val io = IO(new Bundle {
     val addr = Input(UInt(12.W))
     val command = Input(UInt(3.W))
-    val in_data = Input(UInt(32.W))
-    val out_data = Output(UInt(32.W))
+    val in_data = Input(UInt(XLEN.W))
+    val out_data = Output(UInt(XLEN.W))
     
     val retire = Input(Bool())
 
     // debug interface
     val debug = new Bundle {
-      val syscall0 = Output(UInt(32.W))
-      val syscall1 = Output(UInt(32.W))
-      val syscall2 = Output(UInt(32.W))
-      val syscall3 = Output(UInt(32.W))
-      val sysresp0 = Input(UInt(32.W))
-      val sysresp1 = Input(UInt(32.W))
-      val sysresp2 = Input(UInt(32.W))
-      val sysresp3 = Input(UInt(32.W))
+      val syscall0 = Output(UInt(XLEN.W))
+      val syscall1 = Output(UInt(XLEN.W))
+      val syscall2 = Output(UInt(XLEN.W))
+      val syscall3 = Output(UInt(XLEN.W))
+      val sysresp0 = Input(UInt(XLEN.W))
+      val sysresp1 = Input(UInt(XLEN.W))
+      val sysresp2 = Input(UInt(XLEN.W))
+      val sysresp3 = Input(UInt(XLEN.W))
     }
   })
 
 
-  val reg_csr_syscall0 = RegInit(0.U(32.W))
-  val reg_csr_syscall1 = RegInit(0.U(32.W))
-  val reg_csr_syscall2 = RegInit(0.U(32.W))
-  val reg_csr_syscall3 = RegInit(0.U(32.W))
-  val reg_csr_mcycle = RegInit(0.U(32.W))
-  val reg_csr_minstret = RegInit(0.U(32.W))
+  val reg_csr_syscall0 = RegInit(0.U(XLEN.W))
+  val reg_csr_syscall1 = RegInit(0.U(XLEN.W))
+  val reg_csr_syscall2 = RegInit(0.U(XLEN.W))
+  val reg_csr_syscall3 = RegInit(0.U(XLEN.W))
+  val reg_csr_mcycle = RegInit(0.U(XLEN.W))
+  val reg_csr_minstret = RegInit(0.U(XLEN.W))
   
 
   switch (io.addr) {

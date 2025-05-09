@@ -6,7 +6,13 @@ import amba.{Axi4Params, Axi4LiteBundle}
 import builder.addVivadoIp
 
 
-class Axi4LiteTimer extends Module {
+case class Axi4LiteTimerConfig(
+  timerCounterWidth: Int = 32,
+)
+
+class Axi4LiteTimer(
+  val config: Axi4LiteTimerConfig = Axi4LiteTimerConfig()
+) extends Module {
   val io = IO(new Bundle {
     val s_axi = Flipped(new Axi4LiteBundle())
     val capturetrig0 = Input(Bool())
@@ -18,7 +24,7 @@ class Axi4LiteTimer extends Module {
     val freeze = Input(Bool())
   })
 
-  val blackbox = Module(new Axi4LiteTimerBlackbox())
+  val blackbox = Module(new Axi4LiteTimerBlackbox(config))
 
   blackbox.io.s_axi_aclk := clock
   blackbox.io.s_axi_aresetn := ~reset.asBool
@@ -32,7 +38,9 @@ class Axi4LiteTimer extends Module {
   io.interrupt := blackbox.io.interrupt
 }
 
-class Axi4LiteTimerBlackbox extends BlackBox {
+class Axi4LiteTimerBlackbox(
+  val config: Axi4LiteTimerConfig = Axi4LiteTimerConfig()
+) extends BlackBox {
   val io = IO(new Bundle {
     val s_axi_aclk = Input(Clock())
     val s_axi_aresetn = Input(Bool())
@@ -55,7 +63,7 @@ class Axi4LiteTimerBlackbox extends BlackBox {
     moduleName=ipName,
     extra = s"""
 set_property -dict [list \\
-  CONFIG.COUNT_WIDTH {32} \\
+  CONFIG.COUNT_WIDTH {${config.timerCounterWidth}} \\
 ] [get_ips ${ipName}]
 """
   )

@@ -6,13 +6,13 @@ import amba.{Axi4Params, Axi4StreamBundle}
 import builder.addVivadoIp
 
 
-class Axi4LiteStreamDataFifo(width: Int) extends Module {
+class Axi4LiteStreamDataFifo(params: Axi4Params = Axi4Params()) extends Module {
   val io = IO(new Bundle {
     val s_axis = Flipped(new Axi4StreamBundle())
     val m_axis = new Axi4StreamBundle()
   })
 
-  val blackbox = Module(new Axi4LiteStreamDataFifoBlackbox(width))
+  val blackbox = Module(new Axi4LiteStreamDataFifoBlackbox(params))
 
   blackbox.io.s_axis_aclk := clock
   blackbox.io.s_axis_aresetn := ~reset.asBool
@@ -20,12 +20,12 @@ class Axi4LiteStreamDataFifo(width: Int) extends Module {
   blackbox.io.m_axis.flipConnect(io.m_axis)
 }
 
-class Axi4LiteStreamDataFifoBlackbox(width: Int) extends BlackBox {
+class Axi4LiteStreamDataFifoBlackbox(params: Axi4Params = Axi4Params()) extends BlackBox {
   val io = IO(new Bundle {
     val s_axis_aclk = Input(Clock())
     val s_axis_aresetn = Input(Reset())
-    val s_axis = Flipped(new Axi4StreamBlackboxBundle())
-    val m_axis = new Axi4StreamBlackboxBundle()
+    val s_axis = Flipped(new Axi4StreamBlackboxBundle(params))
+    val m_axis = new Axi4StreamBlackboxBundle(params)
   })
 
   val ipName = "AXIStreamDataFifo"

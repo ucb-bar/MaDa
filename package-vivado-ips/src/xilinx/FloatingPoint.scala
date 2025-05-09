@@ -5,8 +5,23 @@ import chisel3.util._
 import builder.addVivadoIp
 
 
+/**
+  * Floating Point Multiplier-Adder
+  *
+  * @param pipelineStages
+  */
+case class FloatingPointConfig(
+  /** Number of pipeline stages */
+  pipelineStages: Int = 1,
+)
+
+/**
+  * Floating Point Multiplier-Adder
+  *
+  * @param config
+  */
 class FloatingPoint(
-  val pipelineStages: Int = 1
+  val config: FloatingPointConfig = FloatingPointConfig()
 ) extends Module {
   val io = IO(new Bundle {
     val a = Flipped(Valid(UInt(32.W)))
@@ -15,7 +30,7 @@ class FloatingPoint(
     val result = Valid(UInt(32.W))
   })
 
-  val blackbox = Module(new FloatingPointBlackbox(pipelineStages=pipelineStages))
+  val blackbox = Module(new FloatingPointBlackbox(config))
 
   blackbox.io.aclk := clock
   blackbox.io.s_axis_a_tvalid := io.a.valid
@@ -29,7 +44,7 @@ class FloatingPoint(
 }
 
 class FloatingPointBlackbox(
-  val pipelineStages: Int = 1
+  val config: FloatingPointConfig = FloatingPointConfig()
 ) extends BlackBox {
   val io = IO(new Bundle {
     val aclk = Input(Clock())
@@ -56,7 +71,7 @@ set_property -dict [list \\
   CONFIG.Add_Sub_Value {Add} \\
   CONFIG.C_A_Exponent_Width {8} \\
   CONFIG.C_A_Fraction_Width {24} \\
-  CONFIG.C_Latency {${pipelineStages}} \\
+  CONFIG.C_Latency {${config.pipelineStages}} \\
   CONFIG.C_Mult_Usage {Full_Usage} \\
   CONFIG.C_Optimization {Speed_Optimized} \\
   CONFIG.C_Rate {1} \\

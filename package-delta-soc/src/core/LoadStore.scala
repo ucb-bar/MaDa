@@ -8,23 +8,23 @@ import Instructions._
 import ScalarControlConstants._
 
 
-class LoadStore extends Module {
+class LoadStore(val XLEN: Int = 32) extends Module {
   val io = IO(new Bundle {
     val mem_func = Input(UInt(M_X.getWidth.W))
 
     val ctl_dmem_mask_sel = Input(UInt(MSK_X.getWidth.W))
     val ctl_dmem_signed = Input(Bool())
 
-    val addr = Input(UInt(32.W))
-    val wdata = Input(UInt(32.W))
-    val rdata = Output(UInt(32.W))
+    val addr = Input(UInt(XLEN.W))
+    val wdata = Input(UInt(XLEN.W))
+    val rdata = Output(UInt(XLEN.W))
 
     val busy = Output(Bool())
     
     val dmem = new Axi4Bundle()
   })
 
-  
+  assert(XLEN == 32, "Currently only 32-bit (XLEN = 32) is supported")
 
   val reg_aw_pending = RegInit(false.B)
   val reg_w_pending = RegInit(false.B)

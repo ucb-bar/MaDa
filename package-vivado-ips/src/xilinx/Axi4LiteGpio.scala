@@ -6,7 +6,12 @@ import amba.{Axi4Params, Axi4LiteBundle}
 import builder.addVivadoIp
 
 
-class Axi4LiteGpio extends Module {
+case class Axi4LiteGpioConfig(
+)
+
+class Axi4LiteGpio(
+  val config: Axi4LiteGpioConfig = Axi4LiteGpioConfig()
+) extends Module {
   val io = IO(new Bundle {
     val s_axi = Flipped(new Axi4LiteBundle())
     val gpio_io_i = Input(UInt(32.W))
@@ -14,7 +19,7 @@ class Axi4LiteGpio extends Module {
     val gpio_io_t = Output(UInt(32.W))
   })
 
-  val blackbox = Module(new Axi4LiteGpioBlackbox())
+  val blackbox = Module(new Axi4LiteGpioBlackbox(config))
 
   blackbox.io.s_axi_aclk := clock
   blackbox.io.s_axi_aresetn := ~reset.asBool
@@ -25,7 +30,9 @@ class Axi4LiteGpio extends Module {
   io.gpio_io_t := blackbox.io.gpio_io_t
 }
 
-class Axi4LiteGpioBlackbox extends BlackBox {
+class Axi4LiteGpioBlackbox(
+  val config: Axi4LiteGpioConfig = Axi4LiteGpioConfig()
+) extends BlackBox {
   val io = IO(new Bundle {
     val s_axi_aclk = Input(Clock())
     val s_axi_aresetn = Input(Bool())

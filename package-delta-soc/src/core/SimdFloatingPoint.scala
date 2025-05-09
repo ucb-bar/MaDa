@@ -2,27 +2,34 @@ package delta
 
 import chisel3._
 import chisel3.util._
-import vivadoips.FloatingPoint
+import vivadoips.{FloatingPoint, FloatingPointConfig}
 
 import Instructions._
 import SimdControlConstants._
 
 
 class SimdFloatingPoint(
-  nVectors: Int = 1,
+  val ELEN: Int = 32,
+  val VLEN: Int = 64,
   pipelineStages: Int = 1,
-) extends Module {
+  ) extends Module {
+  
+  val numVectors = VLEN / ELEN
+
   val io = IO(new Bundle {
-    val op1 = Input(Vec(nVectors, UInt(32.W)))
-    val op2 = Input(Vec(nVectors, UInt(32.W)))
-    val op3 = Input(Vec(nVectors, UInt(32.W)))
+    val op1 = Input(Vec(numVectors, UInt(ELEN.W)))
+    val op2 = Input(Vec(numVectors, UInt(ELEN.W)))
+    val op3 = Input(Vec(numVectors, UInt(ELEN.W)))
     val func = Input(UInt(SIMD_X.getWidth.W))
 
-    val out = Output(Vec(nVectors, UInt(32.W)))
+    val out = Output(Vec(numVectors, UInt(ELEN.W)))
     val busy = Output(Bool())
   })
 
-  val fmacc = Array.fill(nVectors)(Module(new FloatingPoint(pipelineStages=pipelineStages)))
+  assert(ELEN == 32, "Currently only 32-bit (ELEN = 32) is supported")
+  assert(VLEN == 64 || VLEN == 128 || VLEN == 256, "Currently only 64-bit, 128-bit and 256-bit (VLEN = {64, 128, 256}) is supported")
+
+  val fmacc = Array.fill(numVectors)(Module(new FloatingPoint(FloatingPointConfig(pipelineStages=pipelineStages))))
 
   val one = 0x3F800000.U(32.W)
   val zero = 0x00000000.U(32.W)
@@ -45,16 +52,16 @@ class SimdFloatingPoint(
 
 
   // EX 2 stage pipeline registers
-  val ex2_reg_op_a = Reg(Vec(nVectors, UInt(32.W)))
-  val ex2_reg_op_b = Reg(Vec(nVectors, UInt(32.W)))
-  val ex2_reg_op_c = Reg(Vec(nVectors, UInt(32.W)))
+  val ex2_reg_op_a = Reg(Vec(numVectors, UInt(ELEN.W)))
+  val ex2_reg_op_b = Reg(Vec(numVectors, UInt(ELEN.W)))
+  val ex2_reg_op_c = Reg(Vec(numVectors, UInt(ELEN.W)))
   
   val ex2_reg_op_rs2 = RegNext(io.op2)
   val ex2_reg_func = RegNext(io.func)
   val ex2_reg_valid = RegNext(input_valid)
 
 
-  for (i <- 0 until nVectors) {
+  for (i <- 0 until numVectors) {
     when(io.func === SIMD_ADD) {
       ex2_reg_op_a(i) := io.op1(i)
       ex2_reg_op_b(i) := one
@@ -81,7 +88,7 @@ class SimdFloatingPoint(
 
   val ex2_op2_positive = ex2_reg_op_rs2.map(x => x(31) === 0.U)
 
-  for (i <- 0 until nVectors) {
+  for (i <- 0 until numVectors) {
     fmacc(i).io.a.valid := ex2_reg_valid
     fmacc(i).io.b.valid := ex2_reg_valid
     fmacc(i).io.c.valid := ex2_reg_valid

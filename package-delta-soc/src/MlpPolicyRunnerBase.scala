@@ -3,7 +3,22 @@ package delta
 import chisel3._
 import chisel3.util._
 import amba.{Axi4Params, Axi4Bundle, Axi4LiteBundle}
-import vivadoips.{Axi4Crossbar, Axi4DataWidthConverter, Axi4LiteTimer, Axi4LiteCrossbar, Axi4SpiFlash, Axi4QuadSpiFlash, Axi4LiteUartLite, Axi4LiteGpio, IOBUF, ClockingWizard, SyncReset, Arty100TIO}
+import vivadoips.{
+  Arty100TIO,
+  Axi4Crossbar,
+  Axi4DataWidthConverter,
+  Axi4LiteCrossbar,
+  Axi4LiteTimer,
+  Axi4LiteTimerConfig,
+  Axi4LiteUartLite,
+  Axi4LiteUartLiteConfig,
+  Axi4LiteGpio,
+  Axi4QuadSpiFlash,
+  Axi4SpiFlash,
+  ClockingWizard,
+  IOBUF,
+  SyncReset,
+}
 import builder.{addConstraintResource, addSimulationResource}
 
 
@@ -22,7 +37,12 @@ import builder.{addConstraintResource, addSimulationResource}
   * 0x0800_0000 - 0x0800_3FFF: scratchpad (16 kB)
   * 
   */
-class MlpPolicyRunner extends RawModule {
+
+case class SoCConfig(
+  TileConfig: TileConfig = new TileConfig(sbusFrequency=50),
+)
+
+class MlpPolicyRunnerBase(val config: SoCConfig) extends RawModule {
   val io = IO(new Arty100TIO())
 
   val systemClockFrequency = 50
@@ -52,7 +72,7 @@ class MlpPolicyRunner extends RawModule {
   withClockAndReset(clock, reset) {
     val reset_vector = RegInit(0x0800_0000.U(32.W))
 
-    val tile = Module(new Tile(sbusFrequency=systemClockFrequency))
+    val tile = Module(new Tile(config.TileConfig))
 
     tile.io.reset_vector := reset_vector
 
@@ -79,8 +99,8 @@ class MlpPolicyRunner extends RawModule {
     // val spi = Module(new Axi4SpiFlash())
 
     val gpio = Module(new Axi4LiteGpio())
-    val uart = Module(new Axi4LiteUartLite(axiClockFrequency=systemClockFrequency))
-    val timer = Module(new Axi4LiteTimer())
+    val uart = Module(new Axi4LiteUartLite(Axi4LiteUartLiteConfig(axiClockFrequency=systemClockFrequency)))
+    val timer = Module(new Axi4LiteTimer(Axi4LiteTimerConfig(timerCounterWidth=32)))
 
     pbus_crossbar.io.s_axi(0).connectFromAxi4(tile.io.pbus)
 
@@ -173,12 +193,4 @@ class MlpPolicyRunner extends RawModule {
     tile.io.debug.sysresp3 := 0.U(32.W)
 
   }
-
-  addConstraintResource("package-vivado-ips/resources/constraints/Arty-A7-100-Master.xdc")
-
-  addSimulationResource("package-delta-soc/test/MlpPolicyRunnerTestbench.sv")
-  addSimulationResource("package-delta-soc/resources/verilog/SimUart.sv")
-  addSimulationResource("package-delta-soc/resources/verilog/SpiFlashMemCtrl.sv")
-  addSimulationResource("package-delta-soc/resources/verilog/SimSpiFlashModel.sv")
-  addSimulationResource("package-delta-soc/resources/verilog/Ram.v")
 }

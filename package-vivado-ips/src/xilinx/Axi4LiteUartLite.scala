@@ -6,8 +6,13 @@ import amba.{Axi4Params, Axi4LiteBundle}
 import builder.addVivadoIp
 
 
+case class Axi4LiteUartLiteConfig(
+  axiClockFrequency: Int = 100,
+  baudRate: Int = 115200,
+)
+
 class Axi4LiteUartLite(
-  val axiClockFrequency: Int = 100,
+  val config: Axi4LiteUartLiteConfig = Axi4LiteUartLiteConfig()
 ) extends Module {
   val io = IO(new Bundle {
     val s_axi = Flipped(new Axi4LiteBundle())
@@ -15,7 +20,7 @@ class Axi4LiteUartLite(
     val tx = Output(Bool())
   })
 
-  val blackbox = Module(new Axi4LiteUartLiteBlackbox(axiClockFrequency=axiClockFrequency))
+  val blackbox = Module(new Axi4LiteUartLiteBlackbox(config))
 
   blackbox.io.s_axi_aclk := clock
   blackbox.io.s_axi_aresetn := ~reset.asBool
@@ -25,7 +30,7 @@ class Axi4LiteUartLite(
 }
 
 class Axi4LiteUartLiteBlackbox(
-  val axiClockFrequency: Int = 100,
+  val config: Axi4LiteUartLiteConfig = Axi4LiteUartLiteConfig()
 ) extends BlackBox {
   val io = IO(new Bundle {
     val s_axi_aclk = Input(Clock())
@@ -44,8 +49,8 @@ class Axi4LiteUartLiteBlackbox(
     moduleName=ipName,
     extra = s"""
 set_property -dict [list \\
-  CONFIG.C_BAUDRATE {115200} \\
-  CONFIG.C_S_AXI_ACLK_FREQ_HZ_d {${axiClockFrequency}} \\
+  CONFIG.C_BAUDRATE {${config.baudRate}} \\
+  CONFIG.C_S_AXI_ACLK_FREQ_HZ {${config.axiClockFrequency}} \\
 ] [get_ips ${ipName}]
 """
   )

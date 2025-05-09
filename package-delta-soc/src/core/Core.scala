@@ -32,18 +32,26 @@ class DebugIO extends Bundle() {
 }
 
 
-class Core(
-  nVectors: Int = 1,
+case class CoreConfig(
+  XLEN: Int = 32,
+  ELEN: Int = 32,
+  VLEN: Int = 64,
   pipelineStages: Int = 1,
+)
+
+class Core(
+  val config: CoreConfig = CoreConfig()
 ) extends Module {
   val io = IO(new Bundle {
     val reset_vector = Input(UInt(32.W))
 
     val imem = new Axi4LiteBundle()
     val dmem = new Axi4Bundle()
-    val vdmem = new Axi4Bundle(params=Axi4Params(dataWidth=nVectors*32))
+    val vdmem = new Axi4Bundle(params=Axi4Params(dataWidth=config.VLEN))
     val debug = new DebugIO()
   })
+
+  val numVectors = config.VLEN / config.ELEN
   
   val exception = Wire(Bool())
   exception := false.B
@@ -72,9 +80,9 @@ class Core(
   val if_exception_target = Wire(UInt(32.W))
 
 
-  val ex_wb_data = Wire(UInt(32.W))
+  val ex_wb_data = Wire(UInt(config.XLEN.W))
 
-  val ex_vwb_data = Wire(Vec(nVectors, UInt(32.W)))
+  val ex_vwb_data = Wire(Vec(numVectors, UInt(config.ELEN.W)))
 
 
   val ifu = Module(new InstructionFetch())
@@ -236,7 +244,7 @@ class Core(
 
 
   // Vector Register File
-  val vregfile = Mem(32, Vec(nVectors, UInt(32.W)))
+  val vregfile = Mem(32, Vec(numVectors, UInt(config.ELEN.W)))
 
   when(ex_vwb_en) {
     vregfile(rd_addr) := ex_vwb_data
@@ -247,7 +255,7 @@ class Core(
   val vrd_data = vregfile(rd_addr)
 
 
-  val valu = Module(new SimdFloatingPoint(nVectors=nVectors, pipelineStages=pipelineStages))
+  val valu = Module(new SimdFloatingPoint(ELEN=config.ELEN, VLEN=config.VLEN, pipelineStages=config.pipelineStages))
   // result = a * b + c
 
   valu.io.func := ctrl.valu_func
@@ -266,7 +274,7 @@ class Core(
   lsu.io.dmem <> io.dmem
 
 
-  val vlsu = Module(new SimdLoadStore(nVectors=nVectors))
+  val vlsu = Module(new SimdLoadStore(nVectors=numVectors))
 
   vlsu.io.mem_func := Mux(ifu.io.ex.valid, ctrl.vmem_func, M_X)
   vlsu.io.strided := ctrl.vmem_stride
@@ -296,7 +304,7 @@ class Core(
               (ctrl.wb_sel === WB_CSR) -> csr.io.out_data
   ))
 
-  ex_vwb_data := MuxCase(VecInit.fill(nVectors)(0.U(32.W)), Seq(
+  ex_vwb_data := MuxCase(VecInit.fill(numVectors)(0.U(config.ELEN.W)), Seq(
               (ctrl.vwb_sel === WB_ALU) -> valu.io.out,
               (ctrl.vwb_sel === WB_MEM) -> vlsu.io.rdata,
   ))

@@ -6,8 +6,13 @@ import amba.{Axi4Params, Axi4Bundle, Axi4LiteBundle}
 import vivadoips.{Axi4Crossbar, Axi4BlockMemory, Axi4DataWidthConverter}
 
 
+case class TileConfig(
+  CoreConfig: CoreConfig = new CoreConfig(),
+  sbusFrequency: Int = 20,
+)
+
 class Tile(
-  val sbusFrequency: Int = 20,
+  val config: TileConfig = TileConfig()
 ) extends Module {
   val io = IO(new Bundle {
     val reset_vector = Input(UInt(32.W))
@@ -20,11 +25,14 @@ class Tile(
   dontTouch(io.reset_vector)
   dontTouch(io.debug)
 
-  val busWidth = 64
+  val busWidth = config.CoreConfig.VLEN
 
   val core = Module(new Core(
-    nVectors=busWidth/32,
-    pipelineStages=3,
+    CoreConfig(
+      VLEN=busWidth,
+      ELEN=config.CoreConfig.ELEN,
+      pipelineStages=config.CoreConfig.pipelineStages,
+    )
   ))
 
   val itim = Module(new Axi4Memory(
