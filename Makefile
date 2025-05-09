@@ -1,8 +1,8 @@
 BUILD_DIR = ./generated-src
 
 PACKAGE ?= vivado-ips
-MODULE ?= MinimalArty100T
-CONFIG ?= MinimalArty100TConfig
+MODULE ?= vivadoips.MinimalArty100T
+CONFIG ?= vivadoips.MinimalArty100TConfig
 
 MILL_PATH ?= ./toolchains/mill
 
