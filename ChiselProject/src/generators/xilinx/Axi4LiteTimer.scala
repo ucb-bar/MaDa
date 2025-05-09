@@ -44,7 +44,7 @@ class Axi4LiteTimerBlackbox extends BlackBox {
   })
 
   def generate_tcl_script(): Unit = {
-    val vivado_project_dir = "out/VivadoProject"
+    val vivado_project_dir = "out/vivado-project"
     val ip_name = "Axi4LiteTimerBlackbox"
     val ip_name_lower = ip_name.toLowerCase()
 

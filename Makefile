@@ -1,6 +1,6 @@
 BUILD_DIR = ./generated-src
 
-PRJ = ChiselProject
+MODULE = ChiselProject
 
 CONFIG ?= MinimalArty100T
 
@@ -8,16 +8,16 @@ MILL_PATH ?= ./toolchains/mill
 
 verilog:
 	mkdir -p $(BUILD_DIR)
-	$(MILL_PATH) -i $(PRJ).runMain GenerateVerilog --target-dir $(BUILD_DIR) --module-name $(CONFIG)
+	$(MILL_PATH) -i $(MODULE).runMain buildVerilog --target-dir $(BUILD_DIR) --module-name $(CONFIG)
 
 project: verilog
-	$(MILL_PATH) -i $(PRJ).runMain GenerateProject --target-dir $(BUILD_DIR) --module-name $(CONFIG)
+	$(MILL_PATH) -i $(MODULE).runMain buildProject --target-dir $(BUILD_DIR) --module-name $(CONFIG)
 
 bitstream: project
-	$(MILL_PATH) -i $(PRJ).runMain GenerateBitstream --target-dir $(BUILD_DIR) --module-name $(CONFIG)
+	$(MILL_PATH) -i $(MODULE).runMain buildBitstream --target-dir $(BUILD_DIR) --module-name $(CONFIG)
 
 test:
-	$(MILL_PATH) -i $(PRJ).Test
+	$(MILL_PATH) -i $(MODULE).Test
 
 clean:
 	rm -rf $(BUILD_DIR)

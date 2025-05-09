@@ -10,9 +10,40 @@ import scala.sys.process._
 import java.io.PrintWriter
 import java.io.File
 import java.io.FileFilter
+import java.io.FileWriter
+
+
+object BuilderConfig {
+  val chiselGeneratedFilelist = "generated-src/filelist.f"
+  val simulationFilelist = "generated-src/sim_filelist.f"
+  val constraintsFilelist = "generated-src/constraints_filelist.f"
+  
+  val vivadoProjectDir = "out/vivado-project"
+}
+
+
+object addSimulationResource {
+  def apply(path: String): Unit = {
+    println(s"adding Simulation resource: $path")
+    val filelists = new File(BuilderConfig.simulationFilelist)
+    val writer = new PrintWriter(new FileWriter(filelists, true))
+    writer.println(path)
+    writer.close()
+  }
+}
+
+object addConstraintResource {
+  def apply(path: String): Unit = {
+    println(s"adding Constraint resource: $path")
+    val filelists = new File(BuilderConfig.constraintsFilelist)
+    val writer = new PrintWriter(new FileWriter(filelists, true))
+    writer.println(path)
+    writer.close()
+  }
+}
 
 // helper function to parse the module name from the arguments
-object ParseModuleName {
+object _parseModuleName {
   def apply(args: Array[String]): (String, Array[String]) = {
     if (args.length < 1) {
       println("Error: Please provide the module name as an argument")
@@ -29,159 +60,142 @@ object ParseModuleName {
   }
 }
 
-object CreateVivadoDirectory {
-  def apply(vivado_project_dir: String): Unit = {
-    new File(vivado_project_dir).mkdirs()
-    new File(s"${vivado_project_dir}/scripts").mkdirs()
+
+object buildVerilog extends App {
+  {
+    val simulationFilelist = new FileWriter(new File(BuilderConfig.simulationFilelist))
+    simulationFilelist.write("")
+    simulationFilelist.close()
+
+    val constraintsFilelist = new FileWriter(new File(BuilderConfig.constraintsFilelist))
+    constraintsFilelist.write("")
+    constraintsFilelist.close()
   }
-}
+  new File(BuilderConfig.vivadoProjectDir).mkdirs()
+  new File(s"${BuilderConfig.vivadoProjectDir}/scripts").mkdirs()
+  
 
-
-
-object GenerateVerilog extends App {
-  val (module_name, remaining_args) = ParseModuleName(args)
-
-  val vivado_project_dir = "out/VivadoProject"
-  CreateVivadoDirectory(vivado_project_dir)
-
+  val (moduleName, remainingArgs) = _parseModuleName(args)
 
   val moduleClass = () => {
-    val module = Class.forName(module_name)
+    val module = Class.forName(moduleName)
       .getDeclaredConstructor()
       .newInstance()
       .asInstanceOf[chisel3.RawModule]
     module
   }
-  
-  println(s"elaborating module: $module_name")
-  val chisel_opts = remaining_args ++ Array("--split-verilog")
-
-  val firtool_opts = Array(
+  val chiselOpts = remainingArgs ++ Array("--split-verilog")
+  val firtoolOpts = Array(
     "-disable-all-randomization",
     "-strip-debug-info",
   )
 
   ChiselStage.emitSystemVerilogFile(
     gen=moduleClass(),
-    args=chisel_opts,
-    firtoolOpts=firtool_opts
+    args=chiselOpts,
+    firtoolOpts=firtoolOpts
   )
 }
 
-object GenerateProject extends App {
-  val (module_name, remaining_args) = ParseModuleName(args)
+object buildProject extends App {
+  val (moduleName, remainingArgs) = _parseModuleName(args)
 
-  val project_source_dir = "ChiselProject/"
-  val vivado_project_dir = "out/VivadoProject"
-
-  CreateVivadoDirectory(vivado_project_dir)
+  new File(BuilderConfig.vivadoProjectDir).mkdirs()
+  new File(s"${BuilderConfig.vivadoProjectDir}/scripts").mkdirs()
 
   /* Arty A7 100T */
-  // val fpga_part = "xc7a100ticsg324-1L"
-  // val board_part = "digilentinc.com:arty-a7-100t:part0:1.1"
+  // val fpgaPart = "xc7a100ticsg324-1L"
+  // val boardPart = "digilentinc.com:arty-a7-100t:part0:1.1"
 
   /* Arty A7 35T */
-  val fpga_part = "xc7a35ticsg324-1L"
-  val board_part = "digilentinc.com:arty-a7-35:part0:1.1"
+  val fpgaPart = "xc7a35ticsg324-1L"
+  val boardPart = "digilentinc.com:arty-a7-35:part0:1.1"
 
   /* Zedboard */
-  // val fpga_part = "xc7z020clg484-1"
-  // val board_part = "digilentinc.com:zedboard:part0:1.1"
+  // val fpgaPart = "xc7z020clg484-1"
+  // val boardPart = "digilentinc.com:zedboard:part0:1.1"
 
-  // get all files under the generated-src directory
-  val sources = new File("generated-src").listFiles(new FileFilter {
-    def accept(file: File): Boolean = file.isFile || file.isDirectory
-  }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
-  val verilog_sources = new File("ChiselProject/test/resources").listFiles(new FileFilter {
-    def accept(file: File): Boolean = file.isFile || file.isDirectory
-  }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
+  val chiselGeneratedSources = scala.io.Source.fromFile(new File(BuilderConfig.chiselGeneratedFilelist))
+    .getLines()
+    .map(_.trim)
+    .filter(_.nonEmpty)
+    .map(line => s"generated-src/${line}")
+    .toList
+  val simulationSources = scala.io.Source.fromFile(new File(BuilderConfig.simulationFilelist))
+    .getLines()
+    .map(_.trim)
+    .filter(_.nonEmpty)
+  val constraintResources = scala.io.Source.fromFile(new File(BuilderConfig.constraintsFilelist))
+    .getLines()
+    .map(_.trim)
+    .filter(_.nonEmpty)
 
-  val excluded_sources = Array(
-    "ClockSourceAtFreqMHz.v",
-    "SimJTAG.v",
-    "SimTSI.v",
-    "SimUART.v",
-    "TestDriver.v",
-  )
-
-
-  // val chipyard_sources = new File("chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.WithPeripheralAXI4LiteTinyRocketConfig/gen-collateral").listFiles(new FileFilter {
-  //   def accept(file: File): Boolean = file.isFile || file.isDirectory
-  // }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
-  // // Exclude files listed in excluded_sources
-  // .filterNot(source => excluded_sources.contains(new File(source).getName))
 
   {
     // create a run.tcl file
-    val run_tcl = new PrintWriter(s"${vivado_project_dir}/scripts/create_project.tcl")
+    val runTcl = new PrintWriter(s"${BuilderConfig.vivadoProjectDir}/scripts/create_project.tcl")
 
     // create project
-    run_tcl.println(s"create_project VivadoProject ${vivado_project_dir} -part ${fpga_part} -force")
+    runTcl.println(s"create_project VivadoProject ${BuilderConfig.vivadoProjectDir} -part ${fpgaPart} -force")
     // run_tcl.println(s"set_property board_part $board_part [current_project]")
     
     // add constraints
-    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/resources/constraints/Arty-A7-100-Master.xdc")
-
-    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/resources/constraints/axis_async_fifo.tcl")
-    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/resources/constraints/eth_mac_fifo.tcl")
-    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/resources/constraints/mii_phy_if.tcl")
-    run_tcl.println(s"add_files -fileset constrs_1 -norecurse ${project_source_dir}/resources/constraints/sync_reset.tcl")
-
+    if (constraintResources.nonEmpty) {
+      runTcl.print(s"add_files -fileset constrs_1 {")
+      constraintResources.foreach(filepath => {
+        runTcl.println(s" ${filepath} \\")
+      })
+      runTcl.println("}")
+    }
 
     // add sources
-    run_tcl.print(s"add_files")
-    sources.foreach(source => {
-      run_tcl.println(s" ${source} \\")
+    runTcl.print(s"add_files")
+    chiselGeneratedSources.foreach(filepath => {
+      runTcl.println(s" ${filepath} \\")
     })
-    run_tcl.println("")
+    runTcl.println("")
 
-    run_tcl.print(s"add_files -fileset sim_1 {")
-    verilog_sources.foreach(source => {
-      run_tcl.println(s" ${source} \\")
-    })
-    run_tcl.println("}")
+    if (simulationSources.nonEmpty) {
+      runTcl.print(s"add_files -fileset sim_1 {")
+      simulationSources.foreach(filepath => {
+        runTcl.println(s" ${filepath} \\")
+      })
+      runTcl.println("}")
+    }
 
-    // run_tcl.print(s"add_files")
-    // chipyard_sources.foreach(source => {
-    //   run_tcl.println(s" ${source} \\")
-    // })
-    // run_tcl.println("")
-
-    run_tcl.println(s"set_property top ${module_name} [current_fileset]")
+    runTcl.println(s"set_property top ${moduleName} [current_fileset]")
 
     /* create Vivado IPs */
-    run_tcl.println("update_ip_catalog")
+    runTcl.println("update_ip_catalog")
 
-    val create_ip_files = new File(s"${vivado_project_dir}/scripts").listFiles(new FileFilter {
+    val create_ip_files = new File(s"${BuilderConfig.vivadoProjectDir}/scripts").listFiles(new FileFilter {
       def accept(file: File): Boolean = file.isFile && file.getName != "create_project.tcl"
     }).map(_.getAbsolutePath)
 
     create_ip_files.foreach(file => {
-      run_tcl.println(s"source ${file}")
+      runTcl.println(s"source ${file}")
     })
 
 
     // configure simulation settings    
-    run_tcl.println(s"update_compile_order -fileset sources_1")
-    run_tcl.println(s"set_property -name {xsim.simulate.runtime} -value {1000us} -objects [get_filesets sim_1]")
-    run_tcl.println(s"set_property -name {xsim.simulate.log_all_signals} -value {true} -objects [get_filesets sim_1]")
-    run_tcl.println(s"set_property top ${module_name}Testbench [get_filesets sim_1]")
+    runTcl.println(s"update_compile_order -fileset sources_1")
+    runTcl.println(s"set_property -name {xsim.simulate.runtime} -value {1000us} -objects [get_filesets sim_1]")
+    runTcl.println(s"set_property -name {xsim.simulate.log_all_signals} -value {true} -objects [get_filesets sim_1]")
+    runTcl.println(s"set_property top ${moduleName}Testbench [get_filesets sim_1]")
     // run_tcl.println(s"set_property top_lib xil_defaultlib [get_filesets sim_1]")
 
 
-    run_tcl.close()
-    run_tcl.flush()
+    runTcl.close()
+    runTcl.flush()
   }
 
 
-  s"vivado -mode batch -source ${vivado_project_dir}/scripts/create_project.tcl".!
+  s"vivado -mode batch -source ${BuilderConfig.vivadoProjectDir}/scripts/create_project.tcl".!
 }
 
 object GenerateBitstream extends App {
-  val (module_name, remaining_args) = ParseModuleName(args)
+  val (module_name, remaining_args) = _parseModuleName(args)
 
-  val vivado_project_dir = "out/VivadoProject"
-  CreateVivadoDirectory(vivado_project_dir)
 
   // {
   //   // create a generate_bitstream.tcl file

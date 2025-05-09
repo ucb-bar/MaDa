@@ -171,4 +171,10 @@ class MlpPolicyRunner extends RawModule {
     tile.io.debug.sysresp3 := 0.U(32.W)
 
   }
+
+
+
+  addConstraintResource("ChiselProject/resources/constraints/Arty-A7-100-Master.xdc")
+
+  addSimulationResource("ChiselProject/test/resources/verilog/examples/MlpPolicyRunnerTestbench.sv")
 }

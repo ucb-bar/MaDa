@@ -132,7 +132,7 @@ class Axi4Memory(
 
   def generate_tcl_script(): Unit = {
     if (memoryFileHex != "") {
-      val vivado_project_dir = "out/VivadoProject"
+      val vivado_project_dir = "out/vivado-project"
       
       // Get current working directory
       val file_path = System.getProperty("user.dir") + "/firmware/" + memoryFileHex
