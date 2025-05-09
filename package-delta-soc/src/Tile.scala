@@ -7,7 +7,7 @@ import vivadoips.{Axi4Crossbar, Axi4BlockMemory, Axi4DataWidthConverter}
 
 
 case class TileConfig(
-  CoreConfig: CoreConfig = new CoreConfig(),
+  core: CoreConfig = new CoreConfig(),
   sbusFrequency: Int = 20,
 )
 
@@ -25,13 +25,13 @@ class Tile(
   dontTouch(io.reset_vector)
   dontTouch(io.debug)
 
-  val busWidth = config.CoreConfig.VLEN
+  val busWidth = config.core.VLEN
 
   val core = Module(new Core(
     CoreConfig(
       VLEN=busWidth,
-      ELEN=config.CoreConfig.ELEN,
-      pipelineStages=config.CoreConfig.pipelineStages,
+      ELEN=config.core.ELEN,
+      pipelineStages=config.core.pipelineStages,
     )
   ))
 

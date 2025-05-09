@@ -125,7 +125,7 @@ class Axi4QuadSpiFlashBlackbox extends BlackBox {
 
   val ip_name = "Axi4QuadSpiFlashBlackbox"
   val ip_name_lower = ip_name.toLowerCase()
-  addVivadoTclScript(s"create_ip_${ip_name_lower}.tcl", {
+  addVivadoTclScript(s"ip/create_ip_${ip_name_lower}.tcl", {
 
       // HACK: add flash memory file to Vivado project
       // Get current working directory

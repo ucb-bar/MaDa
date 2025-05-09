@@ -133,7 +133,7 @@ class Axi4Memory(
 
 
   if (memoryFileHex != "") {
-    addVivadoTclScript(s"add_memory_${memoryFileHex}.tcl", {
+    addVivadoTclScript(s"ip/add_memory_${memoryFileHex}.tcl", {
       val file_path = System.getProperty("user.dir") + "/firmware/" + memoryFileHex
       
       s"""

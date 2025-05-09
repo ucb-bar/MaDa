@@ -39,13 +39,11 @@ import builder.{addConstraintResource, addSimulationResource}
   */
 
 case class SoCConfig(
-  TileConfig: TileConfig = new TileConfig(sbusFrequency=50),
+  tile: TileConfig = new TileConfig(sbusFrequency=50),
 )
 
 class MlpPolicyRunnerBase(val config: SoCConfig) extends RawModule {
   val io = IO(new Arty100TIO())
-
-  val systemClockFrequency = 50
 
   io := DontCare
 
@@ -54,7 +52,7 @@ class MlpPolicyRunnerBase(val config: SoCConfig) extends RawModule {
   
   val pll_locked = Wire(Bool())
 
-  val clk_wiz = Module(new ClockingWizard(Seq(systemClockFrequency)))
+  val clk_wiz = Module(new ClockingWizard(Seq(config.tile.sbusFrequency)))
   // clocking wizard connection
   clk_wiz.io.clk_in := io.CLK100MHZ
   clk_wiz.io.reset := ~io.ck_rst
@@ -72,7 +70,7 @@ class MlpPolicyRunnerBase(val config: SoCConfig) extends RawModule {
   withClockAndReset(clock, reset) {
     val reset_vector = RegInit(0x0800_0000.U(32.W))
 
-    val tile = Module(new Tile(config.TileConfig))
+    val tile = Module(new Tile(config.tile))
 
     tile.io.reset_vector := reset_vector
 
@@ -99,7 +97,7 @@ class MlpPolicyRunnerBase(val config: SoCConfig) extends RawModule {
     // val spi = Module(new Axi4SpiFlash())
 
     val gpio = Module(new Axi4LiteGpio())
-    val uart = Module(new Axi4LiteUartLite(Axi4LiteUartLiteConfig(axiClockFrequency=systemClockFrequency)))
+    val uart = Module(new Axi4LiteUartLite(Axi4LiteUartLiteConfig(axiClockFrequency=config.tile.sbusFrequency)))
     val timer = Module(new Axi4LiteTimer(Axi4LiteTimerConfig(timerCounterWidth=32)))
 
     pbus_crossbar.io.s_axi(0).connectFromAxi4(tile.io.pbus)

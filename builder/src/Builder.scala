@@ -49,6 +49,10 @@ object addVivadoTclScript {
   def apply(path: String, content: String): Unit = {
     println(s"adding Vivado TCL script: $path")
     val file = new File(BuilderConfig.vivadoTclDir + "/" + path)
+
+    // ensure the directory exists
+    file.getParentFile.mkdirs()
+
     val writer = new PrintWriter(new FileWriter(file))
     writer.println(content)
     writer.close()
@@ -64,7 +68,7 @@ object addVivadoIp {
     moduleName: String,
     extra: String,
     ): Unit = {
-    addVivadoTclScript(s"create_ip_${moduleName.toLowerCase()}.tcl", {
+    addVivadoTclScript(s"ip/create_ip_${moduleName.toLowerCase()}.tcl", {
       s"""
 create_ip -name ${name} -vendor ${vendor} -library ${library} -version ${version} -module_name ${moduleName}
 generate_target {instantiation_template} [get_ips ${moduleName}]
@@ -153,12 +157,17 @@ object buildProject extends App {
   // val fpgaPart = "xc7z020clg484-1"
   // val boardPart = "digilentinc.com:zedboard:part0:1.1"
 
-  val chiselGeneratedSources = scala.io.Source.fromFile(new File(BuilderConfig.chiselGeneratedFilelist))
-    .getLines()
-    .map(_.trim)
-    .filter(_.nonEmpty)
-    .map(line => s"generated-src/${line}")
-    .toList
+  // HACK: the blackboxed sources are not included in the filelist.f, so we need to instead scan for the entire generated-src directory
+  // val chiselGeneratedSources = scala.io.Source.fromFile(new File(BuilderConfig.chiselGeneratedFilelist))
+  //   .getLines()
+  //   .map(_.trim)
+  //   .filter(_.nonEmpty)
+  //   .map(line => s"generated-src/${line}")
+  //   .toList
+  val chiselGeneratedSources = new File("generated-src").listFiles(new FileFilter {
+    def accept(file: File): Boolean = file.isFile || file.isDirectory && !file.getName.endsWith(".f")
+  }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
+
   val simulationSources = scala.io.Source.fromFile(new File(BuilderConfig.simulationFilelist))
     .getLines()
     .map(_.trim)
@@ -201,13 +210,14 @@ object buildProject extends App {
       runTcl.println("}")
     }
 
-    runTcl.println(s"set_property top ${designName} [current_fileset]")
+    val designClassName = designName.split("\\.").last
+    runTcl.println(s"set_property top ${designClassName} [current_fileset]")
 
     /* create Vivado IPs */
     runTcl.println("update_ip_catalog")
 
-    val create_ip_files = new File(BuilderConfig.vivadoTclDir).listFiles(new FileFilter {
-      def accept(file: File): Boolean = file.isFile && file.getName != "create_project.tcl"
+    val create_ip_files = new File(BuilderConfig.vivadoTclDir + "/ip").listFiles(new FileFilter {
+      def accept(file: File): Boolean = file.isFile
     }).map(_.getAbsolutePath)
 
     create_ip_files.foreach(file => {
@@ -219,9 +229,10 @@ object buildProject extends App {
     runTcl.println(s"update_compile_order -fileset sources_1")
     runTcl.println(s"set_property -name {xsim.simulate.runtime} -value {1000us} -objects [get_filesets sim_1]")
     runTcl.println(s"set_property -name {xsim.simulate.log_all_signals} -value {true} -objects [get_filesets sim_1]")
-    runTcl.println(s"set_property top ${designName}Testbench [get_filesets sim_1]")
+    runTcl.println(s"set_property top ${designClassName}Testbench [get_filesets sim_1]")
     // run_tcl.println(s"set_property top_lib xil_defaultlib [get_filesets sim_1]")
 
+    runTcl.println(s"close_project")
 
     runTcl.close()
     runTcl.flush()
@@ -231,7 +242,7 @@ object buildProject extends App {
   s"vivado -mode batch -source ${BuilderConfig.vivadoTclDir}/create_project.tcl".!
 }
 
-object GenerateBitstream extends App {
+object buildBitstream extends App {
   val (designName, remainingArgs) = _parseModuleName(args)
 
 
