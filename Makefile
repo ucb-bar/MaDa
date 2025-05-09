@@ -1,23 +1,23 @@
 BUILD_DIR = ./generated-src
 
-MODULE = vivado-ips
-
-CONFIG ?= MinimalArty100T
+PACKAGE ?= vivado-ips
+MODULE ?= MinimalArty100T
+CONFIG ?= MinimalArty100TConfig
 
 MILL_PATH ?= ./toolchains/mill
 
 verilog:
 	mkdir -p $(BUILD_DIR)
-	$(MILL_PATH) -i module-$(MODULE).runMain buildVerilog --target-dir $(BUILD_DIR) --module-name $(CONFIG)
-
+	$(MILL_PATH) -i package-$(PACKAGE).runMain buildVerilog --target-dir $(BUILD_DIR) --module-name $(MODULE)
+	
 project: verilog
-	$(MILL_PATH) -i module-$(MODULE).runMain buildProject --target-dir $(BUILD_DIR) --module-name $(CONFIG)
+	$(MILL_PATH) -i package-$(PACKAGE).runMain buildProject --target-dir $(BUILD_DIR) --module-name $(MODULE)
 
 bitstream: project
-	$(MILL_PATH) -i module-$(MODULE).runMain buildBitstream --target-dir $(BUILD_DIR) --module-name $(CONFIG)
+	$(MILL_PATH) -i package-$(PACKAGE).runMain buildBitstream --target-dir $(BUILD_DIR) --module-name $(MODULE)
 
 test:
-	$(MILL_PATH) -i module-$(MODULE).Test
+	$(MILL_PATH) -i package-$(PACKAGE).Test
 
 clean:
 	rm -rf $(BUILD_DIR)
