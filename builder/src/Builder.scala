@@ -245,36 +245,36 @@ object buildProject extends App {
 object buildBitstream extends App {
   val (designName, remainingArgs) = _parseModuleName(args)
 
+  {
+    // create a generate_bitstream.tcl file
+    val run_tcl = new PrintWriter(s"${BuilderConfig.vivadoTclDir}/generate_bitstream.tcl")
 
-  // {
-  //   // create a generate_bitstream.tcl file
-  //   val run_tcl = new PrintWriter(s"${BuilderConfig.vivadoTclDir}/scripts/generate_bitstream.tcl")
+    run_tcl.println(s"open_project ${BuilderConfig.vivadoProjectDir}/VivadoProject.xpr")
 
-  //   run_tcl.println(s"open_project ${BuilderConfig.vivadoTclDir}/VivadoProject.xpr")
+    // val ip_name = "clk_wiz_0"
 
-  //   val ip_name = "clk_wiz_0"
+    // run_tcl.println(s"reset_run ${ip_name}_synth_1")
+    // run_tcl.println(s"launch_runs ${ip_name}_synth_1")
 
-  //   run_tcl.println(s"reset_run ${ip_name}_synth_1")
-  //   run_tcl.println(s"launch_runs ${ip_name}_synth_1")
+    // run_tcl.println(s"wait_on_run ${ip_name}_synth_1")
 
-  //   run_tcl.println(s"wait_on_run ${ip_name}_synth_1")
+    // run_tcl.println(s"reset_run synth_1")
+    // run_tcl.println(s"launch_runs synth_1 -jobs 8")
 
-  //   run_tcl.println(s"reset_run synth_1")
-  //   run_tcl.println(s"launch_runs synth_1 -jobs 8")
+    // run_tcl.println(s"wait_on_run synth_1")
 
-  //   run_tcl.println(s"wait_on_run synth_1")
+    run_tcl.println(s"update_compile_order -fileset sources_1")
+    run_tcl.println(s"launch_runs impl_1 -to_step write_bitstream -jobs 8")
+    run_tcl.println(s"wait_on_run impl_1")
 
-  //   run_tcl.println(s"update_compile_order -fileset sources_1")
-  //   run_tcl.println(s"launch_runs impl_1 -to_step write_bitstream -jobs 8")
-  //   run_tcl.println(s"wait_on_run impl_1")
+    run_tcl.println(s"open_run impl_1")
+    run_tcl.println(s"write_bitstream ${BuilderConfig.vivadoTclDir}/Arty100TShell.bit -force")
 
-  //   run_tcl.println(s"open_run impl_1")
-  //   run_tcl.println(s"write_bitstream ${BuilderConfig.vivadoTclDir}/Arty100TShell.bit -force")
+    run_tcl.println(s"close_project")
+    
+    run_tcl.close()
+    run_tcl.flush()   // make sure the file is written to the disk
+  }
 
-
-  //   run_tcl.close()
-  //   run_tcl.flush()   // make sure the file is written to the disk
-  // }
-
-  // s"vivado -mode batch -source ${BuilderConfig.vivadoTclDir}/scripts/generate_bitstream.tcl".!
+  s"vivado -mode batch -source ${BuilderConfig.vivadoTclDir}/generate_bitstream.tcl".!
 }
