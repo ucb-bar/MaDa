@@ -1,7 +1,7 @@
 import chisel3._
 import chisel3.util._
+import amba.{Axi4Params, Axi4LiteBundle}
 
-import java.io.PrintWriter
 
 class Axi4LiteTimer extends Module {
   val io = IO(new Bundle {

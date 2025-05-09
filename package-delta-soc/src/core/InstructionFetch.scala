@@ -1,5 +1,6 @@
 import chisel3._
 import chisel3.util._
+import amba.{Axi4Params, Axi4LiteBundle}
 
 import CsrControlConstants._
 import Instructions._

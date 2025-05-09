@@ -1,7 +1,6 @@
 import chisel3.{BlackBox, _}
 import chisel3.util._
 
-import java.io.PrintWriter
 
 class ClockingWizard(
   clk_freqs: Seq[Int]

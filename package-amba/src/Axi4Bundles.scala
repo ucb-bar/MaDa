@@ -1,3 +1,5 @@
+package amba
+
 /**
   * Axi4Bundle.scala
   * 

@@ -1,5 +1,7 @@
 import chisel3._
 import chisel3.util._
+import amba.{Axi4Params, Axi4Bundle}
+
 
 class Axi4WidthDownsizer(
   s_params: Axi4Params = Axi4Params(dataWidth = 64),

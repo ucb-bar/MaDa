@@ -1,7 +1,6 @@
 import chisel3._
 import chisel3.util._
-
-import java.io.PrintWriter
+import amba.{Axi4Params, Axi4Bundle, AxResponse, AxSize, AxBurst, Axi4LiteBundle}
 
 
 class Axi4LiteCrossbarBlackboxBundle(n: Int, params: Axi4Params = Axi4Params()) extends Bundle {

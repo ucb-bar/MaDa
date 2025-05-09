@@ -1,8 +1,6 @@
 import chisel3._
 import chisel3.util._
 
-import java.io.PrintWriter
-
 
 class FloatingPoint(
   val pipelineStages: Int = 1

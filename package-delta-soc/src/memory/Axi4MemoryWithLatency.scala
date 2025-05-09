@@ -1,7 +1,6 @@
 import chisel3._
 import chisel3.util._
-
-import java.io.PrintWriter
+import amba.{Axi4Params, Axi4Bundle, ChannelAx, ChannelW, ChannelR}
 
 
 class Axi4MemoryWithLatency(

@@ -1,7 +1,7 @@
 import chisel3._
 import chisel3.util._
+import amba.{Axi4Params, Axi4LiteBundle}
 
-import java.io.PrintWriter
 
 class Axi4LiteMemory(
   val params: Axi4Params = Axi4Params(),

@@ -1,7 +1,6 @@
 import chisel3._
 import chisel3.util._
-
-import java.io.PrintWriter
+import amba.{Axi4Params, Axi4StreamBundle}
 
 
 class Axi4LiteStreamDataFifo(width: Int) extends Module {
