@@ -1,4 +1,4 @@
-name: Build Example
+name: Build Verilog
 
 on:
   push:
