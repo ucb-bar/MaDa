@@ -66,7 +66,7 @@ class Axi4QuadSpiFlash extends Module {
   io.io2_t := blackbox.io.io2_t
   blackbox.io.io3_i := io.io3_i
   io.io3_o := blackbox.io.io3_o
-  io.io3_t := blackbox.io.io3_t 
+  io.io3_t := blackbox.io.io3_t
   // blackbox.io.sck_i := io.sck_i
   // io.sck_o := blackbox.io.sck_o
   // io.sck_t := blackbox.io.sck_t
@@ -120,19 +120,19 @@ class Axi4QuadSpiFlashBlackbox extends BlackBox {
     val ip2intc_irpt = Output(Bool())
   })
 
-  def generate_tcl_script(): Unit = {
-    val vivado_project_dir = "out/vivado-project"
-    val ip_name = "Axi4QuadSpiFlashBlackbox"
-    val ip_name_lower = ip_name.toLowerCase()
+  val ip_name = "Axi4QuadSpiFlashBlackbox"
+  val ip_name_lower = ip_name.toLowerCase()
+  addVivadoTclScript(s"create_ip_${ip_name_lower}.tcl", {
 
-    val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
-    
-    tcl_script.println(s"create_ip -name axi_quad_spi -vendor xilinx.com -library ip -version 3.2 -module_name ${ip_name}")
+      // HACK: add flash memory file to Vivado project
+      // Get current working directory
+      val file_path = System.getProperty("user.dir") + "/firmware/" + "firmware.flash.8.hex"
 
     // the Flash memory used on the Arty is Spansion S25FL128S
     // it has 8 dummy cycles for single-mode read commands
     // and 6 dummy cycles for quad-mode read commands
-    tcl_script.println(s"""
+    s"""
+create_ip -name axi_quad_spi -vendor xilinx.com -library ip -version 3.2 -module_name ${ip_name}
 set_property -dict [list \\
   CONFIG.C_SPI_MEMORY {3} \\
   CONFIG.C_USE_STARTUP {0} \\
@@ -141,25 +141,17 @@ set_property -dict [list \\
   CONFIG.C_USE_STARTUP {1} \\
   CONFIG.C_SPI_MODE {2} \\
 ] [get_ips ${ip_name}]
-""")
 
-    tcl_script.println(s"generate_target {instantiation_template} [get_ips ${ip_name}]")
-    tcl_script.println("update_compile_order -fileset sources_1")
-    tcl_script.println(s"generate_target all [get_ips ${ip_name}]")
-    tcl_script.println(s"catch { config_ip_cache -export [get_ips -all ${ip_name}] }")
-    tcl_script.println(s"export_ip_user_files -of_objects [get_ips ${ip_name}] -no_script -sync -force -quiet")
-    tcl_script.println(s"create_ip_run [get_ips ${ip_name}]")
+generate_target {instantiation_template} [get_ips ${ip_name}]
+update_compile_order -fileset sources_1
+generate_target all [get_ips ${ip_name}]
+catch { config_ip_cache -export [get_ips -all ${ip_name}] }
+export_ip_user_files -of_objects [get_ips ${ip_name}] -no_script -sync -force -quiet
+create_ip_run [get_ips ${ip_name}]
 
-    // HACK: add flash memory file to Vivado project
-      // Get current working directory
-      val file_path = System.getProperty("user.dir") + "/firmware/" + "firmware.flash.8.hex"
-      
-      // Use current directory to create paths
-      tcl_script.println(s"add_files -norecurse ${file_path}")
-      tcl_script.println(s"set_property file_type {Memory Initialization Files} [get_files ${file_path}]")
-
-    tcl_script.close()
-  }
-  generate_tcl_script()
+add_files -norecurse ${file_path}
+set_property file_type {Memory Initialization Files} [get_files ${file_path}]
+"""
+  })
 }
 

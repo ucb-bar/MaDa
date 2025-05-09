@@ -172,11 +172,11 @@ class MlpPolicyRunner extends RawModule {
 
   }
 
-  addConstraintResource("module-vivado-ips/resources/constraints/Arty-A7-100-Master.xdc")
+  addConstraintResource("package-vivado-ips/resources/constraints/Arty-A7-100-Master.xdc")
 
-  addSimulationResource("module-delta-soc/test/MlpPolicyRunnerTestbench.sv")
-  addSimulationResource("module-delta-soc/resources/verilog/SimUart.sv")
-  addSimulationResource("module-delta-soc/resources/verilog/SpiFlashMemCtrl.sv")
-  addSimulationResource("module-delta-soc/resources/verilog/SimSpiFlashModel.sv")
-  addSimulationResource("module-delta-soc/resources/verilog/Ram.v")
+  addSimulationResource("package-delta-soc/test/MlpPolicyRunnerTestbench.sv")
+  addSimulationResource("package-delta-soc/resources/verilog/SimUart.sv")
+  addSimulationResource("package-delta-soc/resources/verilog/SpiFlashMemCtrl.sv")
+  addSimulationResource("package-delta-soc/resources/verilog/SimSpiFlashModel.sv")
+  addSimulationResource("package-delta-soc/resources/verilog/Ram.v")
 }

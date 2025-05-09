@@ -49,7 +49,7 @@ class Axi4LiteCrossbar(
 
   blackbox.io.aclk := clock
   blackbox.io.aresetn := ~reset.asBool
-  
+
   // Map the vector of Axi4Lite slaves to a single wide Axi4LiteCrossbarBlackboxBundle
   // this is done because in Xilinx IP, multiple AXI4 Lite interface are concatenated
   // into a single wide AXI4 Lite signals
@@ -102,7 +102,7 @@ class Axi4LiteCrossbar(
     io.m_axi(i).ar.bits.addr := blackbox.io.m_axi.araddr(32*i + 31, 32*i)
   }
   blackbox.io.m_axi.arready := Cat(io.m_axi.reverse.map(_.ar.ready))
-  
+
   blackbox.io.m_axi.rdata := Cat(io.m_axi.reverse.map(_.r.bits.data))
   blackbox.io.m_axi.rresp := Cat(io.m_axi.reverse.map(_.r.bits.resp.asUInt))
   blackbox.io.m_axi.rvalid := Cat(io.m_axi.reverse.map(_.r.valid))
@@ -123,41 +123,30 @@ class Axi4LiteCrossbarBlackbox(
   })
 
 
-  def generate_tcl_script(): Unit = {
-    val vivado_project_dir = "out/vivado-project"
-    val ip_name = "Axi4LiteCrossbarBlackbox"
-    val ip_name_lower = ip_name.toLowerCase()
-
-    val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
-    
-    tcl_script.println(s"create_ip -name axi_crossbar -vendor xilinx.com -library ip -version 2.1 -module_name ${ip_name}")
-
-    tcl_script.println(s"generate_target {instantiation_template} [get_ips ${ip_name}]")
-
-    tcl_script.println("update_compile_order -fileset sources_1")
-    tcl_script.println(s"generate_target all [get_ips ${ip_name}]")
-    tcl_script.println(s"catch { config_ip_cache -export [get_ips -all ${ip_name}] }")
-    tcl_script.println(s"export_ip_user_files -of_objects [get_ips ${ip_name}] -no_script -sync -force -quiet")
-    tcl_script.println(s"create_ip_run [get_ips ${ip_name}]")
-
-    tcl_script.println(s"""
+  val ipName = "Axi4LiteCrossbarBlackbox"
+  addVivadoIp(
+    name="axi_crossbar",
+    vendor="xilinx.com",
+    library="ip",
+    version="2.1",
+    moduleName=ipName,
+    extra = {
+      val baseConfig = s"""
 set_property -dict [list \\
   CONFIG.PROTOCOL {AXI4LITE} \\
   CONFIG.NUM_MI {${numMaster}} \\
   CONFIG.NUM_SI {${numSlave}} \\
-] [get_ips ${ip_name}]
-""")
-
-    for (i <- 0 until numMaster) {
-      tcl_script.println(s"""
+] [get_ips ${ipName}]
+"""
+      val masterConfigs = (0 until numMaster).map { i => s"""
 set_property -dict [list \\
   CONFIG.M${i.toString().reverse.padTo(2, '0').reverse}_A00_ADDR_WIDTH {${log2Ceil(deviceSizes(i))}} \\
   CONFIG.M${i.toString().reverse.padTo(2, '0').reverse}_A00_BASE_ADDR {0x${deviceAddresses(i).toString(16).reverse.padTo(16, '0').reverse}} \\
-] [get_ips ${ip_name}]
-""")
-    }
+] [get_ips ${ipName}]
+"""
+      }.mkString("\n")
 
-    tcl_script.close()
-  }
-  generate_tcl_script()
+      baseConfig + masterConfigs
+    }
+  )
 }

@@ -47,20 +47,17 @@ class ClockingWizardBlackbox(
     val clk_out7 = if (get_used(6)) Output(Clock()) else null
   })
 
-  def generate_tcl_script(): Unit = {
-    val vivado_project_dir = "out/vivado-project"
-    val ip_name = "ClockingWizardBlackbox"
-    val ip_name_lower = ip_name.toLowerCase()
 
-    val num_out_clks = clk_freqs.length
-    
-    val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
-    
-    tcl_script.println(s"create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 -module_name ${ip_name}")
-
-    tcl_script.println(s"""
+  val ipName = "ClockingWizardBlackbox"
+  addVivadoIp(
+    name="clk_wiz",
+    vendor="xilinx.com",
+    library="ip",
+    version="6.0",
+    moduleName=ipName,
+    extra = s"""
 set_property -dict [list \\
-  CONFIG.NUM_OUT_CLKS {${num_out_clks}} \\
+  CONFIG.NUM_OUT_CLKS {${clk_freqs.length}} \\
   CONFIG.MMCM_CLKFBOUT_MULT_F {10.000} \\
   CONFIG.MMCM_CLKOUT0_DIVIDE_F {8.000} \\
   CONFIG.MMCM_CLKOUT1_DIVIDE {40} \\
@@ -92,17 +89,7 @@ set_property -dict [list \\
   CONFIG.CLKOUT7_REQUESTED_OUT_FREQ {${get_freq(6)}} \\
   CONFIG.CLKOUT7_REQUESTED_PHASE {0.0} \\
   CONFIG.CLKOUT7_REQUESTED_DUTY_CYCLE {50.0} \\
-] [get_ips ${ip_name}]
-""")
-
-    tcl_script.println(s"generate_target {instantiation_template} [get_ips ${ip_name}]")
-    tcl_script.println("update_compile_order -fileset sources_1")
-    tcl_script.println(s"generate_target all [get_ips ${ip_name}]")
-    tcl_script.println(s"catch { config_ip_cache -export [get_ips -all ${ip_name}] }")
-    tcl_script.println(s"export_ip_user_files -of_objects [get_ips ${ip_name}] -no_script -sync -force -quiet")
-    tcl_script.println(s"create_ip_run [get_ips ${ip_name}]")
-
-    tcl_script.close()
-  }
-  generate_tcl_script()
+] [get_ips ${ipName}]
+"""
+  )
 }

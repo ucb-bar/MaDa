@@ -18,6 +18,7 @@ object BuilderConfig {
   val simulationFilelist = "generated-src/filelist_simulation.f"
   val constraintsFilelist = "generated-src/filelist_constraints.f"
   
+  val vivadoTclDir = "out/vivado-tcl"
   val vivadoProjectDir = "out/vivado-project"
 }
 
@@ -41,6 +42,42 @@ object addConstraintResource {
     writer.close()
   }
 }
+
+object addVivadoTclScript {
+  def apply(path: String, content: String): Unit = {
+    println(s"adding Vivado TCL script: $path")
+    val file = new File(BuilderConfig.vivadoTclDir + "/" + path)
+    val writer = new PrintWriter(new FileWriter(file))
+    writer.println(content)
+    writer.close()
+  }
+}
+
+object addVivadoIp {
+  def apply(
+    name: String,
+    vendor: String,
+    library: String,
+    version: String,
+    moduleName: String,
+    extra: String,
+    ): Unit = {
+    addVivadoTclScript(s"create_ip_${moduleName.toLowerCase()}.tcl", {
+      s"""
+create_ip -name ${name} -vendor ${vendor} -library ${library} -version ${version} -module_name ${moduleName}
+generate_target {instantiation_template} [get_ips ${moduleName}]
+update_compile_order -fileset sources_1
+generate_target all [get_ips ${moduleName}]
+catch { config_ip_cache -export [get_ips -all ${moduleName}] }
+export_ip_user_files -of_objects [get_ips ${moduleName}] -no_script -sync -force -quiet
+create_ip_run [get_ips ${moduleName}]
+${extra}
+"""
+    })
+  }
+}
+
+
 
 // helper function to parse the module name from the arguments
 object _parseModuleName {
@@ -72,8 +109,7 @@ object buildVerilog extends App {
     constraintsFilelist.close()
   }
   new File(BuilderConfig.vivadoProjectDir).mkdirs()
-  new File(s"${BuilderConfig.vivadoProjectDir}/scripts").mkdirs()
-  
+  new File(BuilderConfig.vivadoTclDir).mkdirs()
 
   val (moduleName, remainingArgs) = _parseModuleName(args)
 
@@ -101,7 +137,7 @@ object buildProject extends App {
   val (moduleName, remainingArgs) = _parseModuleName(args)
 
   new File(BuilderConfig.vivadoProjectDir).mkdirs()
-  new File(s"${BuilderConfig.vivadoProjectDir}/scripts").mkdirs()
+  new File(BuilderConfig.vivadoTclDir).mkdirs()
 
   /* Arty A7 100T */
   // val fpgaPart = "xc7a100ticsg324-1L"
@@ -133,7 +169,7 @@ object buildProject extends App {
 
   {
     // create a run.tcl file
-    val runTcl = new PrintWriter(s"${BuilderConfig.vivadoProjectDir}/scripts/create_project.tcl")
+    val runTcl = new PrintWriter(s"${BuilderConfig.vivadoTclDir}/create_project.tcl")
 
     // create project
     runTcl.println(s"create_project VivadoProject ${BuilderConfig.vivadoProjectDir} -part ${fpgaPart} -force")
@@ -168,7 +204,7 @@ object buildProject extends App {
     /* create Vivado IPs */
     runTcl.println("update_ip_catalog")
 
-    val create_ip_files = new File(s"${BuilderConfig.vivadoProjectDir}/scripts").listFiles(new FileFilter {
+    val create_ip_files = new File(BuilderConfig.vivadoTclDir).listFiles(new FileFilter {
       def accept(file: File): Boolean = file.isFile && file.getName != "create_project.tcl"
     }).map(_.getAbsolutePath)
 
@@ -190,7 +226,7 @@ object buildProject extends App {
   }
 
 
-  s"vivado -mode batch -source ${BuilderConfig.vivadoProjectDir}/scripts/create_project.tcl".!
+  s"vivado -mode batch -source ${BuilderConfig.vivadoTclDir}/create_project.tcl".!
 }
 
 object GenerateBitstream extends App {
@@ -199,9 +235,9 @@ object GenerateBitstream extends App {
 
   // {
   //   // create a generate_bitstream.tcl file
-  //   val run_tcl = new PrintWriter(s"${vivado_project_dir}/scripts/generate_bitstream.tcl")
+  //   val run_tcl = new PrintWriter(s"${BuilderConfig.vivadoTclDir}/scripts/generate_bitstream.tcl")
 
-  //   run_tcl.println(s"open_project ${vivado_project_dir}/VivadoProject.xpr")
+  //   run_tcl.println(s"open_project ${BuilderConfig.vivadoTclDir}/VivadoProject.xpr")
 
   //   val ip_name = "clk_wiz_0"
 
@@ -220,12 +256,12 @@ object GenerateBitstream extends App {
   //   run_tcl.println(s"wait_on_run impl_1")
 
   //   run_tcl.println(s"open_run impl_1")
-  //   run_tcl.println(s"write_bitstream ${vivado_project_dir}/Arty100TShell.bit -force")
+  //   run_tcl.println(s"write_bitstream ${BuilderConfig.vivadoTclDir}/Arty100TShell.bit -force")
 
 
   //   run_tcl.close()
   //   run_tcl.flush()   // make sure the file is written to the disk
   // }
 
-  // s"vivado -mode batch -source ${vivado_project_dir}/scripts/generate_bitstream.tcl".!
+  // s"vivado -mode batch -source ${BuilderConfig.vivadoTclDir}/scripts/generate_bitstream.tcl".!
 }

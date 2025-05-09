@@ -102,37 +102,24 @@ class Axi4SpiFlashBlackbox extends BlackBox {
     val ip2intc_irpt = Output(Bool())
   })
 
-  def generate_tcl_script(): Unit = {
-    val vivado_project_dir = "out/vivado-project"
-    val ip_name = "Axi4SpiFlashBlackbox"
-    val ip_name_lower = ip_name.toLowerCase()
-
-    val tcl_script = new PrintWriter(s"${vivado_project_dir}/scripts/create_ip_${ip_name_lower}.tcl")
-    
-    tcl_script.println(s"create_ip -name axi_quad_spi -vendor xilinx.com -library ip -version 3.2 -module_name ${ip_name}")
-
-    // the Flash memory used on the Arty is Spansion S25FL128S
-    // it has 8 dummy cycles for single-mode read commands
-    // and 6 dummy cycles for quad-mode read commands
-    tcl_script.println(s"""
+  // the Flash memory used on the Arty is Spansion S25FL128S
+  // it has 8 dummy cycles for single-mode read commands
+  // and 6 dummy cycles for quad-mode read commands
+  val ipName = "Axi4SpiFlashBlackbox"
+  addVivadoIp(
+    name="axi_quad_spi",
+    vendor="xilinx.com",
+    library="ip",
+    version="3.2",
+    moduleName=ipName,
+    extra = s"""
 set_property -dict [list \\
   CONFIG.C_SPI_MEMORY {3} \\
   CONFIG.C_USE_STARTUP {0} \\
   CONFIG.C_XIP_MODE {1} \\
   CONFIG.C_XIP_PERF_MODE {0} \\
   CONFIG.C_USE_STARTUP {1} \\
-] [get_ips ${ip_name}]
-""")
-
-    tcl_script.println(s"generate_target {instantiation_template} [get_ips ${ip_name}]")
-    tcl_script.println("update_compile_order -fileset sources_1")
-    tcl_script.println(s"generate_target all [get_ips ${ip_name}]")
-    tcl_script.println(s"catch { config_ip_cache -export [get_ips -all ${ip_name}] }")
-    tcl_script.println(s"export_ip_user_files -of_objects [get_ips ${ip_name}] -no_script -sync -force -quiet")
-    tcl_script.println(s"create_ip_run [get_ips ${ip_name}]")
-
-    tcl_script.close()
-  }
-  generate_tcl_script()
+] [get_ips ${ipName}]
+"""
+  )
 }
-
