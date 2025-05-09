@@ -1,0 +1,25 @@
+name: Run Vivado Flow
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Build MemorySubsystem
+      run: |
+        source /ecad/tools/xilinx/Vivado/2023.2.1/settings64.sh
+        make project PACKAGE=delta-soc DESIGN=delta.MemorySubsystem
+
+    - name: Build MlpPolicyRunner
+      run: |
+        source /ecad/tools/xilinx/Vivado/2023.2.1/settings64.sh
+        make project PACKAGE=delta-soc DESIGN=delta.MlpPolicyRunner

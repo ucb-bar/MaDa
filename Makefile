@@ -1,22 +1,22 @@
 BUILD_DIR = ./generated-src
 
-PRJ = ChiselProject
+PACKAGE ?= vivado-ips
+DESIGN ?= vivadoips.MinimalArty100T
 
-CONFIG ?= MinimalArty100T
-
+MILL_PATH ?= ./toolchains/mill
 
 verilog:
 	mkdir -p $(BUILD_DIR)
-	mill -i $(PRJ).runMain GenerateVerilog --target-dir $(BUILD_DIR) --module-name $(CONFIG)
+	$(MILL_PATH) -i package-$(PACKAGE).runMain builder.buildVerilog --target-dir $(BUILD_DIR) --design-name $(DESIGN)
 
 project: verilog
-	mill -i $(PRJ).runMain GenerateProject --target-dir $(BUILD_DIR) --module-name $(CONFIG)
+	$(MILL_PATH) -i package-$(PACKAGE).runMain builder.buildProject --target-dir $(BUILD_DIR) --design-name $(DESIGN)
 
 bitstream: project
-	mill -i $(PRJ).runMain GenerateBitstream --target-dir $(BUILD_DIR) --module-name $(CONFIG)
+	$(MILL_PATH) -i package-$(PACKAGE).runMain builder.buildBitstream --target-dir $(BUILD_DIR) --design-name $(DESIGN)
 
 test:
-	mill -i $(PRJ).Test
+	$(MILL_PATH) -i package-$(PACKAGE).Test
 
 clean:
 	rm -rf $(BUILD_DIR)
