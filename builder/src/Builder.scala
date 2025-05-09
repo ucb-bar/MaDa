@@ -1,5 +1,5 @@
 /**
- * Elaborate.scala
+ * Builder.scala
  *
  * This file is responsible for elaborating the Chisel design into SystemVerilog. It is the main entry point for
  * generating the hardware description.
