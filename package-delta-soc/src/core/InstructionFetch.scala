@@ -9,25 +9,32 @@ import Instructions._
 import ScalarControlConstants._
 
 
-
+/**
+  * Instruction Fetch Unit
+  *
+  * This module is responsible for fetching instructions from the instruction
+  * memory and sending them to the execution stage.
+  */
 class InstructionFetch extends Module {
   val io = IO(new Bundle {
     // PC reset vector
     val reset_vector = Input(UInt(32.W))
 
-    // decoupled control signals to function units
+    // decoupled control signals to execution stage
     val ex = new DecoupledIO(new Bundle {
       val pc = UInt(32.W)
       val inst = UInt(32.W)
     })
 
     // interface to redirect the PC stream
-    val redirected = Input(Bool())
-    val redirected_pc = Input(UInt(32.W))
-    
+    val redirected = Flipped(new ValidIO(new Bundle {
+      val pc = UInt(32.W)
+    }))
+
     // instruction memory interface
     val imem = new Axi4LiteBundle()
   })
+
 
   /* ================================ */
   /*  Pipeline Registers              */
@@ -53,13 +60,14 @@ class InstructionFetch extends Module {
   // is valid or the new instruction from the memory is valid
   val instruction_valid = reg_inst_buffer_valid || io.imem.r.valid
 
-  // stall the PC update if IF or EX is not ready
+  // if frontend or backend is not ready for next instruction, stall the PC update
   val stall = !io.ex.fire
 
   // update PC based on stall and redirect conditions
-  when (io.redirected) {
+  // ordering is important here, redirect has higher priority
+  when (io.redirected.valid) {
     // if branch/jump/exception is taken, redirect the PC stream
-    if_pc_next := io.redirected_pc
+    if_pc_next := io.redirected.bits.pc
   }
   .elsewhen (stall) {
     // stall the PC update to wait for the instruction / backend to be ready
@@ -70,14 +78,13 @@ class InstructionFetch extends Module {
     if_pc_next := if_pc_plus4
   }
 
-  // update PC
+  // update PC register
   if_reg_pc := if_pc_next
 
 
   /* ================================ */
   /*  Instruction Memory Interface    */
   /* ================================ */
-  
   // ignore write interface
   io.imem.aw := DontCare
   io.imem.w := DontCare
@@ -88,23 +95,27 @@ class InstructionFetch extends Module {
   io.imem.ar.bits.addr := if_pc_next
   io.imem.r.ready := true.B
 
-  // update instruction buffer
+  // update instruction to buffer when instruction memory response is
+  // valid but backend is not ready for execution
   when (io.imem.r.fire && !io.ex.fire) {
     reg_inst_buffer := io.imem.r.bits.data
     reg_inst_buffer_valid := true.B
   }
 
-  when (io.ex.fire || io.redirected) {
+  // clear instruction buffer when the instruction is consumed or
+  // rendered invalid by a redirect
+  when (io.ex.fire || io.redirected.valid) {
     reg_inst_buffer_valid := false.B
   }
-  
+
 
   /* ================================ */
   /*  Function Unit Control Signals   */
   /* ================================ */
   // output to EX stage
+  io.ex.valid := instruction_valid
   io.ex.bits.pc := if_reg_pc
-  
+
   // BUBBLE is used to handle power-on situation, where both the instruction buffer
   // and the instruction memory are not valid
   // otherwise, select the instruction from either the instruction buffer or the
@@ -113,5 +124,4 @@ class InstructionFetch extends Module {
     (reg_inst_buffer_valid) -> reg_inst_buffer,
     (io.imem.r.valid) -> io.imem.r.bits.data,
   ))
-  io.ex.valid := instruction_valid
 }

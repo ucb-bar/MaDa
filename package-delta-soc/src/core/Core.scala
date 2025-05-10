@@ -98,8 +98,8 @@ class Core(
   ifu.io.reset_vector := io.reset_vector
   
   // redirect the PC stream if the PC selection signal is not PC_4
-  ifu.io.redirected := if_pc_sel =/= PC_4
-  ifu.io.redirected_pc := MuxCase(0.U, Seq(
+  ifu.io.redirected.valid := if_pc_sel =/= PC_4
+  ifu.io.redirected.bits.pc := MuxCase(0.U, Seq(
     (if_pc_sel === PC_BR) -> if_branch_target,
     (if_pc_sel === PC_J) -> if_jump_target,
     (if_pc_sel === PC_JR) -> if_jump_reg_target,
