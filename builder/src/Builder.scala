@@ -238,7 +238,6 @@ object buildProject extends App {
     runTcl.flush()
   }
 
-
   s"vivado -mode batch -source ${BuilderConfig.vivadoTclDir}/create_project.tcl".!
 }
 

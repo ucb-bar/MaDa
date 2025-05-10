@@ -12,14 +12,18 @@ class Axi4MemoryWithLatency(
   val readLatency: Int = 2,
   val writeLatency: Int = 2,
 ) extends Module {
+
+  assert (readLatency > 0, "Read latency must be greater than 0")
+  assert (writeLatency > 0, "Write latency must be greater than 0")
+  
   val io = IO(new Bundle {
     val s_axi = Flipped(new Axi4Bundle(params))
   })
 
   // delay the signals by the specified latency
-  val aw_delay = Module(new Pipe(new ChannelAx(params), writeLatency))
-  val w_delay = Module(new Pipe(new ChannelW(params), writeLatency))
-  val r_delay = Module(new Pipe(new ChannelR(params), readLatency))
+  val aw_delay = Module(new Pipe(new ChannelAx(params), writeLatency-1))
+  val w_delay = Module(new Pipe(new ChannelW(params), writeLatency-1))
+  val r_delay = Module(new Pipe(new ChannelR(params), readLatency-1))
 
   // gate off the ready signal when the memory is busy
   val reg_aw_pending = RegInit(false.B)

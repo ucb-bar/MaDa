@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import amba.{Axi4Params, Axi4Bundle, Axi4LiteBundle}
 import vivadoips.{Axi4Crossbar, Axi4BlockMemory}
+import builder.{addSimulationResource}
 
 
 class EECS151Tile extends Module {
@@ -12,16 +13,19 @@ class EECS151Tile extends Module {
     val debug = new DebugIO()
   })
 
-  val core = Module(new Core(CoreConfig(VLEN=32, ELEN=32)))
+  val core = Module(new Core(CoreConfig(VLEN=64, ELEN=32)))
 
-  // instruction memory must be a synchronous 1 cycle read delay memory
-  val itim = Module(new Axi4MemoryWithLatency(
+  val itim = Module(new Axi4Memory(
     params=Axi4Params(addressWidth=14, dataWidth=32),
     memoryFileHex="firmware.hex",
-    readLatency=2,
-    writeLatency=2,
   ))
-
+  // val itim = Module(new Axi4MemoryWithLatency(
+  //   params=Axi4Params(addressWidth=14, dataWidth=32),
+  //   memoryFileHex="firmware.hex",
+  //   readLatency=2,
+  //   writeLatency=2,
+  // ))
+  
   val dtim = Module(new Axi4Memory(
     params=Axi4Params(addressWidth=14, dataWidth=32),
     memoryFileHex="firmware.hex"
@@ -40,6 +44,8 @@ class EECS151Tile extends Module {
   // debug connection
   io.debug <> core.io.debug
   dontTouch(core.io.debug)
+
+  addSimulationResource("package-delta-soc/test/EECS151TileTestbench.sv")
 }
 
 
@@ -94,4 +100,6 @@ class EECS252Tile extends Module {
   // debug connection
   io.debug <> core.io.debug
   dontTouch(core.io.debug)
+
+  addSimulationResource("package-delta-soc/test/EECS252TileTestbench.sv")
 }
