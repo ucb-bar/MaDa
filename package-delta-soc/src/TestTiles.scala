@@ -26,9 +26,13 @@ class EECS151Tile extends Module {
   //   writeLatency=2,
   // ))
   
-  val dtim = Module(new Axi4Memory(
+  // val dtim = Module(new Axi4Memory(
+  //   params=Axi4Params(addressWidth=14, dataWidth=32)
+  // ))
+  val dtim = Module(new Axi4MemoryWithLatency(
     params=Axi4Params(addressWidth=14, dataWidth=32),
-    memoryFileHex="firmware.hex"
+    readLatency=3,
+    writeLatency=3,
   ))
   
   // itim connection

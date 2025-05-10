@@ -7,7 +7,8 @@
 // `define IMEM_PATH dut.itim.mem.mem.mem
 `define IMEM_PATH dut.itim.mem.mem
 
-`define DMEM_PATH dut.dtim.mem.mem
+`define DMEM_PATH dut.dtim.mem.mem.mem
+// `define DMEM_PATH dut.dtim.mem.mem
 `define DMEM_DEPTH 4096
 
 `define TIMEOUT_CYCLES 100

@@ -10,13 +10,14 @@ import ScalarControlConstants._
 
 class LoadStore(val XLEN: Int = 32) extends Module {
   val io = IO(new Bundle {
-    val mem_func = Input(UInt(M_X.getWidth.W))
+    val ex = Flipped(ValidIO(new Bundle {
+      val mem_func = UInt(M_X.getWidth.W)
+      val ctl_dmem_mask_sel = UInt(MSK_X.getWidth.W)
+      val ctl_dmem_signed = Bool()
+      val addr = Input(UInt(XLEN.W))
+      val wdata = Input(UInt(XLEN.W))
+    }))
 
-    val ctl_dmem_mask_sel = Input(UInt(MSK_X.getWidth.W))
-    val ctl_dmem_signed = Input(Bool())
-
-    val addr = Input(UInt(XLEN.W))
-    val wdata = Input(UInt(XLEN.W))
     val rdata = Output(UInt(XLEN.W))
 
     val busy = Output(Bool())
@@ -37,7 +38,7 @@ class LoadStore(val XLEN: Int = 32) extends Module {
   when (io.dmem.aw.fire) {
     reg_aw_pending := false.B
   }
-  .elsewhen (io.mem_func === M_WR && !reg_w_pending && !reg_b_pending) {
+  .elsewhen (io.ex.valid && io.ex.bits.mem_func === M_WR && !reg_w_pending && !reg_b_pending) {
     reg_aw_pending := true.B
   }
 
@@ -45,7 +46,7 @@ class LoadStore(val XLEN: Int = 32) extends Module {
     reg_w_pending := false.B
     reg_b_pending := true.B
   }
-  .elsewhen (io.mem_func === M_WR && !reg_b_pending) {
+  .elsewhen (io.ex.valid && io.ex.bits.mem_func === M_WR && !reg_b_pending) {
     reg_w_pending := true.B
   }
 
@@ -53,7 +54,7 @@ class LoadStore(val XLEN: Int = 32) extends Module {
     reg_ar_pending := false.B
     reg_r_pending := true.B
   }
-  .elsewhen (io.mem_func === M_RD && !reg_r_pending) {
+  .elsewhen (io.ex.valid && io.ex.bits.mem_func === M_RD && !reg_r_pending) {
     reg_ar_pending := true.B
   }
 
@@ -74,42 +75,42 @@ class LoadStore(val XLEN: Int = 32) extends Module {
   val dmem_strb = Wire(UInt(4.W))
 
   dmem_strb := MuxCase(0.U, Seq(
-    ((io.ctl_dmem_mask_sel === MSK_W)) -> "b1111".U,
-    ((io.ctl_dmem_mask_sel === MSK_H) && (io.addr(1) === 0.U)) -> "b0011".U,
-    ((io.ctl_dmem_mask_sel === MSK_H) && (io.addr(1) === 1.U)) -> "b1100".U,
-    ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 0.U)) -> "b0001".U,
-    ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 1.U)) -> "b0010".U,
-    ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 2.U)) -> "b0100".U,
-    ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 3.U)) -> "b1000".U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_W)) -> "b1111".U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_H) && (io.ex.bits.addr(1) === 0.U)) -> "b0011".U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_H) && (io.ex.bits.addr(1) === 1.U)) -> "b1100".U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 0.U)) -> "b0001".U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 1.U)) -> "b0010".U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 2.U)) -> "b0100".U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 3.U)) -> "b1000".U,
   ))
 
   val dmem_wdata_shamt = MuxCase(0.U, Seq(
-    ((io.ctl_dmem_mask_sel === MSK_W)) -> 0.U,
-    ((io.ctl_dmem_mask_sel === MSK_H) && (io.addr(1) === 0.U)) -> 0.U,
-    ((io.ctl_dmem_mask_sel === MSK_H) && (io.addr(1) === 1.U)) -> 16.U,
-    ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 0.U)) -> 0.U,
-    ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 1.U)) -> 8.U,
-    ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 2.U)) -> 16.U,
-    ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 3.U)) -> 24.U
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_W)) -> 0.U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_H) && (io.ex.bits.addr(1) === 0.U)) -> 0.U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_H) && (io.ex.bits.addr(1) === 1.U)) -> 16.U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 0.U)) -> 0.U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 1.U)) -> 8.U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 2.U)) -> 16.U,
+    ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 3.U)) -> 24.U
   ))
   
   io.dmem.aw.valid := reg_aw_pending
   io.dmem.aw.bits.id := 0.U
-  io.dmem.aw.bits.addr := io.addr
+  io.dmem.aw.bits.addr := io.ex.bits.addr
   io.dmem.aw.bits.len := 0.U
   io.dmem.aw.bits.size := AxSize.S_4_BYTES
   io.dmem.aw.bits.burst := AxBurst.INCR
   
   io.dmem.w.valid := reg_w_pending
   io.dmem.w.bits.strb := dmem_strb
-  io.dmem.w.bits.data := (io.wdata << dmem_wdata_shamt).asUInt
+  io.dmem.w.bits.data := (io.ex.bits.wdata << dmem_wdata_shamt).asUInt
   io.dmem.w.bits.last := true.B
 
   io.dmem.b.ready := true.B
   
   io.dmem.ar.valid := reg_ar_pending
   io.dmem.ar.bits.id := 0.U
-  io.dmem.ar.bits.addr := io.addr
+  io.dmem.ar.bits.addr := io.ex.bits.addr
   io.dmem.ar.bits.len := 0.U
   io.dmem.ar.bits.size := AxSize.S_4_BYTES
   io.dmem.ar.bits.burst := AxBurst.INCR
@@ -133,19 +134,17 @@ class LoadStore(val XLEN: Int = 32) extends Module {
 
 
   // stall entire pipeline on I$ or D$ miss
-  // val imem_transaction_pending = !io.dat.imem_resp_valid
-  // val dmem_transaction_pending = c_mem_en && !(ex_reg_dmem_pending /*|| io.dat.data_misaligned)*/)
-  io.busy := (io.mem_func =/= M_X || reg_aw_pending || reg_w_pending || reg_b_pending || reg_ar_pending || reg_r_pending) && !(io.dmem.r.fire || io.dmem.b.fire)
+  io.busy := (io.ex.valid || reg_aw_pending || reg_w_pending || reg_b_pending || reg_ar_pending || reg_r_pending) && !(io.dmem.r.fire || io.dmem.b.fire)
 
   io.rdata := MuxCase(0.U, Seq(
-      (io.ctl_dmem_mask_sel === MSK_W) -> dmem_rdata_w,
+      (io.ex.bits.ctl_dmem_mask_sel === MSK_W) -> dmem_rdata_w,
       // unsigned half-word
-      ((io.ctl_dmem_mask_sel === MSK_H) && (io.addr(1) === 0.U)) -> Mux(io.ctl_dmem_signed, dmem_rdata_h_0_sext, dmem_rdata_h_0),
-      ((io.ctl_dmem_mask_sel === MSK_H) && (io.addr(1) === 1.U)) -> Mux(io.ctl_dmem_signed, dmem_rdata_h_2_sext, dmem_rdata_h_2),
+      ((io.ex.bits.ctl_dmem_mask_sel === MSK_H) && (io.ex.bits.addr(1) === 0.U)) -> Mux(io.ex.bits.ctl_dmem_signed, dmem_rdata_h_0_sext, dmem_rdata_h_0),
+      ((io.ex.bits.ctl_dmem_mask_sel === MSK_H) && (io.ex.bits.addr(1) === 1.U)) -> Mux(io.ex.bits.ctl_dmem_signed, dmem_rdata_h_2_sext, dmem_rdata_h_2),
       // byte
-      ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 0.U)) -> Mux(io.ctl_dmem_signed, dmem_rdata_b_0_sext, dmem_rdata_b_0),
-      ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 1.U)) -> Mux(io.ctl_dmem_signed, dmem_rdata_b_1_sext, dmem_rdata_b_1),
-      ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 2.U)) -> Mux(io.ctl_dmem_signed, dmem_rdata_b_2_sext, dmem_rdata_b_2),
-      ((io.ctl_dmem_mask_sel === MSK_B) && (io.addr(1,0) === 3.U)) -> Mux(io.ctl_dmem_signed, dmem_rdata_b_3_sext, dmem_rdata_b_3),
+      ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 0.U)) -> Mux(io.ex.bits.ctl_dmem_signed, dmem_rdata_b_0_sext, dmem_rdata_b_0),
+      ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 1.U)) -> Mux(io.ex.bits.ctl_dmem_signed, dmem_rdata_b_1_sext, dmem_rdata_b_1),
+      ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 2.U)) -> Mux(io.ex.bits.ctl_dmem_signed, dmem_rdata_b_2_sext, dmem_rdata_b_2),
+      ((io.ex.bits.ctl_dmem_mask_sel === MSK_B) && (io.ex.bits.addr(1,0) === 3.U)) -> Mux(io.ex.bits.ctl_dmem_signed, dmem_rdata_b_3_sext, dmem_rdata_b_3),
       ))
 }
