@@ -90,8 +90,9 @@ class InstructionFetch extends Module {
   io.imem.w := DontCare
   io.imem.b := DontCare
 
-  // request new instruction if instruction buffer is not updated
-  io.imem.ar.valid := !reg_inst_buffer_valid
+  // request new instruction if instruction buffer is outdated
+  // or going to be consumed on the next clock cycle
+  io.imem.ar.valid := !reg_inst_buffer_valid || io.ex.fire
   io.imem.ar.bits.addr := if_pc_next
   io.imem.r.ready := true.B
 

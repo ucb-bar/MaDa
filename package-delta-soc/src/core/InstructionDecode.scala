@@ -9,33 +9,35 @@ import ScalarControlConstants._
 import SimdControlConstants._
 
 
+class ControlSignals extends Bundle {
+  val valid_inst = Bool()
+  val branch_type = UInt(BR_X.getWidth.W)
+  val alu_op1_sel = UInt(OP1_X.getWidth.W)
+  val alu_op2_sel = UInt(OP2_X.getWidth.W)
+  val alu_func = UInt(ALU_X.getWidth.W)
+  val mem_en = Bool()
+  val mem_func = UInt(M_X.getWidth.W)
+  val mem_mask = UInt(MSK_X.getWidth.W)
+  val mem_signed = Bool()
+  val wb_sel = UInt(WB_X.getWidth.W)
+  val wb_en = Bool()
+  val csr_cmd = UInt(CSR_N.getWidth.W)
+
+  val valu_op1_sel = UInt(OP1_X.getWidth.W)
+  val valu_op2_sel = UInt(OP2_X.getWidth.W)
+  val valu_func = UInt(ALU_X.getWidth.W)
+  val vmem_en = Bool()
+  val vmem_func = UInt(M_X.getWidth.W)
+  val vmem_stride = UInt(STRIDE_X.getWidth.W)
+  val vwb_sel = UInt(WB_X.getWidth.W)
+  val vwb_en = Bool()
+}
+
 class InstructionDecode extends Module {
   val io = IO(new Bundle {
     val instruction = Input(UInt(32.W))
 
-    val control_signals = Output(new Bundle {
-      val valid_inst = Bool()
-      val branch_type = UInt(BR_X.getWidth.W)
-      val alu_op1_sel = UInt(OP1_X.getWidth.W)
-      val alu_op2_sel = UInt(OP2_X.getWidth.W)
-      val alu_func = UInt(ALU_X.getWidth.W)
-      val mem_en = Bool()
-      val mem_func = UInt(M_X.getWidth.W)
-      val mem_mask = UInt(MSK_X.getWidth.W)
-      val mem_signed = Bool()
-      val wb_sel = UInt(WB_X.getWidth.W)
-      val wb_en = Bool()
-      val csr_cmd = UInt(CSR_N.getWidth.W)
-
-      val valu_op1_sel = UInt(OP1_X.getWidth.W)
-      val valu_op2_sel = UInt(OP2_X.getWidth.W)
-      val valu_func = UInt(ALU_X.getWidth.W)
-      val vmem_en = Bool()
-      val vmem_func = UInt(M_X.getWidth.W)
-      val vmem_stride = UInt(STRIDE_X.getWidth.W)
-      val vwb_sel = UInt(WB_X.getWidth.W)
-      val vwb_en = Bool()
-    })
+    val control_signals = Output(new ControlSignals)
   })
   
 

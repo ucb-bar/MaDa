@@ -65,9 +65,26 @@ class Axi4Memory(
     }
     is (sWRITE_END) {  // ENDB state
       when (io.s_axi.b.fire) {
-        // transition to IDLE state
-        reg_w_state := sWRITE_IDLE
-        reg_w_strb := 0.U((params.dataWidth/8).W)
+        when (io.s_axi.aw.fire) {
+          // back-to-back write request
+          when (io.s_axi.w.fire) {
+            // transition to END state
+            reg_w_state := sWRITE_END
+            reg_w_data := io.s_axi.w.bits.data
+            reg_w_strb := io.s_axi.w.bits.strb
+          }
+          .otherwise {
+            // transition to LAST state
+            reg_w_state := sWRITE_LAST
+          }
+          reg_aw_id := io.s_axi.aw.bits.id
+          reg_aw_addr := io.s_axi.aw.bits.addr(memAddressWidth-1, memAlignment)
+        }
+        .otherwise {
+          // transition to IDLE state
+          reg_w_state := sWRITE_IDLE
+          reg_w_strb := 0.U((params.dataWidth/8).W)
+        }
       }
     }
   }

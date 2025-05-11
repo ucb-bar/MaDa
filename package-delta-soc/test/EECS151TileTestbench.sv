@@ -259,8 +259,8 @@ module EECS151TileTestbench();
     // Hold reset for a while
     repeat (10) @(posedge clock);
 
-    @(negedge clock);
-    reset = 0;
+    // @(negedge clock);
+    // reset = 0;
 
     // Test R-Type Insts --------------------------------------------------
     // - ADD, SUB, SLL, SLT, SLTU, XOR, OR, AND, SRL, SRA
