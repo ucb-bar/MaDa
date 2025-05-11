@@ -4,8 +4,8 @@
 `define RF_PATH dut.core.regfile_ext.Memory
 `define RF_DEPTH 32
 
-// `define IMEM_PATH dut.itim.mem.mem.mem
-`define IMEM_PATH dut.itim.mem.mem
+`define IMEM_PATH dut.itim.mem.mem.mem
+// `define IMEM_PATH dut.itim.mem.mem
 
 `define DMEM_PATH dut.dtim.mem.mem.mem
 // `define DMEM_PATH dut.dtim.mem.mem
@@ -106,9 +106,9 @@ module EECS151TileTestbench();
         `DMEM_PATH[i] = 0;
       end
 
-      @(negedge clock);
+      @(negedge clock); #0;
       reset = 1;
-      @(negedge clock);
+      @(negedge clock); #0;
       reset = 0;
     end
   endtask
@@ -136,7 +136,7 @@ module EECS151TileTestbench();
   // we terminate the testbench
   initial begin
     while (!all_tests_passed) begin
-      @(posedge clock);
+      @(posedge clock); #0;
       if (cycle === `TIMEOUT_CYCLES) begin
         $display("[Failed] Timeout at [%d] test %s, expected_result = %h, got = %h",
                 current_test_id, current_test_type, current_result, current_output);
@@ -168,7 +168,7 @@ module EECS151TileTestbench();
       
       fork
         begin : timeout_block
-          repeat(`TIMEOUT_CYCLES) @(posedge clock);
+          repeat(`TIMEOUT_CYCLES) @(posedge clock); #0;
           $display("[Failed] Timeout at [%d] test %s, expected_result = %h, got = %h",
                   current_test_id, test_type, result, `RF_PATH[rf_wa]);
           $finish();
@@ -177,7 +177,7 @@ module EECS151TileTestbench();
         begin : check_block
       while (`RF_PATH[rf_wa] !== result) begin
         current_output = `RF_PATH[rf_wa];
-        @(posedge clock);
+        @(posedge clock); #0;
       end
           disable timeout_block;
       done = 1;
@@ -204,7 +204,7 @@ module EECS151TileTestbench();
       
       fork
         begin : timeout_block
-          repeat(`TIMEOUT_CYCLES) @(posedge clock);
+          repeat(`TIMEOUT_CYCLES) @(posedge clock); #0;
           $display("[Failed] Timeout at [%d] test %s, expected_result = %h, got = %h",
                   current_test_id, test_type, result, `DMEM_PATH[addr]);
           $finish();
@@ -213,7 +213,7 @@ module EECS151TileTestbench();
         begin : check_block
       while (`DMEM_PATH[addr] !== result) begin
         current_output = `DMEM_PATH[addr];
-        @(posedge clock);
+        @(posedge clock); #0;
       end
           disable timeout_block;
       done = 1;
@@ -257,10 +257,10 @@ module EECS151TileTestbench();
     // Reset the CPU
     reset = 1;
     // Hold reset for a while
-    repeat (10) @(posedge clock);
+    repeat (10) @(posedge clock); #0;
 
-    // @(negedge clock);
-    // reset = 0;
+    @(negedge clock); #0;
+    reset = 0;
 
     // Test R-Type Insts --------------------------------------------------
     // - ADD, SUB, SLL, SLT, SLTU, XOR, OR, AND, SRL, SRA

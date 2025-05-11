@@ -15,16 +15,14 @@ class EECS151Tile extends Module {
 
   val core = Module(new Core(CoreConfig(VLEN=64, ELEN=32)))
 
-  val itim = Module(new Axi4Memory(
-    params=Axi4Params(addressWidth=14, dataWidth=32),
-    memoryFileHex="firmware.hex",
-  ))
-  // val itim = Module(new Axi4MemoryWithLatency(
+  // val itim = Module(new Axi4Memory(
   //   params=Axi4Params(addressWidth=14, dataWidth=32),
-  //   memoryFileHex="firmware.hex",
-  //   readLatency=2,
-  //   writeLatency=2,
   // ))
+  val itim = Module(new Axi4MemoryWithLatency(
+    params=Axi4Params(addressWidth=14, dataWidth=32),
+    readLatency=2,
+    writeLatency=2,
+  ))
   
   // val dtim = Module(new Axi4Memory(
   //   params=Axi4Params(addressWidth=14, dataWidth=32)

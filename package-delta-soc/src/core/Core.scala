@@ -119,13 +119,12 @@ class Core(
   
 
   // backpressure the IF stage if we are busy with data memory
-  stalled := replay_ex || replay_wb
+  stalled := !ifu.io.ex.fire
   
   // kill the instruction in the decode stage if either the instruction is not valid
   kill_ex := !ifu.io.ex.valid
   
-  // in two-stage pipeline, everything is conbinationally connected
-  when (!replay_ex) {
+  when (!stalled) {
     kill_wb := kill_ex
   }
 
@@ -161,7 +160,7 @@ class Core(
   val ex_inst = ifu.io.ex.bits.inst
   val ex_pc = ifu.io.ex.bits.pc
   
-  ifu.io.ex.ready := !stalled
+  ifu.io.ex.ready := !(replay_ex || replay_wb)
   idu.io.instruction := ex_inst
   
   val ex_ctrl = idu.io.control_signals
@@ -289,7 +288,7 @@ class Core(
   // ================================================================
 
   // Memory Access (MEM) Stage
-  val wb_inst = Reg(UInt(32.W))
+  val wb_inst = RegInit(RiscvConstants.BUBBLE)
   val wb_pc = Reg(UInt(32.W))
   val wb_ctrl = Reg(new ControlSignals())
   dontTouch(wb_inst)
@@ -349,7 +348,7 @@ class Core(
 
 
   // write back commit point
-  commit := !kill_wb && !replay_wb
+  commit := !kill_wb && !replay_wb && !stalled
   
   // regfile write commits
   when(commit && wb_ctrl.wb_en && (wb_rd_addr =/= 0.U)) {
