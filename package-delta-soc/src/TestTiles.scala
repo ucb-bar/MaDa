@@ -15,16 +15,11 @@ class EECS151Tile extends Module {
 
   val core = Module(new Core(CoreConfig(VLEN=64, ELEN=32)))
 
+  // instruction memory must be a synchronous 1 cycle read delay memory
   val itim = Module(new Axi4Memory(
     params=Axi4Params(addressWidth=14, dataWidth=32),
     memoryFileHex="firmware.hex",
   ))
-  // val itim = Module(new Axi4MemoryWithLatency(
-  //   params=Axi4Params(addressWidth=14, dataWidth=32),
-  //   memoryFileHex="firmware.hex",
-  //   readLatency=2,
-  //   writeLatency=2,
-  // ))
   
   val dtim = Module(new Axi4Memory(
     params=Axi4Params(addressWidth=14, dataWidth=32),
@@ -74,11 +69,9 @@ class EECS252Tile extends Module {
   ))
 
   // instruction memory must be a synchronous 1 cycle read delay memory
-  val itim = Module(new Axi4MemoryWithLatency(
+  val itim = Module(new Axi4Memory(
     params=Axi4Params(addressWidth=14, dataWidth=32),
     memoryFileHex="firmware.hex",
-    readLatency=2,
-    writeLatency=2,
   ))
 
   val dtim = Module(new Axi4Memory(

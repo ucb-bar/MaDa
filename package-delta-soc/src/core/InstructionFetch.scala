@@ -42,10 +42,12 @@ class InstructionFetch extends Module {
   // Program Counter
   val if_reg_pc = RegInit(io.reset_vector)
 
-  // Instruction buffer
-  val reg_inst_buffer = Reg(UInt(32.W))
-  val reg_inst_buffer_valid = RegInit(false.B)
+  val ex_reg_valid = RegInit(false.B)
+  val ex_reg_pc = Reg(UInt(32.W))
+  val ex_reg_inst = Reg(UInt(32.W))
 
+  val reg_reset_stall = RegInit(true.B)
+  reg_reset_stall := false.B
 
   /* ================================ */
   /*  PC Update Logic                 */
@@ -58,7 +60,7 @@ class InstructionFetch extends Module {
 
   // current instruction is valid if either the previously stored instruction
   // is valid or the new instruction from the memory is valid
-  val instruction_valid = reg_inst_buffer_valid || io.imem.r.valid
+  val instruction_valid = io.imem.r.valid && !io.redirected.valid
 
   // if frontend or backend is not ready for next instruction, stall the PC update
   val stall = !io.ex.fire
@@ -91,37 +93,25 @@ class InstructionFetch extends Module {
   io.imem.b := DontCare
 
   // request new instruction if instruction buffer is not updated
-  io.imem.ar.valid := !reg_inst_buffer_valid
+  io.imem.ar.valid := !reg_reset_stall
   io.imem.ar.bits.addr := if_pc_next
   io.imem.r.ready := true.B
-
-  // update instruction to buffer when instruction memory response is
-  // valid but backend is not ready for execution
-  when (io.imem.r.fire && !io.ex.fire) {
-    reg_inst_buffer := io.imem.r.bits.data
-    reg_inst_buffer_valid := true.B
-  }
-
-  // clear instruction buffer when the instruction is consumed or
-  // rendered invalid by a redirect
-  when (io.ex.fire || io.redirected.valid) {
-    reg_inst_buffer_valid := false.B
-  }
-
 
   /* ================================ */
   /*  Function Unit Control Signals   */
   /* ================================ */
+  when (io.ex.ready) {
+    ex_reg_valid := instruction_valid
+    ex_reg_pc := if_reg_pc
+    ex_reg_inst := io.imem.r.bits.data
+  }
+  
   // output to EX stage
-  io.ex.valid := instruction_valid
-  io.ex.bits.pc := if_reg_pc
-
+  io.ex.valid := ex_reg_valid
+  io.ex.bits.pc := ex_reg_pc
   // BUBBLE is used to handle power-on situation, where both the instruction buffer
   // and the instruction memory are not valid
   // otherwise, select the instruction from either the instruction buffer or the
   // instruction memory
-  io.ex.bits.inst := MuxCase(RiscvConstants.BUBBLE, Seq(
-    (reg_inst_buffer_valid) -> reg_inst_buffer,
-    (io.imem.r.valid) -> io.imem.r.bits.data,
-  ))
+  io.ex.bits.inst := Mux(ex_reg_valid, ex_reg_inst, RiscvConstants.BUBBLE)
 }
