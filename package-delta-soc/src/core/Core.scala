@@ -274,7 +274,7 @@ class Core(
   lsu.io.dmem <> io.dmem
 
 
-  val vlsu = Module(new SimdLoadStore(nVectors=numVectors))
+  val vlsu = Module(new SimdLoadStore(ELEN=config.ELEN, VLEN=config.VLEN))
 
   vlsu.io.mem_func := Mux(ifu.io.ex.valid, ctrl.vmem_func, M_X)
   vlsu.io.strided := ctrl.vmem_stride

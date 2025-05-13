@@ -10,7 +10,7 @@ class MlpPolicyRunner extends MlpPolicyRunnerBase(
     tile = new TileConfig(
       core = new CoreConfig(
         XLEN = 32,
-        ELEN = 32,
+        ELEN = 16,
         VLEN = 64,
         pipelineStages = 3,
       ),

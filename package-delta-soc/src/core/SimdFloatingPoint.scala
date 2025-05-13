@@ -11,7 +11,7 @@ import SimdControlConstants._
 class SimdFloatingPoint(
   val ELEN: Int = 32,
   val VLEN: Int = 64,
-  pipelineStages: Int = 1,
+  val pipelineStages: Int = 1,
   ) extends Module {
   
   val numVectors = VLEN / ELEN
@@ -26,13 +26,22 @@ class SimdFloatingPoint(
     val busy = Output(Bool())
   })
 
-  assert(ELEN == 32, "Currently only 32-bit (ELEN = 32) is supported")
+  assert(ELEN == 16 || ELEN == 32, "Currently only 16-bit and 32-bit (ELEN = {16, 32}) is supported")
   assert(VLEN == 64 || VLEN == 128 || VLEN == 256, "Currently only 64-bit, 128-bit and 256-bit (VLEN = {64, 128, 256}) is supported")
 
-  val fmacc = Array.fill(numVectors)(Module(new FloatingPoint(FloatingPointConfig(pipelineStages=pipelineStages))))
+  val fmacc = Array.fill(numVectors)(Module(new FloatingPoint(FloatingPointConfig(width=ELEN, pipelineStages=pipelineStages))))
 
-  val one = 0x3F800000.U(32.W)
-  val zero = 0x00000000.U(32.W)
+  val one = Wire(UInt(ELEN.W))
+  val zero = Wire(UInt(ELEN.W))
+
+  if (ELEN == 16) {
+    one := 0x3C00.U
+    zero := 0x0000.U
+  }
+  else {
+    one := 0x3F800000.U
+    zero := 0x00000000.U
+  }
 
 
   // since everybody will execute the same instruction, we need to
@@ -86,7 +95,7 @@ class SimdFloatingPoint(
 
   // ====== pipeline cross here ======
 
-  val ex2_op2_positive = ex2_reg_op_rs2.map(x => x(31) === 0.U)
+  val ex2_op2_positive = ex2_reg_op_rs2.map(x => x(ELEN-1) === 0.U)
 
   for (i <- 0 until numVectors) {
     fmacc(i).io.a.valid := ex2_reg_valid
@@ -102,4 +111,17 @@ class SimdFloatingPoint(
       (ex2_reg_func === SIMD_MAX) -> Mux(ex2_op2_positive(i), ex2_reg_op_rs2(i), zero),
     ))
   }
+}
+
+
+
+
+class FloatingPointForTest extends FloatingPoint(
+  new FloatingPointConfig(
+    pipelineStages = 1,
+    width = 16,
+  )
+) {
+  builder.addSimulationResource("package-delta-soc/test/FloatingPointForTestTestbench.sv")
+
 }
