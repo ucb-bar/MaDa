@@ -3,13 +3,20 @@
 .metals/
 .bloop/
 .vscode/
+.bsp/
 
 # Build artifacts
 out/
 generated-src/
+firmware/*.bin
+firmware/*.dis
+firmware/*.elf
+firmware/*.hex
+firmware/*.coe
+firmware/*.section
+firmware/*.symbol
 
 # Toolchains
-toolchains/mill
 
 # Vivado
 vivado*.jou
@@ -19,3 +26,5 @@ vivado*.str
 .srcs/
 .ip_user_files/
 
+# RISCV Tests
+isa-tests/
