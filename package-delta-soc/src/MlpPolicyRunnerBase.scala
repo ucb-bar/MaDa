@@ -3,6 +3,7 @@ package delta
 import chisel3._
 import chisel3.util._
 import amba.{Axi4Params, Axi4Bundle, Axi4LiteBundle}
+import prci.SyncReset
 import vivadoips.{
   Arty100TIO,
   Axi4Crossbar,
@@ -17,7 +18,6 @@ import vivadoips.{
   Axi4SpiFlash,
   ClockingWizard,
   IOBUF,
-  SyncReset,
 }
 import builder.{addConstraintResource, addSimulationResource}
 

@@ -1,4 +1,4 @@
-package chipyardwrapper
+package chipyard_wrapper
 
 // import chisel3._
 // import chisel3.util._

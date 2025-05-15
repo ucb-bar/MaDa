@@ -17,6 +17,7 @@ import java.io.FileWriter
 
 object BuilderConfig {
   val chiselGeneratedFilelist = "generated-src/filelist.f"
+  val extraGeneratedFilelist = "generated-src/filelist_extra.f"
   val simulationFilelist = "generated-src/filelist_simulation.f"
   val constraintsFilelist = "generated-src/filelist_constraints.f"
   
@@ -25,6 +26,19 @@ object BuilderConfig {
 }
 
 
+object addResourceByFilelist {
+  def apply(external_filelist: String): Unit = {
+    println(s"adding Resource by filelist: $external_filelist")
+    val filelistPath = external_filelist.split("/").dropRight(1).mkString("/")
+    val filelists = new File(BuilderConfig.extraGeneratedFilelist)
+    val writer = new PrintWriter(new FileWriter(filelists, true))
+    val lines = scala.io.Source.fromFile(external_filelist).getLines()
+    lines.foreach(line => {
+      writer.println(s"${filelistPath}/${line}")
+    })
+    writer.close()
+  }
+}
 object addSimulationResource {
   def apply(path: String): Unit = {
     println(s"adding Simulation resource: $path")
@@ -168,6 +182,11 @@ object buildProject extends App {
     def accept(file: File): Boolean = file.isFile || file.isDirectory && !file.getName.endsWith(".f")
   }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
 
+  val extraGeneratedSources = scala.io.Source.fromFile(new File(BuilderConfig.extraGeneratedFilelist))
+    .getLines()
+    .map(_.trim)
+    .filter(_.nonEmpty)
+
   val simulationSources = scala.io.Source.fromFile(new File(BuilderConfig.simulationFilelist))
     .getLines()
     .map(_.trim)
@@ -198,6 +217,9 @@ object buildProject extends App {
     // add sources
     runTcl.print(s"add_files")
     chiselGeneratedSources.foreach(filepath => {
+      runTcl.println(s" ${filepath} \\")
+    })
+    extraGeneratedSources.foreach(filepath => {
       runTcl.println(s" ${filepath} \\")
     })
     runTcl.println("")
