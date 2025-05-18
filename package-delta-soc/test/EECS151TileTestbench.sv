@@ -4,7 +4,8 @@
 `define RF_PATH dut.core.regfile_ext.Memory
 `define RF_DEPTH 32
 
-`define IMEM_PATH dut.itim.mem.mem.mem
+// `define IMEM_PATH dut.itim.mem.mem.mem
+`define IMEM_PATH dut.itim.mem.mem
 
 `define DMEM_PATH dut.dtim.mem.mem
 `define DMEM_DEPTH 4096

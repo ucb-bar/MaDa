@@ -13,6 +13,8 @@ import builder.addVivadoIp
 case class FloatingPointConfig(
   /** Number of pipeline stages */
   pipelineStages: Int = 1,
+  /** Floating point precision */
+  width: Int = 32,
 )
 
 /**
@@ -24,10 +26,10 @@ class FloatingPoint(
   val config: FloatingPointConfig = FloatingPointConfig()
 ) extends Module {
   val io = IO(new Bundle {
-    val a = Flipped(Valid(UInt(32.W)))
-    val b = Flipped(Valid(UInt(32.W)))
-    val c = Flipped(Valid(UInt(32.W)))
-    val result = Valid(UInt(32.W))
+    val a = Flipped(Valid(UInt(config.width.W)))
+    val b = Flipped(Valid(UInt(config.width.W)))
+    val c = Flipped(Valid(UInt(config.width.W)))
+    val result = Valid(UInt(config.width.W))
   })
 
   val blackbox = Module(new FloatingPointBlackbox(config))
@@ -49,14 +51,18 @@ class FloatingPointBlackbox(
   val io = IO(new Bundle {
     val aclk = Input(Clock())
     val s_axis_a_tvalid = Input(Bool())
-    val s_axis_a_tdata = Input(UInt(32.W))
+    val s_axis_a_tdata = Input(UInt(config.width.W))
     val s_axis_b_tvalid = Input(Bool())
-    val s_axis_b_tdata = Input(UInt(32.W))
+    val s_axis_b_tdata = Input(UInt(config.width.W))
     val s_axis_c_tvalid = Input(Bool())
-    val s_axis_c_tdata = Input(UInt(32.W))
+    val s_axis_c_tdata = Input(UInt(config.width.W))
     val m_axis_result_tvalid = Output(Bool())
-    val m_axis_result_tdata = Output(UInt(32.W))
+    val m_axis_result_tdata = Output(UInt(config.width.W))
   })
+
+  val exponentWidth = if (config.width == 16) 5 else 8
+  val fractionWidth = if (config.width == 16) 11 else 24
+  val precisionType = if (config.width == 16) "Half" else "Single"
 
   val ipName = "FloatingPointBlackbox"
   addVivadoIp(
@@ -67,21 +73,24 @@ class FloatingPointBlackbox(
     moduleName=ipName,
     extra = s"""
 set_property -dict [list \\
-  CONFIG.A_Precision_Type {Single} \\
   CONFIG.Add_Sub_Value {Add} \\
-  CONFIG.C_A_Exponent_Width {8} \\
-  CONFIG.C_A_Fraction_Width {24} \\
+  CONFIG.A_Precision_Type {${precisionType}} \\
+  CONFIG.C_A_Exponent_Width {${exponentWidth}} \\
+  CONFIG.C_A_Fraction_Width {${fractionWidth}} \\
+  CONFIG.C_Accum_Input_Msb {15} \\
+  CONFIG.C_Accum_Lsb {-24} \\
+  CONFIG.C_Accum_Msb {32} \\
   CONFIG.C_Latency {${config.pipelineStages}} \\
   CONFIG.C_Mult_Usage {Full_Usage} \\
   CONFIG.C_Optimization {Speed_Optimized} \\
   CONFIG.C_Rate {1} \\
-  CONFIG.C_Result_Exponent_Width {8} \\
-  CONFIG.C_Result_Fraction_Width {24} \\
+  CONFIG.Result_Precision_Type {${precisionType}} \\
+  CONFIG.C_Result_Exponent_Width {${exponentWidth}} \\
+  CONFIG.C_Result_Fraction_Width {${fractionWidth}} \\
   CONFIG.Flow_Control {NonBlocking} \\
   CONFIG.Has_RESULT_TREADY {false} \\
   CONFIG.Maximum_Latency {false} \\
   CONFIG.Operation_Type {FMA} \\
-  CONFIG.Result_Precision_Type {Single} \\
 ] [get_ips ${ipName}]
 """
   )
