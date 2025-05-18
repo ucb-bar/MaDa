@@ -116,7 +116,6 @@ class TacitRocketConfigOhYeah extends RawModule {
     io.led := gpio.io.gpio_io_o
   }
 
-  
   // custom boot
   chiptop.io.custom_boot := false.B
 

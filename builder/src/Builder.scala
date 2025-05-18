@@ -186,20 +186,40 @@ object buildProject extends App {
     def accept(file: File): Boolean = file.isFile || file.isDirectory && !file.getName.endsWith(".f")
   }).flatMap(file => if (file.isDirectory) file.listFiles().map(_.getAbsolutePath) else Array(file.getAbsolutePath))
 
-  val extraGeneratedSources = scala.io.Source.fromFile(new File(BuilderConfig.extraGeneratedFilelist))
-    .getLines()
-    .map(_.trim)
-    .filter(_.nonEmpty)
+  val extraGeneratedSources = {
+    val file = new File(BuilderConfig.extraGeneratedFilelist)
+    if (file.exists()) {
+      scala.io.Source.fromFile(file)
+        .getLines()
+        .map(_.trim)
+        .filter(_.nonEmpty)
+    } else {
+      Iterator.empty
+    }
+  }
 
-  val simulationSources = scala.io.Source.fromFile(new File(BuilderConfig.simulationFilelist))
-    .getLines()
-    .map(_.trim)
-    .filter(_.nonEmpty)
-  val constraintResources = scala.io.Source.fromFile(new File(BuilderConfig.constraintsFilelist))
-    .getLines()
-    .map(_.trim)
-    .filter(_.nonEmpty)
-
+  val simulationSources = {
+    val file = new File(BuilderConfig.simulationFilelist)
+    if (file.exists()) {
+      scala.io.Source.fromFile(file)
+        .getLines()
+        .map(_.trim)
+        .filter(_.nonEmpty)
+    } else {
+      Iterator.empty
+    }
+  }
+  val constraintResources = {
+    val file = new File(BuilderConfig.constraintsFilelist)
+    if (file.exists()) {
+      scala.io.Source.fromFile(file)
+        .getLines()
+        .map(_.trim)
+        .filter(_.nonEmpty)
+    } else {
+      Iterator.empty
+    }
+  }
 
   {
     // create a run.tcl file
