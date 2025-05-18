@@ -17,8 +17,8 @@ import vivadoips.{
   Axi4SpiFlash,
   ClockingWizard,
   IOBUF,
-  SyncReset,
 }
+import prci.SyncReset
 import builder.{addConstraintResource, addSimulationResource}
 
 
@@ -42,7 +42,7 @@ case class SoCConfig(
   tile: TileConfig = new TileConfig(sbusFrequency=50),
 )
 
-class MlpPolicyRunnerBase(val config: SoCConfig) extends RawModule {
+class MlpPolicyRunnerTemplate(val config: SoCConfig) extends RawModule {
   val io = IO(new Arty100TIO())
 
   io := DontCare
@@ -52,12 +52,19 @@ class MlpPolicyRunnerBase(val config: SoCConfig) extends RawModule {
   
   val pll_locked = Wire(Bool())
 
-  val clk_wiz = Module(new ClockingWizard(Seq(config.tile.sbusFrequency)))
-  // clocking wizard connection
-  clk_wiz.io.clk_in := io.CLK100MHZ
-  clk_wiz.io.reset := ~io.ck_rst
-  pll_locked := clk_wiz.io.locked
-  clock := clk_wiz.io.clk_outs(0)
+  // val clk_wiz = Module(new ClockingWizard(Seq(config.tile.sbusFrequency)))
+  // // clocking wizard connection
+  // clk_wiz.io.clk_in := io.CLK100MHZ
+  // clk_wiz.io.reset := ~io.ck_rst
+  // pll_locked := clk_wiz.io.locked
+  // clock := clk_wiz.io.clk_outs(0)
+
+  // simple divide by 2 clock divider
+  withClockAndReset(io.CLK100MHZ, ~io.ck_rst) {
+    val (counter_count, counter_wrapped) = Counter(true.B, 2)
+    clock := counter_wrapped.asClock
+    pll_locked := io.ck_rst
+  }
 
 
   val sync_reset = Module(new SyncReset())

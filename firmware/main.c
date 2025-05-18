@@ -16,6 +16,8 @@
 
 #define SIMULATION    0
 
+#define VLEN   8
+
 
 #include "uart.h"
 #include "gpio.h"
@@ -37,11 +39,6 @@
 #define TIM0                            ((XilinxTimer *) TIM0_BASE)
 
 #include "glossy.h"
-
-
-
-
-#define VLEN   2
 
 
 #if SIMULATION == 1

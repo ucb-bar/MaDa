@@ -5,13 +5,13 @@ import chisel3.util._
 import builder.{addConstraintResource, addSimulationResource}
 
 
-class MlpPolicyRunner extends MlpPolicyRunnerBase(
+class MlpPolicyRunner extends MlpPolicyRunnerTemplate(
   new SoCConfig(
     tile = new TileConfig(
       core = new CoreConfig(
         XLEN = 32,
-        ELEN = 16,
-        VLEN = 64,
+        ELEN = 32,
+        VLEN = 256,
         pipelineStages = 3,
       ),
       sbusFrequency = 50,
