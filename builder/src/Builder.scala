@@ -85,13 +85,13 @@ object addVivadoIp {
     addVivadoTclScript(s"ip/create_ip_${moduleName.toLowerCase()}.tcl", {
       s"""
 create_ip -name ${name} -vendor ${vendor} -library ${library} -version ${version} -module_name ${moduleName}
+${extra}
 generate_target {instantiation_template} [get_ips ${moduleName}]
 update_compile_order -fileset sources_1
 generate_target all [get_ips ${moduleName}]
 catch { config_ip_cache -export [get_ips -all ${moduleName}] }
 export_ip_user_files -of_objects [get_ips ${moduleName}] -no_script -sync -force -quiet
 create_ip_run [get_ips ${moduleName}]
-${extra}
 """
     })
   }
@@ -159,13 +159,17 @@ object buildProject extends App {
   new File(BuilderConfig.vivadoProjectDir).mkdirs()
   new File(BuilderConfig.vivadoTclDir).mkdirs()
 
+  /* Arty A7 200T */
+  val fpgaPart = "xc7a200tsbg484-1"
+  val boardPart = "digilentinc.com:nexys_video:part0:1.2"
+
   /* Arty A7 100T */
-  // val fpgaPart = "xc7a100ticsg324-1L"
+  // val fpgaPart = "xc7a100tcsg324-1"
   // val boardPart = "digilentinc.com:arty-a7-100t:part0:1.1"
 
   /* Arty A7 35T */
-  val fpgaPart = "xc7a35ticsg324-1L"
-  val boardPart = "digilentinc.com:arty-a7-35:part0:1.1"
+  // val fpgaPart = "xc7a35ticsg324-1L"
+  // val boardPart = "digilentinc.com:arty-a7-35:part0:1.1"
 
   /* Zedboard */
   // val fpgaPart = "xc7z020clg484-1"

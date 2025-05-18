@@ -2,8 +2,10 @@ package chipyard_wrapper
 
 import chisel3.{BlackBox, _}
 import chisel3.util._
-import amba.Axi4Bundle
+import amba.{Axi4Bundle, Axi4LiteBundle}
 import prci.SyncReset
+
+
 class SystemJTAGIO extends Bundle {
   val jtag = new Bundle {
     val TCK = Output(Clock())
@@ -54,6 +56,9 @@ class ChipTop extends BlackBox {
     val uart_0_rxd = Input(Bool())
     val axi4_mem_0_clock = Output(Clock())
     val axi4_mem_0_bits = new Axi4Bundle()
+    val periph_axi4_aclk = Output(Clock())
+    val periph_axi4_aresetn = Output(Bool())
+    val periph_axi4 = new Axi4LiteBundle()
     val custom_boot = Input(Bool())
     val jtag_TCK = Input(Clock())
     val jtag_TMS = Input(Bool())
